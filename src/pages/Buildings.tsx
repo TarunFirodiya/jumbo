@@ -56,10 +56,11 @@ export default function Buildings() {
       
       const { data, error } = await supabase
         .from("user_building_shortlist")
-        .select("id");
+        .select("building_id")
+        .eq('user_id', user.id);
       
       if (error) throw error;
-      return data.map(item => item.id);
+      return data.map(item => item.building_id);
     },
   });
 
@@ -72,7 +73,8 @@ export default function Buildings() {
       const { error } = await supabase
         .from("user_building_shortlist")
         .insert({ 
-          id: buildingId
+          user_id: user.id,
+          building_id: buildingId
         });
 
       if (error) throw error;
