@@ -175,7 +175,7 @@ export type Database = {
         Insert: {
           building_id?: string | null
           created_at?: string
-          id: string
+          id?: string
           user_id?: string | null
         }
         Update: {
