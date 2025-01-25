@@ -10,7 +10,8 @@ interface BuildingsMapProps {
 
 const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
+  const mapInstance = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -32,7 +33,7 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
     mapboxgl.accessToken = token;
     
     try {
-      map.current = new mapboxgl.Map({
+      mapInstance.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/light-v11',
         zoom: 12,
@@ -40,10 +41,14 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
       });
 
       // Add navigation controls
-      map.current.addControl(
+      mapInstance.current.addControl(
         new mapboxgl.NavigationControl(),
         'top-right'
       );
+
+      // Clear existing markers
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
 
       // Add markers for buildings with coordinates
       buildings.forEach((building) => {
@@ -60,10 +65,12 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
               </div>`
             );
 
-          new mapboxgl.Marker()
+          const marker = new mapboxgl.Marker()
             .setLngLat([building.longitude, building.latitude])
             .setPopup(popup)
-            .addTo(map.current);
+            .addTo(mapInstance.current!);
+
+          markersRef.current.push(marker);
         }
       });
     } catch (error) {
@@ -77,7 +84,12 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
 
     // Cleanup
     return () => {
-      map.current?.remove();
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
+      if (mapInstance.current) {
+        mapInstance.current.remove();
+        mapInstance.current = null;
+      }
     };
   }, [buildings, toast]);
 
