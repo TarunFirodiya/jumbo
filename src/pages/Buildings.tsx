@@ -83,10 +83,10 @@ export default function Buildings() {
         // Add to shortlist
         const { error } = await supabase
           .from("user_building_shortlist")
-          .insert({ 
+          .insert([{ 
             user_id: user.id,
             building_id: buildingId
-          });
+          }]);
 
         if (error) throw error;
       }
