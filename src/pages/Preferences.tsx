@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { Plus, Home, Building2, Castle, Trees } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const steps = [
@@ -87,21 +87,23 @@ export default function Preferences() {
       ];
 
       const { error } = await supabase.from("user_preferences").upsert({
-        user_id: user.id,
+        user_id: user.id,  // Explicitly set the user_id
         location_preference_input: formData.location_preference_input,
         location_radius: formData.location_radius,
-        max_budget: parseFloat(formData.max_budget as string),
-        size: parseFloat(formData.size as string),
+        max_budget: parseFloat(formData.max_budget as string) || null,
+        size: parseFloat(formData.size as string) || null,
         lifestyle_cohort: formData.lifestyle_cohort,
         home_features: allHomeFeatures,
         deal_breakers: allDealBreakers,
+      }, {
+        onConflict: 'user_id',  // Specify the conflict target
       });
 
       if (error) {
         console.error("Error saving preferences:", error);
         toast({
           title: "Error",
-          description: "Failed to save preferences. Please try again.",
+          description: `Failed to save preferences: ${error.message}`,
           variant: "destructive",
         });
         return;
