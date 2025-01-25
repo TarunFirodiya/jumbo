@@ -32,19 +32,34 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
     // Initialize map with the token
     mapboxgl.accessToken = token;
     
-    try {
-      mapInstance.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/light-v11',
-        zoom: 12,
-        center: [72.8777, 19.0760], // Mumbai coordinates as default
-      });
+    const initializeMap = () => {
+      try {
+        if (mapInstance.current) return;
 
-      // Add navigation controls
-      mapInstance.current.addControl(
-        new mapboxgl.NavigationControl(),
-        'top-right'
-      );
+        mapInstance.current = new mapboxgl.Map({
+          container: mapContainer.current!,
+          style: 'mapbox://styles/mapbox/light-v11',
+          zoom: 12,
+          center: [72.8777, 19.0760], // Mumbai coordinates as default
+        });
+
+        // Add navigation controls
+        mapInstance.current.addControl(
+          new mapboxgl.NavigationControl(),
+          'top-right'
+        );
+      } catch (error) {
+        console.error('Error initializing map:', error);
+        toast({
+          title: "Map Error",
+          description: "There was an error loading the map",
+          variant: "destructive",
+        });
+      }
+    };
+
+    const addMarkers = () => {
+      if (!mapInstance.current) return;
 
       // Clear existing markers
       markersRef.current.forEach(marker => marker.remove());
@@ -68,24 +83,23 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
           const marker = new mapboxgl.Marker()
             .setLngLat([building.longitude, building.latitude])
             .setPopup(popup)
-            .addTo(mapInstance.current!);
+            .addTo(mapInstance.current);
 
           markersRef.current.push(marker);
         }
       });
-    } catch (error) {
-      console.error('Error initializing map:', error);
-      toast({
-        title: "Map Error",
-        description: "There was an error loading the map",
-        variant: "destructive",
-      });
-    }
+    };
 
-    // Cleanup
+    initializeMap();
+    addMarkers();
+
+    // Cleanup function
     return () => {
+      // Remove all markers
       markersRef.current.forEach(marker => marker.remove());
       markersRef.current = [];
+
+      // Remove map instance
       if (mapInstance.current) {
         mapInstance.current.remove();
         mapInstance.current = null;
