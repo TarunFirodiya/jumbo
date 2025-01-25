@@ -3,6 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Progress } from "@/components/ui/progress";
+import { Plus, Home, Building2, Castle, Trees } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const steps = [
   { id: 1, title: "Location" },
@@ -10,51 +14,141 @@ const steps = [
   { id: 3, title: "Lifestyle" },
 ];
 
+type LocationStep = 1 | 2 | 3;
+
 export default function Preferences() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [locations, setLocations] = useState<string[]>([""]);
+  const [locationStep, setLocationStep] = useState<LocationStep>(1);
+  const [formData, setFormData] = useState({
+    location_preference_input: "",
+    proximity_type: "",
+    proximity_location: "",
+    location_radius: 5,
+    max_budget: "",
+    size: "",
+    lifestyle_cohort: "",
+    home_features: [] as string[],
+    custom_home_features: [] as string[],
+    deal_breakers: [] as string[],
+    custom_deal_breakers: [] as string[],
+  });
 
-  const handleAddLocation = () => {
-    setLocations([...locations, ""]);
-  };
-
-  const handleLocationChange = (index: number, value: string) => {
-    const newLocations = [...locations];
-    newLocations[index] = value;
-    setLocations(newLocations);
+  const handleInputChange = (field: string, value: string | string[]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleNext = () => {
+    if (currentStep === 1 && locationStep < 3) {
+      setLocationStep((prev) => (prev + 1) as LocationStep);
+      return;
+    }
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
+      setLocationStep(1);
     }
   };
 
   const handleBack = () => {
+    if (currentStep === 1 && locationStep > 1) {
+      setLocationStep((prev) => (prev - 1) as LocationStep);
+      return;
+    }
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
   };
 
+  const renderLocationStep = () => {
+    switch (locationStep) {
+      case 1:
+        return (
+          <div className="space-y-4">
+            <Label>Where are you looking to live?</Label>
+            <Input
+              placeholder="Enter area or locality"
+              value={formData.location_preference_input}
+              onChange={(e) => handleInputChange("location_preference_input", e.target.value)}
+            />
+          </div>
+        );
+      case 2:
+        return (
+          <div className="space-y-4">
+            <Label>Do you want to live close to work, school, a metro station or a friend?</Label>
+            <RadioGroup
+              value={formData.proximity_type}
+              onValueChange={(value) => handleInputChange("proximity_type", value)}
+              className="grid grid-cols-2 gap-4"
+            >
+              {["Work", "School", "Metro Station", "Friend's Place"].map((option) => (
+                <div key={option} className="flex items-center space-x-2">
+                  <RadioGroupItem value={option.toLowerCase()} id={option} />
+                  <Label htmlFor={option}>{option}</Label>
+                </div>
+              ))}
+            </RadioGroup>
+          </div>
+        );
+      case 3:
+        return (
+          <div className="space-y-4">
+            <Label>{`Where is your ${formData.proximity_type}?`}</Label>
+            <Input
+              placeholder="Enter location"
+              value={formData.proximity_location}
+              onChange={(e) => handleInputChange("proximity_location", e.target.value)}
+            />
+          </div>
+        );
+    }
+  };
+
+  const lifestyleOptions = [
+    { 
+      title: "Luxury Amenities", 
+      icon: Castle,
+      value: "luxury"
+    },
+    { 
+      title: "Gated Apartment with Basic Amenities", 
+      icon: Building2,
+      value: "gated_basic"
+    },
+    { 
+      title: "Gated Apartment, Amenities don't matter", 
+      icon: Home,
+      value: "gated_no_amenities"
+    },
+    { 
+      title: "Independent Villa", 
+      icon: Trees,
+      value: "villa"
+    },
+  ];
+
+  const homeFeatures = ["Balconies", "Spacious Rooms", "Great Ventilation"];
+  const dealBreakers = ["Old construction", "South Facing Door", "Bad Access Roads"];
+
   return (
     <div className="container max-w-2xl mx-auto py-8">
       <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
+        <Progress value={((currentStep - 1) * 100) / (steps.length - 1)} className="mb-2" />
+        <div className="flex justify-between items-center">
           {steps.map((step) => (
             <div
               key={step.id}
-              className={`flex items-center ${
-                step.id === currentStep
-                  ? "text-primary"
-                  : "text-muted-foreground"
-              }`}
+              className={cn(
+                "flex items-center",
+                step.id === currentStep ? "text-primary" : "text-muted-foreground"
+              )}
             >
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center border ${
+                className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center border",
                   step.id === currentStep
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-muted-foreground"
-                }`}
+                )}
               >
                 {step.id}
               </div>
@@ -69,55 +163,131 @@ export default function Preferences() {
           <CardTitle>{steps[currentStep - 1].title} Preferences</CardTitle>
         </CardHeader>
         <CardContent>
-          {currentStep === 1 && (
-            <div className="space-y-4">
-              {locations.map((location, index) => (
-                <div key={index} className="space-y-2">
-                  <Label>Location {index + 1}</Label>
-                  <Input
-                    placeholder="Enter a location"
-                    value={location}
-                    onChange={(e) => handleLocationChange(index, e.target.value)}
-                  />
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleAddLocation}
-                className="w-full"
-              >
-                + Add Another Location
-              </Button>
-            </div>
-          )}
+          {currentStep === 1 && renderLocationStep()}
 
           {currentStep === 2 && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Budget Range</Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <Input placeholder="Min Budget" type="number" />
-                  <Input placeholder="Max Budget" type="number" />
-                </div>
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <Label>What's your maximum budget for a home?</Label>
+                <Input
+                  type="number"
+                  placeholder="Enter amount"
+                  value={formData.max_budget}
+                  onChange={(e) => handleInputChange("max_budget", e.target.value)}
+                />
+              </div>
+              <div className="space-y-4">
+                <Label>How many bedrooms are you looking for?</Label>
+                <Input
+                  type="number"
+                  placeholder="Number of bedrooms"
+                  value={formData.size}
+                  onChange={(e) => handleInputChange("size", e.target.value)}
+                />
               </div>
             </div>
           )}
 
           {currentStep === 3 && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Must-Have Amenities</Label>
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <Label>What kind of amenities are you looking for?</Label>
                 <div className="grid grid-cols-2 gap-4">
-                  {["Parking", "Gym", "Pool", "Security"].map((amenity) => (
-                    <Button
-                      key={amenity}
-                      variant="outline"
-                      className="justify-start"
+                  {lifestyleOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleInputChange("lifestyle_cohort", option.value)}
+                      className={cn(
+                        "p-4 rounded-lg border-2 flex flex-col items-center gap-2 transition-all",
+                        formData.lifestyle_cohort === option.value
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/50"
+                      )}
                     >
-                      {amenity}
-                    </Button>
+                      <option.icon className="w-8 h-8" />
+                      <span className="text-sm text-center">{option.title}</span>
+                    </button>
                   ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Label>Which of these does your ideal home have?</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  {homeFeatures.map((feature) => (
+                    <button
+                      key={feature}
+                      onClick={() => {
+                        const features = formData.home_features.includes(feature)
+                          ? formData.home_features.filter((f) => f !== feature)
+                          : [...formData.home_features, feature];
+                        handleInputChange("home_features", features);
+                      }}
+                      className={cn(
+                        "p-3 rounded-lg border-2 text-left transition-all",
+                        formData.home_features.includes(feature)
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/50"
+                      )}
+                    >
+                      {feature}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => {
+                      const customFeature = window.prompt("Enter custom feature");
+                      if (customFeature) {
+                        handleInputChange("custom_home_features", [
+                          ...formData.custom_home_features,
+                          customFeature,
+                        ]);
+                      }
+                    }}
+                    className="p-3 rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Other</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Label>Are there any deal-breakers?</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  {dealBreakers.map((dealBreaker) => (
+                    <button
+                      key={dealBreaker}
+                      onClick={() => {
+                        const breakers = formData.deal_breakers.includes(dealBreaker)
+                          ? formData.deal_breakers.filter((d) => d !== dealBreaker)
+                          : [...formData.deal_breakers, dealBreaker];
+                        handleInputChange("deal_breakers", breakers);
+                      }}
+                      className={cn(
+                        "p-3 rounded-lg border-2 text-left transition-all",
+                        formData.deal_breakers.includes(dealBreaker)
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/50"
+                      )}
+                    >
+                      {dealBreaker}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => {
+                      const customBreaker = window.prompt("Enter custom deal-breaker");
+                      if (customBreaker) {
+                        handleInputChange("custom_deal_breakers", [
+                          ...formData.custom_deal_breakers,
+                          customBreaker,
+                        ]);
+                      }
+                    }}
+                    className="p-3 rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Other</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -128,7 +298,7 @@ export default function Preferences() {
               type="button"
               variant="outline"
               onClick={handleBack}
-              disabled={currentStep === 1}
+              disabled={currentStep === 1 && locationStep === 1}
             >
               Back
             </Button>
