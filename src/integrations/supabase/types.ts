@@ -23,11 +23,11 @@ export type Database = {
           latitude: number | null
           locality: string | null
           longitude: number | null
-          map_image: string | null
           max_price: number | null
           min_price: number | null
           name: string
           price_psqft: number | null
+          street_view: string | null
           sub_locality: string | null
           total_floors: number | null
           type: string | null
@@ -47,11 +47,11 @@ export type Database = {
           latitude?: number | null
           locality?: string | null
           longitude?: number | null
-          map_image?: string | null
           max_price?: number | null
           min_price?: number | null
           name: string
           price_psqft?: number | null
+          street_view?: string | null
           sub_locality?: string | null
           total_floors?: number | null
           type?: string | null
@@ -71,11 +71,11 @@ export type Database = {
           latitude?: number | null
           locality?: string | null
           longitude?: number | null
-          map_image?: string | null
           max_price?: number | null
           min_price?: number | null
           name?: string
           price_psqft?: number | null
+          street_view?: string | null
           sub_locality?: string | null
           total_floors?: number | null
           type?: string | null
@@ -161,6 +161,36 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_building_shortlist: {
+        Row: {
+          created_at: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_building_shortlist_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_building_shortlist_id_fkey1"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "buildings"
             referencedColumns: ["id"]
           },
         ]
