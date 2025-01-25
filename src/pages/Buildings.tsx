@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { ExpandableTabs } from "@/components/ui/expandable-tabs";
 import { 
   Building,
   Heart, 
@@ -11,7 +12,10 @@ import {
   InfoCircle,
   Map,
   Cube, 
-  Camera
+  Camera,
+  Filter,
+  SortDescending,
+  Star
 } from "iconoir-react";
 
 export default function Buildings() {
@@ -88,6 +92,13 @@ export default function Buildings() {
     },
   });
 
+  const tabs = [
+    { title: "Filter", icon: Filter },
+    { title: "Sort", icon: SortDescending },
+    { type: "separator" as const },
+    { title: "Shortlisted", icon: Star },
+  ];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -97,9 +108,11 @@ export default function Buildings() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Available Buildings</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="container mx-auto px-4">
+      <div className="sticky top-0 z-10 bg-background py-4">
+        <ExpandableTabs tabs={tabs} />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
         {buildings?.map((building) => (
           <Card key={building.id} className="overflow-hidden">
             <div className="relative">
