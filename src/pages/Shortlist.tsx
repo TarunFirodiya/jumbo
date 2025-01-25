@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ExpandableTabs } from "@/components/ui/expandable-tabs";
-import { Home, Heart, Settings, HelpCircle } from "iconoir-react";
+import { Home, Heart, Settings, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,7 +31,9 @@ export default function Shortlist() {
             sub_locality,
             min_price,
             max_price,
-            images
+            images,
+            total_floors,
+            age
           )
         `)
         .eq('user_id', user.id)
@@ -48,25 +50,21 @@ export default function Shortlist() {
         <ExpandableTabs tabs={tabs} />
       </div>
       <div className="mt-8">
-        <h1 className="text-2xl font-bold mb-6">Your Shortlisted Properties</h1>
-        
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {isLoading ? (
+            [1, 2, 3].map((i) => (
               <Skeleton key={i} className="h-[300px] w-full" />
-            ))}
-          </div>
-        ) : !shortlistedBuildings?.length ? (
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">
-                You haven't shortlisted any properties yet.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {shortlistedBuildings?.map((item) => (
+            ))
+          ) : !shortlistedBuildings?.length ? (
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-center text-muted-foreground">
+                  You haven't shortlisted any properties yet.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            shortlistedBuildings?.map((item) => (
               <Card key={item.building_id} className="overflow-hidden">
                 <div className="aspect-video relative">
                   {item.buildings?.images?.[0] ? (
@@ -77,7 +75,11 @@ export default function Shortlist() {
                     />
                   ) : (
                     <div className="w-full h-full bg-muted flex items-center justify-center">
-                      No image available
+                      <img 
+                        src="/placeholder.svg" 
+                        alt="Placeholder" 
+                        className="w-16 h-16 opacity-50"
+                      />
                     </div>
                   )}
                 </div>
@@ -91,11 +93,15 @@ export default function Shortlist() {
                     {item.buildings?.min_price && `₹${(item.buildings.min_price/10000000).toFixed(1)} Cr`}
                     {item.buildings?.max_price && ` - ₹${(item.buildings.max_price/10000000).toFixed(1)} Cr`}
                   </div>
+                  <div className="text-sm text-muted-foreground">
+                    {item.buildings?.total_floors && `${item.buildings.total_floors} floors`}
+                    {item.buildings?.age && ` • ${item.buildings.age} years old`}
+                  </div>
                 </CardHeader>
               </Card>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

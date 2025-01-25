@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExpandableTabs } from "@/components/ui/expandable-tabs";
-import { Home, Heart, Settings, HelpCircle } from "iconoir-react";
+import { Home, Heart, Settings, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -107,25 +107,21 @@ export default function Buildings() {
         <ExpandableTabs tabs={tabs} />
       </div>
       <div className="mt-8">
-        <h1 className="text-2xl font-bold mb-6">Available Properties</h1>
-        
-        {buildingsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {buildingsLoading ? (
+            [1, 2, 3].map((i) => (
               <Skeleton key={i} className="h-[300px] w-full" />
-            ))}
-          </div>
-        ) : !buildings?.length ? (
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">
-                No properties available at the moment.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {buildings?.map((building) => (
+            ))
+          ) : !buildings?.length ? (
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-center text-muted-foreground">
+                  No properties available at the moment.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            buildings?.map((building) => (
               <Card key={building.id} className="overflow-hidden">
                 <div className="aspect-video relative">
                   {building.images?.[0] ? (
@@ -136,7 +132,11 @@ export default function Buildings() {
                     />
                   ) : (
                     <div className="w-full h-full bg-muted flex items-center justify-center">
-                      No image available
+                      <img 
+                        src="/placeholder.svg" 
+                        alt="Placeholder" 
+                        className="w-16 h-16 opacity-50"
+                      />
                     </div>
                   )}
                   <button
@@ -144,7 +144,7 @@ export default function Buildings() {
                     className="absolute top-2 right-2 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
                   >
                     <Heart
-                      className={shortlistedBuildings?.includes(building.id) ? "text-red-500" : "text-gray-500"}
+                      className={shortlistedBuildings?.includes(building.id) ? "fill-red-500 stroke-red-500" : ""}
                     />
                   </button>
                 </div>
@@ -158,11 +158,15 @@ export default function Buildings() {
                     {building.min_price && `₹${(building.min_price/10000000).toFixed(1)} Cr`}
                     {building.max_price && ` - ₹${(building.max_price/10000000).toFixed(1)} Cr`}
                   </div>
+                  <div className="text-sm text-muted-foreground">
+                    {building.total_floors && `${building.total_floors} floors`}
+                    {building.age && ` • ${building.age} years old`}
+                  </div>
                 </CardHeader>
               </Card>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
