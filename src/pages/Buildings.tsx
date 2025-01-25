@@ -15,7 +15,10 @@ import {
   Camera,
   Filter,
   SortDown,
-  Star
+  Star,
+  Home,
+  Settings,
+  HelpCircle
 } from "iconoir-react";
 
 export default function Buildings() {
@@ -115,10 +118,10 @@ export default function Buildings() {
   };
 
   const tabs = [
-    { title: "Filter", icon: Filter },
-    { title: "Sort", icon: SortDown },
-    { type: "separator" as const },
-    { title: "Shortlisted", icon: Star },
+    { title: "Home", icon: Home, path: "/buildings" },
+    { title: "Shortlist", icon: Heart, path: "/shortlist" },
+    { title: "Settings", icon: Settings, path: "/settings" },
+    { title: "Support", icon: HelpCircle, externalLink: "https://wa.link/i4szqw" },
   ];
 
   if (isLoading) {

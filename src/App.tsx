@@ -7,6 +7,8 @@ import MainLayout from "./layouts/MainLayout";
 import Auth from "./pages/Auth";
 import Preferences from "./pages/Preferences";
 import Buildings from "./pages/Buildings";
+import Shortlist from "./pages/Shortlist";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +23,8 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/preferences" element={<Preferences />} />
             <Route path="/buildings" element={<Buildings />} />
+            <Route path="/shortlist" element={<Shortlist />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/" element={<Navigate to="/auth" replace />} />
           </Routes>
         </MainLayout>

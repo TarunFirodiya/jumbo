@@ -5,11 +5,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useOnClickOutside } from "usehooks-ts";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Tab {
   title: string;
   icon: LucideIcon;
   type?: undefined;
+  path?: string;
+  externalLink?: string;
 }
 
 interface Separator {
@@ -54,15 +57,25 @@ export function ExpandableTabs({
 }: ExpandableTabsProps) {
   const [selected, setSelected] = React.useState<number | null>(null);
   const outsideClickRef = React.useRef(null);
+  const navigate = useNavigate();
 
   useOnClickOutside(outsideClickRef, () => {
     setSelected(null);
     onChange?.(null);
   });
 
-  const handleSelect = (index: number) => {
+  const handleSelect = (index: number, tab: TabItem) => {
     setSelected(index);
     onChange?.(index);
+
+    if (tab.type === "separator") return;
+
+    const tabWithPath = tab as Tab;
+    if (tabWithPath.externalLink) {
+      window.open(tabWithPath.externalLink, '_blank');
+    } else if (tabWithPath.path) {
+      navigate(tabWithPath.path);
+    }
   };
 
   const Separator = () => (
@@ -90,7 +103,7 @@ export function ExpandableTabs({
             initial={false}
             animate="animate"
             custom={selected === index}
-            onClick={() => handleSelect(index)}
+            onClick={() => handleSelect(index, tab)}
             transition={transition}
             className={cn(
               "relative flex items-center rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-300",
