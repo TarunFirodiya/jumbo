@@ -7,6 +7,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { Plus, Home, Building2, Castle, Trees } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const steps = [
   { id: 1, title: "Location" },
@@ -17,6 +19,7 @@ const steps = [
 type LocationStep = 1 | 2 | 3;
 
 export default function Preferences() {
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [locationStep, setLocationStep] = useState<LocationStep>(1);
   const [formData, setFormData] = useState({
@@ -55,6 +58,66 @@ export default function Preferences() {
     }
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to save preferences",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Combine custom and predefined features/deal-breakers
+      const allHomeFeatures = [
+        ...formData.home_features,
+        ...formData.custom_home_features,
+      ];
+      const allDealBreakers = [
+        ...formData.deal_breakers,
+        ...formData.custom_deal_breakers,
+      ];
+
+      const { error } = await supabase.from("user_preferences").upsert({
+        user_id: user.id,
+        location_preference_input: formData.location_preference_input,
+        location_radius: formData.location_radius,
+        max_budget: parseFloat(formData.max_budget as string),
+        size: parseFloat(formData.size as string),
+        lifestyle_cohort: formData.lifestyle_cohort,
+        home_features: allHomeFeatures,
+        deal_breakers: allDealBreakers,
+      });
+
+      if (error) {
+        console.error("Error saving preferences:", error);
+        toast({
+          title: "Error",
+          description: "Failed to save preferences. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Your preferences have been saved!",
+      });
+    } catch (error) {
+      console.error("Error in form submission:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -302,13 +365,15 @@ export default function Preferences() {
             >
               Back
             </Button>
-            <Button
-              type="button"
-              onClick={handleNext}
-              disabled={currentStep === steps.length}
-            >
-              {currentStep === steps.length ? "Submit" : "Next"}
-            </Button>
+            {currentStep === steps.length ? (
+              <Button type="button" onClick={handleSubmit}>
+                Submit
+              </Button>
+            ) : (
+              <Button type="button" onClick={handleNext}>
+                Next
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
