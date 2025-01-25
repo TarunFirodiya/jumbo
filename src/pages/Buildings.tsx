@@ -5,12 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { 
-  BuildingSkyscraper, 
+  Building, // Changed from BuildingSkyscraper
   Heart, 
   HeartSolid,
   InfoCircle,
   Map,
-  ThreeDCubeSphere,
+  Cube3D, // Changed from ThreeDCubeSphere
   Camera
 } from "iconoir-react";
 
@@ -128,7 +128,7 @@ export default function Buildings() {
                   <Map className="w-5 h-5" />
                 </button>
                 <button className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100">
-                  <ThreeDCubeSphere className="w-5 h-5" />
+                  <Cube3D className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -147,7 +147,7 @@ export default function Buildings() {
               </div>
               <div className="flex gap-4 my-4">
                 <div className="flex items-center gap-1">
-                  <BuildingSkyscraper className="w-4 h-4 text-gray-600" />
+                  <Building className="w-4 h-4 text-gray-600" />
                   <span className="text-sm text-gray-600">
                     {building.age || "?"} years
                   </span>
