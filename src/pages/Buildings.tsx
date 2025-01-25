@@ -71,7 +71,10 @@ export default function Buildings() {
 
       const { error } = await supabase
         .from("user_building_shortlist")
-        .insert({ id: buildingId });
+        .insert({ 
+          id: buildingId,
+          user_id: user.id  // Add the user_id to match RLS policy
+        });
 
       if (error) throw error;
     },
