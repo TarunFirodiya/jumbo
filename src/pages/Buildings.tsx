@@ -14,7 +14,7 @@ import {
   Cube, 
   Camera,
   Filter,
-  SortDescending,
+  SortDown,
   Star
 } from "iconoir-react";
 
@@ -94,7 +94,7 @@ export default function Buildings() {
 
   const tabs = [
     { title: "Filter", icon: Filter },
-    { title: "Sort", icon: SortDescending },
+    { title: "Sort", icon: SortDown },
     { type: "separator" as const },
     { title: "Shortlisted", icon: Star },
   ];
