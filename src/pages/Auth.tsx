@@ -36,7 +36,7 @@ export default function Auth() {
           title: "Welcome back!",
           description: "You have been signed in successfully"
         });
-        navigate("/preferences");
+        navigate("/buildings");
       }
     } catch (error) {
       console.error("Auth error:", error);

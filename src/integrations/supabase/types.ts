@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       buildings: {
         Row: {
+          age: number | null
           amenities_cohort: number | null
           bhk_types: string[] | null
           created_at: string | null
@@ -34,6 +35,7 @@ export type Database = {
           video_thumbnail: string | null
         }
         Insert: {
+          age?: number | null
           amenities_cohort?: number | null
           bhk_types?: string[] | null
           created_at?: string | null
@@ -57,6 +59,7 @@ export type Database = {
           video_thumbnail?: string | null
         }
         Update: {
+          age?: number | null
           amenities_cohort?: number | null
           bhk_types?: string[] | null
           created_at?: string | null

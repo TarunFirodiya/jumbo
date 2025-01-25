@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 import Auth from "./pages/Auth";
 import Preferences from "./pages/Preferences";
-import Index from "./pages/Index";
+import Buildings from "./pages/Buildings";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +20,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/preferences" element={<Preferences />} />
+            <Route path="/buildings" element={<Buildings />} />
             <Route path="/" element={<Navigate to="/auth" replace />} />
           </Routes>
         </MainLayout>
