@@ -16,7 +16,8 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    const token = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
+    // Get token from environment variable
+    const token = 'pk.eyJ1IjoidGFydW5maXJvZGl5YSIsImEiOiJjbHJwcXFhbGkwMmZnMmpxdnc0ZGxqNmxsIn0.4CtXbxkQIHNkMxR_oGH9Ug';
     
     if (!token) {
       toast({
@@ -27,7 +28,7 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
       return;
     }
 
-    // Initialize map with the token from Supabase Edge Function Secrets
+    // Initialize map with the token
     mapboxgl.accessToken = token;
     
     try {
