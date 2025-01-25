@@ -1,216 +1,168 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
 import { ExpandableTabs } from "@/components/ui/expandable-tabs";
-import { 
-  Building,
-  Heart, 
-  HeartSolid,
-  InfoCircle,
-  Map,
-  Cube, 
-  Camera,
-  Filter,
-  SortDown,
-  Star,
-  Home,
-  Settings,
-  HelpCircle
-} from "iconoir-react";
+import { Home, Heart, Settings, HelpCircle } from "iconoir-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+
+const tabs = [
+  { title: "Home", icon: Home, path: "/buildings" },
+  { title: "Shortlist", icon: Heart, path: "/shortlist" },
+  { title: "Settings", icon: Settings, path: "/settings" },
+  { title: "Support", icon: HelpCircle, externalLink: "https://wa.link/i4szqw" },
+];
 
 export default function Buildings() {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Check authentication status
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
-      }
-    };
-    checkAuth();
-  }, [navigate]);
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user;
+    },
+  });
 
-  // Fetch buildings data
-  const { data: buildings, isLoading } = useQuery({
-    queryKey: ["buildings"],
+  const { data: buildings, isLoading: buildingsLoading } = useQuery({
+    queryKey: ['buildings'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("buildings")
-        .select("id, name, locality, age, total_floors, min_price, max_price, images");
-      
+        .from('buildings')
+        .select('*')
+        .order('created_at', { ascending: false });
+
       if (error) throw error;
       return data;
     },
   });
 
-  // Fetch shortlisted buildings
   const { data: shortlistedBuildings } = useQuery({
-    queryKey: ["shortlisted"],
+    queryKey: ['shortlistedBuildings'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      
       const { data, error } = await supabase
-        .from("user_building_shortlist")
-        .select("building_id")
+        .from('user_building_shortlist')
+        .select('building_id')
         .eq('user_id', user.id);
-      
+
       if (error) throw error;
       return data.map(item => item.building_id);
     },
+    enabled: !!user,
   });
 
-  // Shortlist mutation
-  const shortlistMutation = useMutation({
+  const toggleShortlistMutation = useMutation({
     mutationFn: async ({ buildingId, isShortlisted }: { buildingId: string, isShortlisted: boolean }) => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
       if (isShortlisted) {
-        // Remove from shortlist
         const { error } = await supabase
-          .from("user_building_shortlist")
+          .from('user_building_shortlist')
           .delete()
-          .eq('user_id', user.id)
-          .eq('building_id', buildingId);
-
+          .eq('building_id', buildingId)
+          .eq('user_id', user.id);
         if (error) throw error;
       } else {
-        // Add to shortlist
         const { error } = await supabase
-          .from("user_building_shortlist")
-          .insert([{ 
-            user_id: user.id,
-            building_id: buildingId
-          }]);
-
+          .from('user_building_shortlist')
+          .insert({ building_id: buildingId, user_id: user.id });
         if (error) throw error;
       }
     },
     onSuccess: (_, { isShortlisted }) => {
-      queryClient.invalidateQueries({ queryKey: ["shortlisted"] });
+      queryClient.invalidateQueries({ queryKey: ['shortlistedBuildings'] });
       toast({
         title: isShortlisted ? "Removed from shortlist" : "Added to shortlist",
-        description: isShortlisted ? 
-          "Building has been removed from your shortlist" : 
-          "Building has been added to your shortlist",
+        description: isShortlisted ? "Property removed from your shortlist" : "Property added to your shortlist",
       });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to update shortlist",
+        description: error.message,
         variant: "destructive",
       });
-      console.error("Shortlist error:", error);
     },
   });
 
-  const handleShortlist = (buildingId: string, isShortlisted: boolean) => {
-    shortlistMutation.mutate({ buildingId, isShortlisted });
+  const handleShortlistToggle = (buildingId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to shortlist properties",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const isShortlisted = shortlistedBuildings?.includes(buildingId);
+    toggleShortlistMutation.mutate({ buildingId, isShortlisted: !!isShortlisted });
   };
-
-  const tabs = [
-    { title: "Home", icon: Home, path: "/buildings" },
-    { title: "Shortlist", icon: Heart, path: "/shortlist" },
-    { title: "Settings", icon: Settings, path: "/settings" },
-    { title: "Support", icon: HelpCircle, externalLink: "https://wa.link/i4szqw" },
-  ];
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Loading buildings...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4">
       <div className="sticky top-0 z-10 bg-background py-4">
         <ExpandableTabs tabs={tabs} />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
-        {buildings?.map((building) => {
-          const isShortlisted = shortlistedBuildings?.includes(building.id) || false;
-          
-          return (
-            <Card key={building.id} className="overflow-hidden">
-              <div className="relative">
-                <div className="aspect-video overflow-hidden">
-                  <img
-                    src={building.images?.[0] || "/lovable-uploads/f82e009e-6ea1-464e-899f-2af5b617ef52.png"}
-                    alt={building.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="absolute top-4 right-4 flex gap-2">
-                  <button 
-                    className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors"
-                    onClick={() => handleShortlist(building.id, isShortlisted)}
+      <div className="mt-8">
+        <h1 className="text-2xl font-bold mb-6">Available Properties</h1>
+        
+        {buildingsLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-[300px] w-full" />
+            ))}
+          </div>
+        ) : !buildings?.length ? (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-center text-muted-foreground">
+                No properties available at the moment.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {buildings?.map((building) => (
+              <Card key={building.id} className="overflow-hidden">
+                <div className="aspect-video relative">
+                  {building.images?.[0] ? (
+                    <img
+                      src={building.images[0]}
+                      alt={building.name}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                      No image available
+                    </div>
+                  )}
+                  <button
+                    onClick={() => handleShortlistToggle(building.id)}
+                    className="absolute top-2 right-2 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
                   >
-                    {isShortlisted ? (
-                      <HeartSolid className="w-5 h-5 text-red-500" />
-                    ) : (
-                      <Heart className="w-5 h-5" />
-                    )}
-                  </button>
-                  <button className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors">
-                    <Camera className="w-5 h-5" />
-                  </button>
-                  <button className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors">
-                    <Map className="w-5 h-5" />
-                  </button>
-                  <button className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors">
-                    <Cube className="w-5 h-5" />
+                    <Heart
+                      className={shortlistedBuildings?.includes(building.id) ? "text-red-500" : "text-gray-500"}
+                    />
                   </button>
                 </div>
-              </div>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="text-lg font-semibold">{building.name}</h3>
-                    <p className="text-sm text-gray-600 flex items-center gap-1">
-                      <Map className="w-4 h-4" />
-                      {building.locality || "Location not specified"}
-                    </p>
+                <CardHeader>
+                  <CardTitle className="text-lg">{building.name}</CardTitle>
+                  <div className="text-sm text-muted-foreground">
+                    {building.locality}
+                    {building.sub_locality && `, ${building.sub_locality}`}
                   </div>
-                  <div className="flex items-center gap-1 bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
-                    92% Match
+                  <div className="text-sm font-medium">
+                    {building.min_price && `₹${(building.min_price/10000000).toFixed(1)} Cr`}
+                    {building.max_price && ` - ₹${(building.max_price/10000000).toFixed(1)} Cr`}
                   </div>
-                </div>
-                <div className="flex gap-4 my-4">
-                  <div className="flex items-center gap-1">
-                    <Building className="w-4 h-4 text-gray-600" />
-                    <span className="text-sm text-gray-600">
-                      {building.age || "?"} years
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <InfoCircle className="w-4 h-4 text-gray-600" />
-                    <span className="text-sm text-gray-600">
-                      {building.total_floors || "?"} floors
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <p className="text-sm text-gray-600">Price Range</p>
-                  <p className="text-lg font-semibold">
-                    {building.min_price ? `₹${(building.min_price/10000000).toFixed(1)} Cr` : 'N/A'} 
-                    {building.max_price ? ` - ₹${(building.max_price/10000000).toFixed(1)} Cr` : ''}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
