@@ -5,12 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { 
-  Building, // Changed from BuildingSkyscraper
+  Building,
   Heart, 
   HeartSolid,
   InfoCircle,
   Map,
-  Cube3D, // Changed from ThreeDCubeSphere
+  Cube, 
   Camera
 } from "iconoir-react";
 
@@ -128,7 +128,7 @@ export default function Buildings() {
                   <Map className="w-5 h-5" />
                 </button>
                 <button className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100">
-                  <Cube3D className="w-5 h-5" />
+                  <Cube className="w-5 h-5" />
                 </button>
               </div>
             </div>
