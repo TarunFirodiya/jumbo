@@ -15,7 +15,7 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
     if (!mapContainer.current) return;
 
     // Initialize map with the token from Supabase Edge Function Secrets
-    mapboxgl.accessToken = process.env.MAPBOX_PUBLIC_TOKEN || '';
+    mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN || '';
     
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
