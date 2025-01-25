@@ -14,8 +14,6 @@ interface Tab {
 
 interface Separator {
   type: "separator";
-  title?: undefined;
-  icon?: undefined;
 }
 
 type TabItem = Tab | Separator;
