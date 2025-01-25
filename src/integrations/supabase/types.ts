@@ -204,6 +204,7 @@ export type Database = {
         Row: {
           created_at: string | null
           deal_breakers: string[] | null
+          home_features: string[] | null
           id: string
           lifestyle_cohort: string | null
           location_latitude: number | null
@@ -219,6 +220,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           deal_breakers?: string[] | null
+          home_features?: string[] | null
           id?: string
           lifestyle_cohort?: string | null
           location_latitude?: number | null
@@ -234,6 +236,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           deal_breakers?: string[] | null
+          home_features?: string[] | null
           id?: string
           lifestyle_cohort?: string | null
           location_latitude?: number | null
