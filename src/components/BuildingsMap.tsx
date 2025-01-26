@@ -10,47 +10,38 @@ interface BuildingsMapProps {
 
 const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
+  const mapInstance = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || mapInstance.current) return;
 
     try {
       mapboxgl.accessToken = 'pk.eyJ1IjoidGFydW5maXJvZGl5YSIsImEiOiJjbHJwcXFhbGkwMmZnMmpxdnc0ZGxqNmxsIn0.4CtXbxkQIHNkMxR_oGH9Ug';
       
-      const map = new mapboxgl.Map({
+      // Initialize map
+      mapInstance.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/light-v11',
         zoom: 12,
         center: [72.8777, 19.0760], // Mumbai coordinates
       });
 
-      map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      mapInstance.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-      // Add markers for buildings
-      buildings.forEach(building => {
-        if (!building.latitude || !building.longitude) return;
-
-        const popup = new mapboxgl.Popup({ offset: 25 })
-          .setHTML(`
-            <div class="p-2">
-              <h3 class="font-semibold">${building.name}</h3>
-              <p class="text-sm text-gray-600">${building.locality || ''}</p>
-              ${building.min_price ? 
-                `<p class="text-sm font-medium">₹${(building.min_price/10000000).toFixed(1)} Cr${building.max_price ? 
-                  ` - ₹${(building.max_price/10000000).toFixed(1)} Cr` : ''}</p>` 
-                : ''}
-            </div>
-          `);
-
-        new mapboxgl.Marker()
-          .setLngLat([building.longitude, building.latitude])
-          .setPopup(popup)
-          .addTo(map);
-      });
-
-      // Cleanup
-      return () => map.remove();
+      // Clean up function
+      return () => {
+        // Remove all markers
+        markersRef.current.forEach(marker => marker.remove());
+        markersRef.current = [];
+        
+        // Remove map
+        if (mapInstance.current) {
+          mapInstance.current.remove();
+          mapInstance.current = null;
+        }
+      };
     } catch (error) {
       console.error('Error initializing map:', error);
       toast({
@@ -59,7 +50,40 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
         variant: "destructive",
       });
     }
-  }, [buildings, toast]);
+  }, [toast]);
+
+  // Update markers when buildings change
+  useEffect(() => {
+    if (!mapInstance.current) return;
+
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+
+    // Add new markers
+    buildings.forEach(building => {
+      if (!building.latitude || !building.longitude) return;
+
+      const popup = new mapboxgl.Popup({ offset: 25 })
+        .setHTML(`
+          <div class="p-2">
+            <h3 class="font-semibold">${building.name}</h3>
+            <p class="text-sm text-gray-600">${building.locality || ''}</p>
+            ${building.min_price ? 
+              `<p class="text-sm font-medium">₹${(building.min_price/10000000).toFixed(1)} Cr${building.max_price ? 
+                ` - ₹${(building.max_price/10000000).toFixed(1)} Cr` : ''}</p>` 
+              : ''}
+          </div>
+        `);
+
+      const marker = new mapboxgl.Marker()
+        .setLngLat([building.longitude, building.latitude])
+        .setPopup(popup)
+        .addTo(mapInstance.current!);
+
+      markersRef.current.push(marker);
+    });
+  }, [buildings]);
 
   return (
     <div className="w-full h-[calc(100vh-12rem)]">
