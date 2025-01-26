@@ -1,16 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { ExpandableTabs } from "@/components/ui/expandable-tabs";
-import { Home, Heart, Settings, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const tabs = [
-  { title: "Home", icon: Home, path: "/buildings" },
-  { title: "Shortlist", icon: Heart, path: "/shortlist" },
-  { title: "Settings", icon: Settings, path: "/settings" },
-  { title: "Support", icon: HelpCircle, externalLink: "https://wa.link/i4szqw" },
-];
 
 export default function Shortlist() {
   const { data: shortlistedBuildings, isLoading } = useQuery({
@@ -47,9 +38,6 @@ export default function Shortlist() {
 
   return (
     <div className="container mx-auto px-4">
-      <div className="sticky top-0 z-10 bg-background py-4">
-        <ExpandableTabs tabs={tabs} />
-      </div>
       <div className="mt-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoading ? (

@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ExpandableTabs } from "@/components/ui/expandable-tabs";
-import { Home, Heart, Settings, HelpCircle, MapIcon, List, MapPin } from "lucide-react";
+import { Heart, MapIcon, List, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,17 +9,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BuildingsMap from "@/components/BuildingsMap";
 import { Progress } from "@/components/ui/progress";
-
-const tabs = [
-  { title: "Home", icon: Home, path: "/buildings" },
-  { title: "Shortlist", icon: Heart, path: "/shortlist" },
-  { title: "Settings", icon: Settings, path: "/settings" },
-  { title: "Support", icon: HelpCircle, externalLink: "https://wa.link/i4szqw" },
-];
-
-type ToggleShortlistParams = {
-  buildingId: string;
-};
 
 export default function Buildings() {
   const { toast } = useToast();
@@ -127,26 +115,23 @@ export default function Buildings() {
   return (
     <div className="container mx-auto px-4">
       <div className="sticky top-0 z-10 bg-background py-4">
-        <div className="flex justify-between items-center mb-4">
-          <ExpandableTabs tabs={tabs} />
-          <Button
-            variant="outline"
-            onClick={() => setIsMapView(!isMapView)}
-            className="ml-4"
-          >
-            {isMapView ? (
-              <>
-                <List className="mr-2 h-4 w-4" />
-                List View
-              </>
-            ) : (
-              <>
-                <MapIcon className="mr-2 h-4 w-4" />
-                Map View
-              </>
-            )}
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          onClick={() => setIsMapView(!isMapView)}
+          className="ml-auto block"
+        >
+          {isMapView ? (
+            <>
+              <List className="mr-2 h-4 w-4" />
+              List View
+            </>
+          ) : (
+            <>
+              <MapIcon className="mr-2 h-4 w-4" />
+              Map View
+            </>
+          )}
+        </Button>
       </div>
 
       {buildingsLoading ? (
