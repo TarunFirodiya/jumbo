@@ -10,6 +10,11 @@ import { useNavigate } from "react-router-dom";
 import BuildingsMap from "@/components/BuildingsMap";
 import { Progress } from "@/components/ui/progress";
 
+// Add the missing type definition
+type ToggleShortlistParams = {
+  buildingId: string;
+};
+
 export default function Buildings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
