@@ -51,14 +51,17 @@ export default function Buildings() {
       if (!user) return null;
       const { data, error } = await supabase
         .from('user_building_scores')
-        .select('*')
+        .select('building_id, shortlisted, overall_match_score')
         .eq('user_id', user.id);
 
       if (error) throw error;
       return data.reduce((acc, score) => {
-        acc[score.building_id] = score;
+        acc[score.building_id] = {
+          shortlisted: score.shortlisted,
+          overall_match_score: score.overall_match_score
+        };
         return acc;
-      }, {} as Record<string, any>);
+      }, {} as Record<string, { shortlisted: boolean; overall_match_score: number | null }>);
     },
     enabled: !!user,
   });
