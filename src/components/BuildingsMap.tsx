@@ -14,29 +14,25 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const { toast } = useToast();
 
+  // Initialize map
   useEffect(() => {
     if (!mapContainer.current || mapInstance.current) return;
 
     try {
       mapboxgl.accessToken = 'pk.eyJ1IjoidGFydW5maXJvZGl5YSIsImEiOiJjbHJwcXFhbGkwMmZnMmpxdnc0ZGxqNmxsIn0.4CtXbxkQIHNkMxR_oGH9Ug';
       
-      // Initialize map
-      mapInstance.current = new mapboxgl.Map({
+      const map = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/light-v11',
         zoom: 12,
         center: [72.8777, 19.0760], // Mumbai coordinates
       });
 
-      mapInstance.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      
+      mapInstance.current = map;
 
-      // Clean up function
       return () => {
-        // Remove all markers
-        markersRef.current.forEach(marker => marker.remove());
-        markersRef.current = [];
-        
-        // Remove map
         if (mapInstance.current) {
           mapInstance.current.remove();
           mapInstance.current = null;
@@ -52,7 +48,7 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
     }
   }, [toast]);
 
-  // Update markers when buildings change
+  // Handle markers separately
   useEffect(() => {
     if (!mapInstance.current) return;
 
@@ -61,8 +57,8 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
     markersRef.current = [];
 
     // Add new markers
-    buildings.forEach(building => {
-      if (!building.latitude || !building.longitude) return;
+    const newMarkers = buildings.map(building => {
+      if (!building.latitude || !building.longitude) return null;
 
       const popup = new mapboxgl.Popup({ offset: 25 })
         .setHTML(`
@@ -81,8 +77,15 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
         .setPopup(popup)
         .addTo(mapInstance.current!);
 
-      markersRef.current.push(marker);
-    });
+      return marker;
+    }).filter((marker): marker is mapboxgl.Marker => marker !== null);
+
+    markersRef.current = newMarkers;
+
+    return () => {
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
+    };
   }, [buildings]);
 
   return (
