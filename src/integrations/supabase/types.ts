@@ -165,42 +165,6 @@ export type Database = {
           },
         ]
       }
-      user_building_shortlist: {
-        Row: {
-          building_id: string | null
-          created_at: string
-          id: string
-          user_id: string | null
-        }
-        Insert: {
-          building_id?: string | null
-          created_at?: string
-          id?: string
-          user_id?: string | null
-        }
-        Update: {
-          building_id?: string | null
-          created_at?: string
-          id?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_building_shortlist_building_id_fkey"
-            columns: ["building_id"]
-            isOneToOne: false
-            referencedRelation: "buildings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_building_shortlist_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_preference_weights: {
         Row: {
           budget_weight: number | null

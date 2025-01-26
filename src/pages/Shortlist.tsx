@@ -20,7 +20,7 @@ export default function Shortlist() {
       if (!user) throw new Error("User not authenticated");
 
       const { data, error } = await supabase
-        .from('user_building_shortlist')
+        .from('user_building_scores')
         .select(`
           building_id,
           buildings (
@@ -37,7 +37,8 @@ export default function Shortlist() {
           )
         `)
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .eq('shortlisted', true)
+        .order('calculated_at', { ascending: false });
 
       if (error) throw error;
       return data;
