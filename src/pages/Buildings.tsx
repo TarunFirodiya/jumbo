@@ -63,45 +63,35 @@ export default function Buildings() {
     enabled: !!user,
   });
 
-  const { data: shortlistedBuildings } = useQuery({
-    queryKey: ['shortlistedBuildings'],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('user_building_shortlist')
-        .select('building_id')
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-      return data.map(item => item.building_id);
-    },
-    enabled: !!user,
-  });
-
   const toggleShortlistMutation = useMutation({
-    mutationFn: async ({ buildingId, isShortlisted }: { buildingId: string, isShortlisted: boolean }) => {
+    mutationFn: async ({ buildingId }: { buildingId: string }) => {
       if (!user) throw new Error("User not authenticated");
 
-      if (isShortlisted) {
+      const currentScore = buildingScores?.[buildingId];
+      const isCurrentlyShortlisted = currentScore?.shortlisted || false;
+
+      if (currentScore) {
+        // Update existing score
         const { error } = await supabase
-          .from('user_building_shortlist')
-          .delete()
+          .from('user_building_scores')
+          .update({ shortlisted: !isCurrentlyShortlisted })
           .eq('building_id', buildingId)
           .eq('user_id', user.id);
         if (error) throw error;
       } else {
+        // Create new score with shortlisted true
         const { error } = await supabase
-          .from('user_building_shortlist')
-          .insert({ building_id: buildingId, user_id: user.id });
+          .from('user_building_scores')
+          .insert({
+            building_id: buildingId,
+            user_id: user.id,
+            shortlisted: true,
+          });
         if (error) throw error;
       }
     },
-    onSuccess: (_, { isShortlisted }) => {
-      queryClient.invalidateQueries({ queryKey: ['shortlistedBuildings'] });
-      toast({
-        title: isShortlisted ? "Removed from shortlist" : "Added to shortlist",
-        description: isShortlisted ? "Property removed from your shortlist" : "Property added to your shortlist",
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['buildingScores'] });
     },
     onError: (error) => {
       toast({
@@ -122,8 +112,7 @@ export default function Buildings() {
       return;
     }
 
-    const isShortlisted = shortlistedBuildings?.includes(buildingId);
-    toggleShortlistMutation.mutate({ buildingId, isShortlisted: !!isShortlisted });
+    toggleShortlistMutation.mutate({ buildingId });
   };
 
   return (
@@ -172,6 +161,7 @@ export default function Buildings() {
           {buildings?.map((building) => {
             const buildingScore = buildingScores?.[building.id];
             const matchScore = buildingScore?.overall_match_score || 0;
+            const isShortlisted = buildingScore?.shortlisted || false;
 
             return (
               <Card key={building.id} className="overflow-hidden">
@@ -196,7 +186,7 @@ export default function Buildings() {
                     className="absolute top-2 right-2 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
                   >
                     <Heart
-                      className={shortlistedBuildings?.includes(building.id) ? "fill-red-500 stroke-red-500" : ""}
+                      className={isShortlisted ? "fill-red-500 stroke-red-500" : ""}
                     />
                   </button>
                 </div>
