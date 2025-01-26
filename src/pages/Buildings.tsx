@@ -18,6 +18,10 @@ const tabs = [
   { title: "Support", icon: HelpCircle, externalLink: "https://wa.link/i4szqw" },
 ];
 
+type ToggleShortlistParams = {
+  buildingId: string;
+};
+
 export default function Buildings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -67,22 +71,22 @@ export default function Buildings() {
   });
 
   const toggleShortlistMutation = useMutation({
-    mutationFn: async ({ buildingId }: { buildingId: string }) => {
+    mutationFn: async ({ buildingId }: ToggleShortlistParams) => {
       if (!user) throw new Error("User not authenticated");
 
       const currentScore = buildingScores?.[buildingId];
       const isCurrentlyShortlisted = currentScore?.shortlisted || false;
 
       if (currentScore) {
-        // Update existing score
         const { error } = await supabase
           .from('user_building_scores')
           .update({ shortlisted: !isCurrentlyShortlisted })
           .eq('building_id', buildingId)
           .eq('user_id', user.id);
+        
         if (error) throw error;
+        return { buildingId, shortlisted: !isCurrentlyShortlisted };
       } else {
-        // Create new score with shortlisted true
         const { error } = await supabase
           .from('user_building_scores')
           .insert({
@@ -90,7 +94,9 @@ export default function Buildings() {
             user_id: user.id,
             shortlisted: true,
           });
+        
         if (error) throw error;
+        return { buildingId, shortlisted: true };
       }
     },
     onSuccess: () => {
