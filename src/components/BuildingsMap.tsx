@@ -10,32 +10,30 @@ interface BuildingsMapProps {
 
 const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const markers = useRef<mapboxgl.Marker[]>([]);
   const { toast } = useToast();
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || mapInstance.current) return;
+    if (!mapContainer.current || map.current) return;
 
     try {
       mapboxgl.accessToken = 'pk.eyJ1IjoidGFydW5maXJvZGl5YSIsImEiOiJjbHJwcXFhbGkwMmZnMmpxdnc0ZGxqNmxsIn0.4CtXbxkQIHNkMxR_oGH9Ug';
       
-      const map = new mapboxgl.Map({
+      map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/light-v11',
         zoom: 12,
         center: [72.8777, 19.0760], // Mumbai coordinates
       });
 
-      map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-      
-      mapInstance.current = map;
+      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
       return () => {
-        if (mapInstance.current) {
-          mapInstance.current.remove();
-          mapInstance.current = null;
+        if (map.current) {
+          map.current.remove();
+          map.current = null;
         }
       };
     } catch (error) {
@@ -48,17 +46,17 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
     }
   }, [toast]);
 
-  // Handle markers separately
+  // Handle markers
   useEffect(() => {
-    if (!mapInstance.current) return;
+    if (!map.current) return;
 
     // Clear existing markers
-    markersRef.current.forEach(marker => marker.remove());
-    markersRef.current = [];
+    markers.current.forEach(marker => marker.remove());
+    markers.current = [];
 
     // Add new markers
-    const newMarkers = buildings.map(building => {
-      if (!building.latitude || !building.longitude) return null;
+    buildings.forEach(building => {
+      if (!building.latitude || !building.longitude) return;
 
       const popup = new mapboxgl.Popup({ offset: 25 })
         .setHTML(`
@@ -75,16 +73,15 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
       const marker = new mapboxgl.Marker()
         .setLngLat([building.longitude, building.latitude])
         .setPopup(popup)
-        .addTo(mapInstance.current!);
+        .addTo(map.current!);
 
-      return marker;
-    }).filter((marker): marker is mapboxgl.Marker => marker !== null);
+      markers.current.push(marker);
+    });
 
-    markersRef.current = newMarkers;
-
+    // Cleanup function
     return () => {
-      markersRef.current.forEach(marker => marker.remove());
-      markersRef.current = [];
+      markers.current.forEach(marker => marker.remove());
+      markers.current = [];
     };
   }, [buildings]);
 
