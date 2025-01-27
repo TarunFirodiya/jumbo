@@ -114,6 +114,7 @@ export type Database = {
           building_id: string | null
           calculated_at: string | null
           id: string
+          last_calculation_time: string | null
           lifestyle_match_score: number | null
           location_match_score: number | null
           overall_match_score: number | null
@@ -127,6 +128,7 @@ export type Database = {
           building_id?: string | null
           calculated_at?: string | null
           id?: string
+          last_calculation_time?: string | null
           lifestyle_match_score?: number | null
           location_match_score?: number | null
           overall_match_score?: number | null
@@ -140,6 +142,7 @@ export type Database = {
           building_id?: string | null
           calculated_at?: string | null
           id?: string
+          last_calculation_time?: string | null
           lifestyle_match_score?: number | null
           location_match_score?: number | null
           overall_match_score?: number | null
