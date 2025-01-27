@@ -30,6 +30,7 @@ interface PreferenceWeights {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -41,34 +42,14 @@ serve(async (req) => {
     )
 
     const { user_id, building_ids } = await req.json()
+    console.log('Received request for user_id:', user_id)
+    console.log('Building IDs:', building_ids)
+
     if (!user_id) {
       return new Response(
         JSON.stringify({ error: 'user_id is required' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
-    }
-
-    console.log('Calculating scores for user:', user_id)
-    console.log('Building IDs:', building_ids)
-
-    // Check rate limiting
-    const { data: lastCalc } = await supabaseClient
-      .from('user_building_scores')
-      .select('last_calculation_time')
-      .eq('user_id', user_id)
-      .order('last_calculation_time', { ascending: false })
-      .limit(1)
-      .single()
-
-    if (lastCalc?.last_calculation_time) {
-      const lastCalcTime = new Date(lastCalc.last_calculation_time)
-      const timeSinceLastCalc = Date.now() - lastCalcTime.getTime()
-      if (timeSinceLastCalc < 30000) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Please wait before recalculating.' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
-        )
-      }
     }
 
     // Get user preferences
@@ -81,7 +62,7 @@ serve(async (req) => {
     if (preferencesError) {
       console.error('Error fetching preferences:', preferencesError)
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch user preferences' }),
+        JSON.stringify({ error: 'Failed to fetch user preferences', details: preferencesError }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
@@ -121,7 +102,7 @@ serve(async (req) => {
     if (buildingsError) {
       console.error('Error fetching buildings:', buildingsError)
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch buildings' }),
+        JSON.stringify({ error: 'Failed to fetch buildings', details: buildingsError }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
@@ -164,12 +145,13 @@ serve(async (req) => {
       if (building.amenities_cohort !== null && preferences.lifestyle_cohort) {
         const buildingCohort = building.amenities_cohort
         const userCohort = parseInt(preferences.lifestyle_cohort)
-        const cohortDiff = Math.abs(buildingCohort - userCohort)
-        
-        if (cohortDiff === 0) lifestyleScore = 1
-        else if (cohortDiff === 1) lifestyleScore = 0.7
-        else if (cohortDiff === 2) lifestyleScore = 0.4
-        else lifestyleScore = 0.2
+        if (!isNaN(userCohort)) {
+          const cohortDiff = Math.abs(buildingCohort - userCohort)
+          if (cohortDiff === 0) lifestyleScore = 1
+          else if (cohortDiff === 1) lifestyleScore = 0.7
+          else if (cohortDiff === 2) lifestyleScore = 0.4
+          else lifestyleScore = 0.2
+        }
       }
 
       const overallScore = (
@@ -201,7 +183,7 @@ serve(async (req) => {
     if (upsertError) {
       console.error('Error upserting scores:', upsertError)
       return new Response(
-        JSON.stringify({ error: 'Failed to update building scores' }),
+        JSON.stringify({ error: 'Failed to update building scores', details: upsertError }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
