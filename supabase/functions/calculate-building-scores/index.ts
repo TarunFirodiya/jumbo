@@ -30,7 +30,6 @@ interface PreferenceWeights {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -41,11 +40,16 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get user_id from request body
     const { user_id, building_ids } = await req.json()
     if (!user_id) {
-      throw new Error('user_id is required')
+      return new Response(
+        JSON.stringify({ error: 'user_id is required' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
     }
+
+    console.log('Calculating scores for user:', user_id)
+    console.log('Building IDs:', building_ids)
 
     // Check rate limiting
     const { data: lastCalc } = await supabaseClient
@@ -59,7 +63,7 @@ serve(async (req) => {
     if (lastCalc?.last_calculation_time) {
       const lastCalcTime = new Date(lastCalc.last_calculation_time)
       const timeSinceLastCalc = Date.now() - lastCalcTime.getTime()
-      if (timeSinceLastCalc < 30000) { // 30 seconds rate limit
+      if (timeSinceLastCalc < 30000) {
         return new Response(
           JSON.stringify({ error: 'Rate limit exceeded. Please wait before recalculating.' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
@@ -68,14 +72,26 @@ serve(async (req) => {
     }
 
     // Get user preferences
-    const { data: preferences } = await supabaseClient
+    const { data: preferences, error: preferencesError } = await supabaseClient
       .from('user_preferences')
       .select('*')
       .eq('user_id', user_id)
-      .single()
+      .maybeSingle()
+
+    if (preferencesError) {
+      console.error('Error fetching preferences:', preferencesError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch user preferences' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
 
     if (!preferences) {
-      throw new Error('User preferences not found')
+      console.log('No preferences found for user:', user_id)
+      return new Response(
+        JSON.stringify({ message: 'No user preferences found', scores: [] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     // Get preference weights
@@ -83,7 +99,7 @@ serve(async (req) => {
       .from('user_preference_weights')
       .select('*')
       .eq('user_id', user_id)
-      .single()
+      .maybeSingle()
 
     const preferenceWeights: PreferenceWeights = {
       location_weight: weights?.location_weight ?? 0.33,
@@ -100,15 +116,28 @@ serve(async (req) => {
       buildingQuery = buildingQuery.in('id', building_ids)
     }
 
-    const { data: buildings } = await buildingQuery
+    const { data: buildings, error: buildingsError } = await buildingQuery
 
-    if (!buildings) {
-      throw new Error('No buildings found')
+    if (buildingsError) {
+      console.error('Error fetching buildings:', buildingsError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch buildings' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
     }
+
+    if (!buildings || buildings.length === 0) {
+      console.log('No buildings found to score')
+      return new Response(
+        JSON.stringify({ message: 'No buildings found to score', scores: [] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log(`Calculating scores for ${buildings.length} buildings`)
 
     // Calculate scores for each building
     const buildingScores = buildings.map((building: BuildingData) => {
-      // Calculate location score
       let locationScore = 0
       if (building.latitude && building.longitude && 
           preferences.location_latitude && preferences.location_longitude) {
@@ -118,11 +147,10 @@ serve(async (req) => {
           building.latitude,
           building.longitude
         )
-        const maxRadius = preferences.location_radius || 5 // Default 5km radius
+        const maxRadius = preferences.location_radius || 5
         locationScore = Math.max(0, 1 - (distance / maxRadius))
       }
 
-      // Calculate budget score
       let budgetScore = 0
       if (building.max_price && preferences.max_budget) {
         if (building.max_price <= preferences.max_budget) {
@@ -132,7 +160,6 @@ serve(async (req) => {
         }
       }
 
-      // Calculate lifestyle score
       let lifestyleScore = 0
       if (building.amenities_cohort !== null && preferences.lifestyle_cohort) {
         const buildingCohort = building.amenities_cohort
@@ -145,7 +172,6 @@ serve(async (req) => {
         else lifestyleScore = 0.2
       }
 
-      // Calculate overall score
       const overallScore = (
         locationScore * preferenceWeights.location_weight +
         budgetScore * preferenceWeights.budget_weight +
@@ -163,6 +189,8 @@ serve(async (req) => {
       }
     })
 
+    console.log('Calculated scores:', buildingScores)
+
     // Update scores in database
     const { error: upsertError } = await supabaseClient
       .from('user_building_scores')
@@ -171,7 +199,11 @@ serve(async (req) => {
       })
 
     if (upsertError) {
-      throw upsertError
+      console.error('Error upserting scores:', upsertError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to update building scores' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
     }
 
     return new Response(
@@ -188,7 +220,6 @@ serve(async (req) => {
   }
 })
 
-// Helper function to calculate distance between two points in kilometers
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371 // Earth's radius in kilometers
   const dLat = toRad(lat2 - lat1)
