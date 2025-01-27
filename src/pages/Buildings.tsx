@@ -28,7 +28,7 @@ export default function Buildings() {
     },
   });
 
-  // Add query for user preferences to debug
+  // Changed to use maybeSingle() instead of single()
   const { data: userPreferences } = useQuery({
     queryKey: ['userPreferences', user?.id],
     queryFn: async () => {
@@ -37,7 +37,7 @@ export default function Buildings() {
         .from('user_preferences')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user preferences:', error);
