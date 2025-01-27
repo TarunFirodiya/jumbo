@@ -5,12 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BuildingsMap from "@/components/BuildingsMap";
 import { Progress } from "@/components/ui/progress";
 
-// Add the missing type definition
 type ToggleShortlistParams = {
   buildingId: string;
 };
@@ -29,6 +28,27 @@ export default function Buildings() {
     },
   });
 
+  // Add query for user preferences to debug
+  const { data: userPreferences } = useQuery({
+    queryKey: ['userPreferences', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user preferences:', error);
+        return null;
+      }
+      console.log('User preferences:', data);
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const { data: buildings, isLoading: buildingsLoading } = useQuery({
     queryKey: ['buildings'],
     queryFn: async () => {
@@ -38,6 +58,7 @@ export default function Buildings() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log('Buildings data:', data);
       return data;
     },
   });
@@ -51,7 +72,11 @@ export default function Buildings() {
         .select('building_id, shortlisted, overall_match_score')
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching building scores:', error);
+        throw error;
+      }
+      console.log('Building scores:', data);
       return data.reduce((acc, score) => {
         acc[score.building_id] = {
           shortlisted: score.shortlisted,
@@ -62,6 +87,53 @@ export default function Buildings() {
     },
     enabled: !!user,
   });
+
+  // Effect to check if preferences exist and redirect if not
+  useEffect(() => {
+    if (user && userPreferences === null) {
+      toast({
+        title: "Set Your Preferences",
+        description: "Please set your preferences to see personalized matches",
+        variant: "default",
+      });
+      navigate('/preferences');
+    }
+  }, [user, userPreferences, navigate, toast]);
+
+  // Effect to trigger score calculation when needed
+  useEffect(() => {
+    const calculateScores = async () => {
+      if (user && userPreferences && buildings?.length > 0) {
+        try {
+          const response = await fetch('https://qmeyqhreseuvkrdowzfe.supabase.co/functions/v1/calculate-building-scores', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+            },
+            body: JSON.stringify({
+              user_id: user.id,
+              building_ids: buildings.map(b => b.id)
+            })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Error calculating scores:', errorData);
+            return;
+          }
+
+          const result = await response.json();
+          console.log('Score calculation result:', result);
+          queryClient.invalidateQueries({ queryKey: ['buildingScores'] });
+        } catch (error) {
+          console.error('Error calculating building scores:', error);
+        }
+      }
+    };
+
+    calculateScores();
+  }, [user, userPreferences, buildings, queryClient]);
 
   const toggleShortlistMutation = useMutation({
     mutationFn: async ({ buildingId }: ToggleShortlistParams) => {
