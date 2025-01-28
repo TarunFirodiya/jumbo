@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -29,7 +28,15 @@ interface PreferenceWeights {
   lifestyle_weight: number;
 }
 
-serve(async (req) => {
+function chunkArray<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+}
+
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -43,7 +50,7 @@ serve(async (req) => {
 
     const { user_id, building_ids } = await req.json()
     console.log('Received request for user_id:', user_id)
-    console.log('Building IDs:', building_ids)
+    console.log('Number of building IDs:', building_ids?.length)
 
     if (!user_id) {
       return new Response(
@@ -57,7 +64,7 @@ serve(async (req) => {
       .from('user_preferences')
       .select('*')
       .eq('user_id', user_id)
-      .maybeSingle()
+      .maybeSingle();
 
     if (preferencesError) {
       console.error('Error fetching preferences:', preferencesError)
@@ -88,38 +95,38 @@ serve(async (req) => {
       lifestyle_weight: weights?.lifestyle_weight ?? 0.34,
     }
 
-    // Get buildings to score
-    let buildingQuery = supabaseClient
-      .from('buildings')
-      .select('id, latitude, longitude, min_price, max_price, amenities_cohort')
+    // Process buildings in chunks
+    const CHUNK_SIZE = 50;
+    const buildingChunks = chunkArray(building_ids || [], CHUNK_SIZE);
+    let allBuildings: BuildingData[] = [];
 
-    if (building_ids && building_ids.length > 0) {
-      buildingQuery = buildingQuery.in('id', building_ids)
+    for (const chunk of buildingChunks) {
+      const { data: buildings, error: buildingsError } = await supabaseClient
+        .from('buildings')
+        .select('id, latitude, longitude, min_price, max_price, amenities_cohort')
+        .in('id', chunk);
+
+      if (buildingsError) {
+        console.error('Error fetching buildings chunk:', buildingsError);
+        continue;
+      }
+
+      allBuildings = allBuildings.concat(buildings);
     }
 
-    const { data: buildings, error: buildingsError } = await buildingQuery
-
-    if (buildingsError) {
-      console.error('Error fetching buildings:', buildingsError)
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch buildings', details: buildingsError }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      )
-    }
-
-    if (!buildings || buildings.length === 0) {
-      console.log('No buildings found to score')
+    if (allBuildings.length === 0) {
+      console.log('No buildings found to score');
       return new Response(
         JSON.stringify({ message: 'No buildings found to score', scores: [] }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log(`Calculating scores for ${buildings.length} buildings`)
+    console.log(`Calculating scores for ${allBuildings.length} buildings`);
 
     // Calculate scores for each building
-    const buildingScores = buildings.map((building: BuildingData) => {
-      let locationScore = 0
+    const buildingScores = allBuildings.map((building: BuildingData) => {
+      let locationScore = 0;
       if (building.latitude && building.longitude && 
           preferences.location_latitude && preferences.location_longitude) {
         const distance = calculateDistance(
@@ -127,30 +134,30 @@ serve(async (req) => {
           preferences.location_longitude,
           building.latitude,
           building.longitude
-        )
-        const maxRadius = preferences.location_radius || 5
-        locationScore = Math.max(0, 1 - (distance / maxRadius))
+        );
+        const maxRadius = preferences.location_radius || 5;
+        locationScore = Math.max(0, 1 - (distance / maxRadius));
       }
 
-      let budgetScore = 0
+      let budgetScore = 0;
       if (building.max_price && preferences.max_budget) {
         if (building.max_price <= preferences.max_budget) {
-          budgetScore = 1
+          budgetScore = 1;
         } else {
-          budgetScore = Math.max(0, 1 - ((building.max_price - preferences.max_budget) / preferences.max_budget))
+          budgetScore = Math.max(0, 1 - ((building.max_price - preferences.max_budget) / preferences.max_budget));
         }
       }
 
-      let lifestyleScore = 0
+      let lifestyleScore = 0;
       if (building.amenities_cohort !== null && preferences.lifestyle_cohort) {
-        const buildingCohort = building.amenities_cohort
-        const userCohort = parseInt(preferences.lifestyle_cohort)
+        const buildingCohort = building.amenities_cohort;
+        const userCohort = parseInt(preferences.lifestyle_cohort);
         if (!isNaN(userCohort)) {
-          const cohortDiff = Math.abs(buildingCohort - userCohort)
-          if (cohortDiff === 0) lifestyleScore = 1
-          else if (cohortDiff === 1) lifestyleScore = 0.7
-          else if (cohortDiff === 2) lifestyleScore = 0.4
-          else lifestyleScore = 0.2
+          const cohortDiff = Math.abs(buildingCohort - userCohort);
+          if (cohortDiff === 0) lifestyleScore = 1;
+          else if (cohortDiff === 1) lifestyleScore = 0.7;
+          else if (cohortDiff === 2) lifestyleScore = 0.4;
+          else lifestyleScore = 0.2;
         }
       }
 
@@ -158,7 +165,7 @@ serve(async (req) => {
         locationScore * preferenceWeights.location_weight +
         budgetScore * preferenceWeights.budget_weight +
         lifestyleScore * preferenceWeights.lifestyle_weight
-      )
+      );
 
       return {
         building_id: building.id,
@@ -168,52 +175,50 @@ serve(async (req) => {
         lifestyle_match_score: lifestyleScore,
         overall_match_score: overallScore,
         last_calculation_time: new Date().toISOString()
-      }
-    })
-
-    console.log('Calculated scores:', buildingScores)
+      };
+    });
 
     // Update scores in database
     const { error: upsertError } = await supabaseClient
       .from('user_building_scores')
       .upsert(buildingScores, {
         onConflict: 'building_id,user_id'
-      })
+      });
 
     if (upsertError) {
-      console.error('Error upserting scores:', upsertError)
+      console.error('Error upserting scores:', upsertError);
       return new Response(
         JSON.stringify({ error: 'Failed to update building scores', details: upsertError }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      )
+      );
     }
 
     return new Response(
       JSON.stringify({ success: true, scores: buildingScores }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
 
   } catch (error) {
-    console.error('Error calculating building scores:', error)
+    console.error('Error calculating building scores:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    )
+    );
   }
-})
+});
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371 // Earth's radius in kilometers
-  const dLat = toRad(lat2 - lat1)
-  const dLon = toRad(lon2 - lon1)
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
   const a = 
     Math.sin(dLat/2) * Math.sin(dLat/2) +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2)
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-  return R * c
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
 }
 
 function toRad(degrees: number): number {
-  return degrees * (Math.PI / 180)
+  return degrees * (Math.PI / 180);
 }
