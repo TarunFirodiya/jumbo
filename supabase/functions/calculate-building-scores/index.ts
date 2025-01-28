@@ -28,6 +28,13 @@ interface PreferenceWeights {
   lifestyle_weight: number;
 }
 
+const LIFESTYLE_COHORT_MAP: { [key: string]: number } = {
+  'luxury': 1,
+  'gated_basic': 2,
+  'gated_no_amenities': 3,
+  'villa': 4
+};
+
 function chunkArray<T>(array: T[], size: number): T[][] {
   const chunks: T[][] = [];
   for (let i = 0; i < array.length; i += size) {
@@ -37,7 +44,6 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -59,7 +65,6 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Get user preferences
     const { data: preferences, error: preferencesError } = await supabaseClient
       .from('user_preferences')
       .select('*')
@@ -82,7 +87,6 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Get preference weights
     const { data: weights } = await supabaseClient
       .from('user_preference_weights')
       .select('*')
@@ -95,7 +99,6 @@ Deno.serve(async (req) => {
       lifestyle_weight: weights?.lifestyle_weight ?? 0.34,
     }
 
-    // Process buildings in chunks
     const CHUNK_SIZE = 50;
     const buildingChunks = chunkArray(building_ids || [], CHUNK_SIZE);
     let allBuildings: BuildingData[] = [];
@@ -124,7 +127,12 @@ Deno.serve(async (req) => {
 
     console.log(`Calculating scores for ${allBuildings.length} buildings`);
 
-    // Calculate scores for each building
+    // Map the lifestyle cohort text to number
+    const userLifestyleCohort = preferences.lifestyle_cohort ? 
+      LIFESTYLE_COHORT_MAP[preferences.lifestyle_cohort.toLowerCase()] : null;
+
+    console.log('User lifestyle cohort:', preferences.lifestyle_cohort, 'mapped to:', userLifestyleCohort);
+
     const buildingScores = allBuildings.map((building: BuildingData) => {
       let locationScore = 0;
       if (building.latitude && building.longitude && 
@@ -149,16 +157,12 @@ Deno.serve(async (req) => {
       }
 
       let lifestyleScore = 0;
-      if (building.amenities_cohort !== null && preferences.lifestyle_cohort) {
-        const buildingCohort = building.amenities_cohort;
-        const userCohort = parseInt(preferences.lifestyle_cohort);
-        if (!isNaN(userCohort)) {
-          const cohortDiff = Math.abs(buildingCohort - userCohort);
-          if (cohortDiff === 0) lifestyleScore = 1;
-          else if (cohortDiff === 1) lifestyleScore = 0.7;
-          else if (cohortDiff === 2) lifestyleScore = 0.4;
-          else lifestyleScore = 0.2;
-        }
+      if (building.amenities_cohort !== null && userLifestyleCohort !== null) {
+        const cohortDiff = Math.abs(building.amenities_cohort - userLifestyleCohort);
+        if (cohortDiff === 0) lifestyleScore = 1;
+        else if (cohortDiff === 1) lifestyleScore = 0.7;
+        else if (cohortDiff === 2) lifestyleScore = 0.4;
+        else lifestyleScore = 0.2;
       }
 
       const overallScore = (
@@ -178,7 +182,6 @@ Deno.serve(async (req) => {
       };
     });
 
-    // Update scores in database
     const { error: upsertError } = await supabaseClient
       .from('user_building_scores')
       .upsert(buildingScores, {
