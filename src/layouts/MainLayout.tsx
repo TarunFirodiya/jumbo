@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ExpandableTabs } from "@/components/ui/expandable-tabs";
@@ -14,7 +14,9 @@ const tabs = [
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const isAuthPage = location.pathname === "/auth";
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -36,11 +38,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <main className="container mx-auto px-4 py-8">
         {children}
       </main>
-      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 backdrop-blur-md bg-background/80 border-t">
-        <div className="container mx-auto">
-          <ExpandableTabs tabs={tabs} />
+      {!isAuthPage && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 backdrop-blur-md bg-background/80 border-t">
+          <div className="container mx-auto">
+            <ExpandableTabs tabs={tabs} />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
