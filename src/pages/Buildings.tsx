@@ -236,8 +236,8 @@ export default function Buildings() {
 
             return (
               <Card key={building.id} className="overflow-hidden">
-                <div className="aspect-video relative">
-                  {building.images?.[0] ? (
+                <div className="aspect-video relative bg-muted">
+                  {building.images && building.images.length > 0 ? (
                     <img
                       src={building.images[0]}
                       alt={building.name}
@@ -249,7 +249,7 @@ export default function Buildings() {
                       }}
                     />
                   ) : (
-                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                    <div className="w-full h-full flex items-center justify-center">
                       <img 
                         src="/placeholder.svg" 
                         alt="Placeholder" 
