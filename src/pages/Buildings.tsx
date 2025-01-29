@@ -245,7 +245,7 @@ export default function Buildings() {
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.src = "/placeholder.svg";
-                        target.className = "w-16 h-16 opacity-50";
+                        target.className = "w-16 h-16 opacity-50 m-auto";
                       }}
                     />
                   ) : (
