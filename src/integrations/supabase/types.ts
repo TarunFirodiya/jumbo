@@ -11,7 +11,7 @@ export type Database = {
     Tables: {
       buildings: {
         Row: {
-          age: number | null
+          age: string | null
           amenities_cohort: number | null
           bhk_types: string[] | null
           created_at: string | null
@@ -23,6 +23,7 @@ export type Database = {
           latitude: number | null
           locality: string | null
           longitude: number | null
+          map_link: string | null
           max_price: number | null
           min_price: number | null
           name: string
@@ -35,7 +36,7 @@ export type Database = {
           video_thumbnail: string | null
         }
         Insert: {
-          age?: number | null
+          age?: string | null
           amenities_cohort?: number | null
           bhk_types?: string[] | null
           created_at?: string | null
@@ -47,6 +48,7 @@ export type Database = {
           latitude?: number | null
           locality?: string | null
           longitude?: number | null
+          map_link?: string | null
           max_price?: number | null
           min_price?: number | null
           name: string
@@ -59,7 +61,7 @@ export type Database = {
           video_thumbnail?: string | null
         }
         Update: {
-          age?: number | null
+          age?: string | null
           amenities_cohort?: number | null
           bhk_types?: string[] | null
           created_at?: string | null
@@ -71,6 +73,7 @@ export type Database = {
           latitude?: number | null
           locality?: string | null
           longitude?: number | null
+          map_link?: string | null
           max_price?: number | null
           min_price?: number | null
           name?: string

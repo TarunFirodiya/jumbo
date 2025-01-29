@@ -242,6 +242,11 @@ export default function Buildings() {
                       src={building.images[0]}
                       alt={building.name}
                       className="object-cover w-full h-full"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/placeholder.svg";
+                        target.className = "w-16 h-16 opacity-50";
+                      }}
                     />
                   ) : (
                     <div className="w-full h-full bg-muted flex items-center justify-center">
