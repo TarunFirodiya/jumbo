@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ export default function Preferences() {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [locationStep, setLocationStep] = useState<LocationStep>(1);
+  const autocompleteInput = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     location_preference_input: "",
     proximity_type: "",
@@ -34,7 +35,50 @@ export default function Preferences() {
     custom_home_features: [] as string[],
     deal_breakers: [] as string[],
     custom_deal_breakers: [] as string[],
+    location_latitude: null as number | null,
+    location_longitude: null as number | null,
   });
+
+  // Initialize Google Places Autocomplete
+  useEffect(() => {
+    if (window.google && autocompleteInput.current) {
+      const autocomplete = new google.maps.places.Autocomplete(autocompleteInput.current, {
+        componentRestrictions: { country: "in" },
+        bounds: new google.maps.LatLngBounds(
+          new google.maps.LatLng(12.864162, 77.438610), // SW bounds of Bangalore
+          new google.maps.LatLng(13.139807, 77.711895)  // NE bounds of Bangalore
+        ),
+        strictBounds: true,
+        types: ['geocode', 'establishment']
+      });
+
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (place.geometry) {
+          const lat = place.geometry.location?.lat();
+          const lng = place.geometry.location?.lng();
+          console.log('Selected place:', { lat, lng, place });
+          setFormData(prev => ({
+            ...prev,
+            location_preference_input: place.formatted_address || prev.location_preference_input,
+            location_latitude: lat,
+            location_longitude: lng
+          }));
+        }
+      });
+    }
+  }, [currentStep, locationStep]);
+
+  // Load Google Maps Script
+  useEffect(() => {
+    if (!window.google) {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+  }, []);
 
   const handleInputChange = (field: string, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -95,6 +139,8 @@ export default function Preferences() {
         lifestyle_cohort: formData.lifestyle_cohort,
         home_features: allHomeFeatures,
         deal_breakers: allDealBreakers,
+        location_latitude: formData.location_latitude,
+        location_longitude: formData.location_longitude,
       }, {
         onConflict: 'user_id',  // Specify the conflict target
       });
@@ -130,6 +176,7 @@ export default function Preferences() {
           <div className="space-y-4">
             <Label>Where are you looking to live?</Label>
             <Input
+              ref={autocompleteInput}
               placeholder="Enter area or locality"
               value={formData.location_preference_input}
               onChange={(e) => handleInputChange("location_preference_input", e.target.value)}
