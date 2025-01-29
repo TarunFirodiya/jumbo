@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import BuildingsMap from "@/components/BuildingsMap";
 import { Progress } from "@/components/ui/progress";
@@ -28,7 +28,6 @@ export default function Buildings() {
     },
   });
 
-  // Changed to use maybeSingle() instead of single()
   const { data: userPreferences } = useQuery({
     queryKey: ['userPreferences', user?.id],
     queryFn: async () => {
@@ -54,8 +53,7 @@ export default function Buildings() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('buildings')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
 
       if (error) throw error;
       console.log('Buildings data:', data);
@@ -88,7 +86,6 @@ export default function Buildings() {
     enabled: !!user,
   });
 
-  // Effect to check if preferences exist and redirect if not
   useEffect(() => {
     if (user && userPreferences === null) {
       toast({
@@ -100,7 +97,6 @@ export default function Buildings() {
     }
   }, [user, userPreferences, navigate, toast]);
 
-  // Effect to trigger score calculation when needed
   useEffect(() => {
     const calculateScores = async () => {
       if (user && userPreferences && buildings?.length > 0) {
@@ -189,6 +185,16 @@ export default function Buildings() {
     toggleShortlistMutation.mutate({ buildingId });
   };
 
+  const sortedBuildings = useMemo(() => {
+    if (!buildings || !buildingScores) return buildings;
+
+    return [...buildings].sort((a, b) => {
+      const scoreA = buildingScores[a.id]?.overall_match_score || 0;
+      const scoreB = buildingScores[b.id]?.overall_match_score || 0;
+      return scoreB - scoreA; // Sort in descending order
+    });
+  }, [buildings, buildingScores]);
+
   return (
     <div className="container mx-auto px-4">
       <div className="sticky top-0 z-10 bg-background py-4">
@@ -226,10 +232,10 @@ export default function Buildings() {
           </CardContent>
         </Card>
       ) : isMapView ? (
-        <BuildingsMap buildings={buildings} />
+        <BuildingsMap buildings={sortedBuildings} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {buildings?.map((building) => {
+          {sortedBuildings?.map((building) => {
             const buildingScore = buildingScores?.[building.id];
             const matchScore = buildingScore?.overall_match_score || 0;
             const isShortlisted = buildingScore?.shortlisted || false;
