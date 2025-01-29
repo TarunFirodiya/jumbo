@@ -22,77 +22,105 @@ type ShortlistedBuilding = {
   buildings: {
     id: string;
     name: string;
-    type: string;
-    locality: string;
+    type: string | null;
+    locality: string | null;
     sub_locality: string | null;
     min_price: number | null;
     max_price: number | null;
     images: string[] | null;
     total_floors: number | null;
-    age: number | null;
+    age: string | null;
   } | null;
 };
 
 const columns: ColumnDef<ShortlistedBuilding>[] = [
   {
+    accessorKey: "buildings",
     header: "Property",
-    accessorFn: (row) => row.buildings?.name,
-    cell: ({ row }) => (
-      <div className="flex items-center gap-4">
-        <div className="h-12 w-12 overflow-hidden rounded-md">
-          {row.original.buildings?.images?.[0] ? (
-            <img
-              src={row.original.buildings.images[0]}
-              alt={row.original.buildings?.name}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-muted">
-              <img 
-                src="/placeholder.svg" 
-                alt="Placeholder" 
-                className="h-6 w-6 opacity-50"
+    cell: ({ row }) => {
+      const building = row.original.buildings;
+      if (!building) return null;
+      
+      return (
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 overflow-hidden rounded-md">
+            {building.images?.[0] ? (
+              <img
+                src={building.images[0]}
+                alt={building.name}
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/placeholder.svg";
+                  target.className = "h-6 w-6 opacity-50";
+                }}
               />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-muted">
+                <img 
+                  src="/placeholder.svg" 
+                  alt="Placeholder" 
+                  className="h-6 w-6 opacity-50"
+                />
+              </div>
+            )}
+          </div>
+          <div>
+            <div className="font-medium">{building.name}</div>
+            <div className="text-sm text-muted-foreground">
+              {building.type}
             </div>
-          )}
-        </div>
-        <div>
-          <div className="font-medium">{row.original.buildings?.name}</div>
-          <div className="text-sm text-muted-foreground">
-            {row.original.buildings?.type}
           </div>
         </div>
-      </div>
-    ),
+      );
+    },
   },
   {
+    accessorKey: "buildings",
     header: "Location",
-    cell: ({ row }) => (
-      <div>
-        {row.original.buildings?.locality}
-        {row.original.buildings?.sub_locality && `, ${row.original.buildings.sub_locality}`}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const building = row.original.buildings;
+      if (!building) return null;
+      
+      return (
+        <div>
+          {building.locality}
+          {building.sub_locality && `, ${building.sub_locality}`}
+        </div>
+      );
+    },
   },
   {
+    accessorKey: "buildings",
     header: "Price Range",
-    cell: ({ row }) => (
-      <div>
-        {row.original.buildings?.min_price && 
-          `₹${(row.original.buildings.min_price/10000000).toFixed(1)} Cr`}
-        {row.original.buildings?.max_price && 
-          ` - ₹${(row.original.buildings.max_price/10000000).toFixed(1)} Cr`}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const building = row.original.buildings;
+      if (!building) return null;
+      
+      return (
+        <div>
+          {building.min_price && 
+            `₹${(building.min_price/10000000).toFixed(1)} Cr`}
+          {building.max_price && 
+            ` - ₹${(building.max_price/10000000).toFixed(1)} Cr`}
+        </div>
+      );
+    },
   },
   {
+    accessorKey: "buildings",
     header: "Details",
-    cell: ({ row }) => (
-      <div className="text-sm text-muted-foreground">
-        {row.original.buildings?.total_floors && `${row.original.buildings.total_floors} floors`}
-        {row.original.buildings?.age && ` • ${row.original.buildings.age} years old`}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const building = row.original.buildings;
+      if (!building) return null;
+      
+      return (
+        <div className="text-sm text-muted-foreground">
+          {building.total_floors && `${building.total_floors} floors`}
+          {building.age && ` • ${building.age} years old`}
+        </div>
+      );
+    },
   },
 ];
 
