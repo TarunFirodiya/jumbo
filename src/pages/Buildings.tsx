@@ -235,7 +235,11 @@ export default function Buildings() {
             const isShortlisted = buildingScore?.shortlisted || false;
 
             return (
-              <Card key={building.id} className="overflow-hidden">
+              <Card 
+                key={building.id} 
+                className="overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow"
+                onClick={() => navigate(`/buildings/${building.id}`)}
+              >
                 <div className="aspect-video relative bg-muted">
                   {building.images && building.images.length > 0 ? (
                     <img
@@ -258,7 +262,10 @@ export default function Buildings() {
                     </div>
                   )}
                   <button
-                    onClick={() => handleShortlistToggle(building.id)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent card click when clicking heart
+                      handleShortlistToggle(building.id);
+                    }}
                     className="absolute top-2 right-2 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
                   >
                     <Heart
@@ -267,11 +274,42 @@ export default function Buildings() {
                   </button>
                 </div>
                 <CardHeader>
-                  <CardTitle className="text-lg">{building.name}</CardTitle>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    {building.locality}
-                    {building.sub_locality && `, ${building.sub_locality}`}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">{building.name}</CardTitle>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4" />
+                        {building.locality}
+                        {building.sub_locality && `, ${building.sub_locality}`}
+                      </div>
+                    </div>
+                    {buildingScore && (
+                      <div className="relative w-14 h-14 flex-shrink-0">
+                        <svg className="w-full h-full -rotate-90">
+                          <circle
+                            cx="28"
+                            cy="28"
+                            r="24"
+                            className="stroke-muted fill-none"
+                            strokeWidth="6"
+                          />
+                          <circle
+                            cx="28"
+                            cy="28"
+                            r="24"
+                            className="stroke-primary fill-none"
+                            strokeWidth="6"
+                            strokeDasharray={`${matchScore * 150.8} 150.8`}
+                            style={{
+                              transition: "stroke-dasharray 0.6s ease",
+                            }}
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center text-sm font-medium">
+                          {Math.round(matchScore * 100)}%
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="grid grid-cols-3 gap-4 mt-2 text-sm">
                     {building.age && (
@@ -298,22 +336,7 @@ export default function Buildings() {
                       {building.min_price && `₹${(building.min_price/10000000).toFixed(1)} Cr`}
                       {building.max_price && ` - ₹${(building.max_price/10000000).toFixed(1)} Cr`}
                     </div>
-                    {buildingScore && (
-                      <div className="mt-2">
-                        <div className="flex justify-between text-sm mb-1">
-                          <span>Match Score</span>
-                          <span>{Math.round(matchScore * 100)}%</span>
-                        </div>
-                        <Progress value={matchScore * 100} className="h-2" />
-                      </div>
-                    )}
                   </div>
-                  <Button 
-                    className="w-full mt-4"
-                    onClick={() => navigate(`/buildings/${building.id}`)}
-                  >
-                    View Details
-                  </Button>
                 </CardHeader>
               </Card>
             );
