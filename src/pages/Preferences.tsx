@@ -41,44 +41,51 @@ export default function Preferences() {
 
   // Initialize Google Places Autocomplete
   useEffect(() => {
-    if (window.google && autocompleteInput.current) {
-      const autocomplete = new google.maps.places.Autocomplete(autocompleteInput.current, {
-        componentRestrictions: { country: "in" },
-        bounds: new google.maps.LatLngBounds(
-          new google.maps.LatLng(12.864162, 77.438610), // SW bounds of Bangalore
-          new google.maps.LatLng(13.139807, 77.711895)  // NE bounds of Bangalore
-        ),
-        strictBounds: true,
-        types: ['geocode', 'establishment']
-      });
-
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        if (place.geometry) {
-          const lat = place.geometry.location?.lat();
-          const lng = place.geometry.location?.lng();
-          console.log('Selected place:', { lat, lng, place });
-          setFormData(prev => ({
-            ...prev,
-            location_preference_input: place.formatted_address || prev.location_preference_input,
-            location_latitude: lat,
-            location_longitude: lng
-          }));
-        }
-      });
-    }
-  }, [currentStep, locationStep]);
-
-  // Load Google Maps Script
-  useEffect(() => {
-    if (!window.google) {
+    if (currentStep === 1 && locationStep === 1 && !window.google) {
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
       script.async = true;
       script.defer = true;
       document.head.appendChild(script);
+      
+      script.onload = () => {
+        initializeAutocomplete();
+      };
+    } else if (window.google && currentStep === 1 && locationStep === 1) {
+      initializeAutocomplete();
     }
-  }, []);
+  }, [currentStep, locationStep]);
+
+  const initializeAutocomplete = () => {
+    if (!autocompleteInput.current || !window.google) return;
+
+    const bangaloreBounds = new google.maps.LatLngBounds(
+      new google.maps.LatLng(12.864162, 77.438610), // SW bounds of Bangalore
+      new google.maps.LatLng(13.139807, 77.711895)  // NE bounds of Bangalore
+    );
+
+    const autocomplete = new google.maps.places.Autocomplete(autocompleteInput.current, {
+      bounds: bangaloreBounds,
+      strictBounds: true,
+      componentRestrictions: { country: "in" },
+      types: ['geocode', 'establishment']
+    });
+
+    autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace();
+      if (place.geometry) {
+        const lat = place.geometry.location?.lat();
+        const lng = place.geometry.location?.lng();
+        console.log('Selected place:', { lat, lng, place });
+        setFormData(prev => ({
+          ...prev,
+          location_preference_input: place.formatted_address || prev.location_preference_input,
+          location_latitude: lat || null,
+          location_longitude: lng || null
+        }));
+      }
+    });
+  };
 
   const handleInputChange = (field: string, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -180,6 +187,7 @@ export default function Preferences() {
               placeholder="Enter area or locality"
               value={formData.location_preference_input}
               onChange={(e) => handleInputChange("location_preference_input", e.target.value)}
+              className="w-full"
             />
           </div>
         );
