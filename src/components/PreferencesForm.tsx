@@ -17,6 +17,7 @@ interface PreferencesFormProps {
 export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: PreferencesFormProps) {
   const { toast } = useToast();
   const autocompleteInput = useRef<HTMLInputElement>(null);
+  const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     location_preference_input: "",
     location_radius: 5,
@@ -44,22 +45,58 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
     }
   }, [initialData]);
 
+  // Fetch Google Maps API key
+  useEffect(() => {
+    const fetchApiKey = async () => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-google-maps-key`,
+          {
+            headers: {
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+          }
+        );
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch API key');
+        }
+        
+        const data = await response.json();
+        setGoogleMapsApiKey(data.apiKey);
+      } catch (error) {
+        console.error('Error fetching Google Maps API key:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load location search. Please try again later.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchApiKey();
+  }, [toast]);
+
   // Initialize Google Places Autocomplete
   useEffect(() => {
-    if (!window.google) {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
-      script.async = true;
-      script.defer = true;
+    if (!googleMapsApiKey || !window.google || !autocompleteInput.current) return;
+
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    
+    script.onload = () => {
+      initializeAutocomplete();
+    };
+
+    // Only append the script if it hasn't been added yet
+    if (!document.querySelector(`script[src*="maps.googleapis.com"]`)) {
       document.head.appendChild(script);
-      
-      script.onload = () => {
-        initializeAutocomplete();
-      };
     } else {
       initializeAutocomplete();
     }
-  }, []);
+  }, [googleMapsApiKey]);
 
   const initializeAutocomplete = () => {
     if (!autocompleteInput.current || !window.google) return;
