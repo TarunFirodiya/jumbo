@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Heart, MapIcon, List, MapPin } from "lucide-react";
+import { Heart, MapIcon, List, MapPin, CalendarDays, Building2, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -320,20 +320,29 @@ export default function Buildings() {
                   <div className="grid grid-cols-3 gap-4 mt-2 text-sm">
                     {building.age && (
                       <div>
-                        <div className="font-medium">{building.age} years</div>
+                        <div className="font-medium flex items-center gap-1">
+                          <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                          <span>{building.age}</span>
+                        </div>
                         <div className="text-muted-foreground text-xs">Age</div>
                       </div>
                     )}
                     {building.total_floors && (
                       <div>
-                        <div className="font-medium">{building.total_floors}</div>
+                        <div className="font-medium flex items-center gap-1">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <span>{building.total_floors}</span>
+                        </div>
                         <div className="text-muted-foreground text-xs">Floors</div>
                       </div>
                     )}
                     {building.bhk_types && (
                       <div>
-                        <div className="font-medium">{building.bhk_types.join(", ")}</div>
-                        <div className="text-muted-foreground text-xs">Types</div>
+                        <div className="font-medium flex items-center gap-1">
+                          <Home className="h-4 w-4 text-muted-foreground" />
+                          <span>{building.bhk_types.join(", ")}</span>
+                        </div>
+                        <div className="text-muted-foreground text-xs">BHK</div>
                       </div>
                     )}
                   </div>
