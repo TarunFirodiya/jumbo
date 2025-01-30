@@ -2,14 +2,14 @@ import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ExpandableTabs } from "@/components/ui/expandable-tabs";
+import { NavBar } from "@/components/ui/tubelight-navbar";
 import { Home, Heart, Settings, HelpCircle } from "lucide-react";
 
 const tabs = [
-  { title: "Home", icon: Home, path: "/buildings" },
-  { title: "Shortlist", icon: Heart, path: "/shortlist" },
-  { title: "Settings", icon: Settings, path: "/settings" },
-  { title: "Support", icon: HelpCircle, externalLink: "https://wa.link/i4szqw" },
+  { name: "Home", url: "/buildings", icon: Home },
+  { name: "Shortlist", url: "/shortlist", icon: Heart },
+  { name: "Settings", url: "/settings", icon: Settings },
+  { name: "Support", url: "#", icon: HelpCircle, externalLink: "https://wa.link/i4szqw" },
 ];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -39,9 +39,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         {children}
       </main>
       {!isAuthPage && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 backdrop-blur-md bg-background/80 border-t">
+        <div className="fixed bottom-0 left-0 right-0 z-50 p-4">
           <div className="container mx-auto">
-            <ExpandableTabs tabs={tabs} />
+            <NavBar items={tabs} />
           </div>
         </div>
       )}
