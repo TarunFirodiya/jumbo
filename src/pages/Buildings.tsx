@@ -348,8 +348,7 @@ export default function Buildings() {
                   </div>
                   <div className="mt-4">
                     <div className="text-lg font-semibold">
-                      {building.min_price && `₹${(building.min_price/10000000).toFixed(1)} Cr`}
-                      {building.max_price && ` - ₹${(building.max_price/10000000).toFixed(1)} Cr`}
+                      {building.min_price && `Starting at ₹${(building.min_price/10000000).toFixed(1)} Cr`}
                     </div>
                   </div>
                 </CardHeader>
