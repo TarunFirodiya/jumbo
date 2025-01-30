@@ -286,7 +286,6 @@ export default function Buildings() {
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <MapPin className="h-4 w-4" />
                         {building.locality}
-                        {building.sub_locality && `, ${building.sub_locality}`}
                       </div>
                     </div>
                     {buildingScore && (
