@@ -23,6 +23,7 @@ export default function Preferences() {
   const [currentStep, setCurrentStep] = useState(1);
   const [locationStep, setLocationStep] = useState<LocationStep>(1);
   const autocompleteInput = useRef<HTMLInputElement>(null);
+  const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     location_preference_input: "",
     proximity_type: "",
@@ -39,29 +40,64 @@ export default function Preferences() {
     location_longitude: null as number | null,
   });
 
+  // Fetch Google Maps API key
+  useEffect(() => {
+    const fetchApiKey = async () => {
+      try {
+        const headers = new Headers({
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        });
+
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-google-maps-key`,
+          { headers }
+        );
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch API key');
+        }
+        
+        const data = await response.json();
+        setGoogleMapsApiKey(data.apiKey);
+      } catch (error) {
+        console.error('Error fetching Google Maps API key:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load location search. Please try again later.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchApiKey();
+  }, [toast]);
+
   // Initialize Google Places Autocomplete
   useEffect(() => {
-    if (currentStep === 1 && locationStep === 1 && !window.google) {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-      
-      script.onload = () => {
+    if (!googleMapsApiKey) return;
+
+    const loadGoogleMapsScript = () => {
+      if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places`;
+        script.async = true;
+        script.defer = true;
+        script.onload = initializeAutocomplete;
+        document.head.appendChild(script);
+      } else {
         initializeAutocomplete();
-      };
-    } else if (window.google && currentStep === 1 && locationStep === 1) {
-      initializeAutocomplete();
-    }
-  }, [currentStep, locationStep]);
+      }
+    };
+
+    loadGoogleMapsScript();
+  }, [googleMapsApiKey]);
 
   const initializeAutocomplete = () => {
     if (!autocompleteInput.current || !window.google) return;
 
     const bangaloreBounds = new google.maps.LatLngBounds(
-      new google.maps.LatLng(12.864162, 77.438610), // SW bounds of Bangalore
-      new google.maps.LatLng(13.139807, 77.711895)  // NE bounds of Bangalore
+      new google.maps.LatLng(12.864162, 77.438610),
+      new google.maps.LatLng(13.139807, 77.711895)
     );
 
     const autocomplete = new google.maps.places.Autocomplete(autocompleteInput.current, {
