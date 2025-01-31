@@ -3,13 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { Plus, Home, Building2, Castle, Trees } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { TagsSelector } from "@/components/ui/tags-selector";
+import ProgressIndicator from "@/components/ui/progress-indicator";
 
 const steps = [
   { id: 1, title: "Location" },
@@ -306,30 +306,10 @@ export default function Preferences() {
   return (
     <div className="container max-w-2xl mx-auto py-8">
       <div className="mb-8">
-        <Progress value={((currentStep - 1) * 100) / (steps.length - 1)} className="mb-2" />
-        <div className="flex justify-between items-center">
-          {steps.map((step) => (
-            <div
-              key={step.id}
-              className={cn(
-                "flex items-center",
-                step.id === currentStep ? "text-primary" : "text-muted-foreground"
-              )}
-            >
-              <div
-                className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center border",
-                  step.id === currentStep
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-muted-foreground"
-                )}
-              >
-                {step.id}
-              </div>
-              <span className="ml-2">{step.title}</span>
-            </div>
-          ))}
-        </div>
+        <ProgressIndicator 
+          currentStep={currentStep} 
+          onStepChange={setCurrentStep} 
+        />
       </div>
 
       <Card>
