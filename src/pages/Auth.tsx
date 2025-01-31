@@ -20,23 +20,33 @@ export default function Auth() {
     setIsLoading(true);
     
     try {
-      const { error } = isSignUp 
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
-
-      if (error) throw error;
-
       if (isSignUp) {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        
         toast({
           title: "Account created",
           description: "Please check your email to verify your account"
         });
+        navigate("/preferences");
       } else {
+        const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+
+        // Check if user has preferences
+        const { data: preferences } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', data.user.id)
+          .maybeSingle();
+
         toast({
           title: "Welcome back!",
           description: "You have been signed in successfully"
         });
-        navigate("/buildings");
+
+        // Navigate based on whether user has preferences
+        navigate(preferences ? "/buildings" : "/preferences");
       }
     } catch (error) {
       console.error("Auth error:", error);

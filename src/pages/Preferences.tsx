@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { TagsSelector } from "@/components/ui/tags-selector";
 import ProgressIndicator from "@/components/ui/progress-indicator";
+import { useNavigate } from "react-router-dom";
 
 const steps = [
   { id: 1, title: "Location" },
@@ -23,6 +24,7 @@ type LocationStep = 1 | 2 | 3;
 
 export default function Preferences() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [locationStep, setLocationStep] = useState<LocationStep>(1);
   const autocompleteInput = useRef<HTMLInputElement>(null);
@@ -207,6 +209,9 @@ export default function Preferences() {
         title: "Success",
         description: "Your preferences have been saved!",
       });
+      
+      // Navigate to buildings page after successful submission
+      navigate("/buildings");
     } catch (error) {
       console.error("Error in form submission:", error);
       toast({
