@@ -4,6 +4,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BuildingsMapProps {
   buildings: Tables<'buildings'>[];
@@ -18,38 +19,49 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+    const initializeMap = async () => {
+      if (!mapContainer.current || map.current) return;
 
-    try {
-      mapboxgl.accessToken = 'pk.eyJ1IjoidGFydW5maXJvZGl5YSIsImEiOiJjbHJwcXFhbGkwMmZnMmpxdnc0ZGxqNmxsIn0.4CtXbxkQIHNkMxR_oGH9Ug';
-      
-      const initializedMap = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/light-v11',
-        zoom: 12,
-        center: [72.8777, 19.0760], // Mumbai coordinates
-      });
+      try {
+        // Get the Mapbox token from Supabase Edge Function
+        const { data: { token }, error } = await supabase.functions.invoke('get-mapbox-token');
+        
+        if (error || !token) {
+          throw new Error('Failed to get Mapbox token');
+        }
 
-      // Wait for map to load before setting ref
-      initializedMap.on('load', () => {
-        map.current = initializedMap;
-        console.log('Map loaded successfully');
-      });
+        mapboxgl.accessToken = token;
+        
+        const initializedMap = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: 'mapbox://styles/mapbox/light-v11',
+          zoom: 12,
+          center: [77.5946, 12.9716], // Bangalore coordinates
+        });
 
-      initializedMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        // Wait for map to load before setting ref
+        initializedMap.on('load', () => {
+          map.current = initializedMap;
+          console.log('Map loaded successfully');
+        });
 
-      return () => {
-        initializedMap.remove();
-        map.current = null;
-      };
-    } catch (error) {
-      console.error('Error initializing map:', error);
-      toast({
-        title: "Map Error",
-        description: "There was an error loading the map",
-        variant: "destructive",
-      });
-    }
+        initializedMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+        return () => {
+          initializedMap.remove();
+          map.current = null;
+        };
+      } catch (error) {
+        console.error('Error initializing map:', error);
+        toast({
+          title: "Map Error",
+          description: "There was an error loading the map",
+          variant: "destructive",
+        });
+      }
+    };
+
+    initializeMap();
   }, [toast]);
 
   // Handle markers
