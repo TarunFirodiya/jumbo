@@ -46,7 +46,6 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
     }
   }, [initialData]);
 
-  // Fetch Google Maps API key
   useEffect(() => {
     const fetchApiKey = async () => {
       try {
