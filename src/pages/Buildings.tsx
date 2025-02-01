@@ -210,11 +210,11 @@ export default function Buildings() {
         <p className="text-muted-foreground mt-2">1000+ ready-to-move homes in Bangalore</p>
       </div>
       
-      <div className="sticky top-0 z-10 bg-background py-4">
+      <div className="sticky top-0 z-10 bg-background py-2">
         <Button
           variant="outline"
           onClick={() => setIsMapView(!isMapView)}
-          className="ml-auto block"
+          className="ml-auto block min-w-[120px]"
         >
           {isMapView ? (
             <>
