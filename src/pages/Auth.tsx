@@ -64,12 +64,8 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>{isSignUp ? "Create Account" : "Welcome Back"}</CardTitle>
-          <CardDescription>
-            {isSignUp 
-              ? "Enter your details to create a new account" 
-              : "Enter your credentials to sign in"}
-          </CardDescription>
+          <CardTitle>Spam-Free Home Search</CardTitle>
+          <CardDescription>1000+ ready-to-move homes in Bangalore</CardDescription>
         </CardHeader>
         <form onSubmit={handleAuth}>
           <CardContent className="space-y-4">
