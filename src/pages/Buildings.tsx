@@ -197,6 +197,11 @@ export default function Buildings() {
 
   return (
     <div className="container mx-auto px-4">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">Spam-Free Home Search</h1>
+        <p className="text-muted-foreground mt-2">1000+ ready-to-move homes in Bangalore</p>
+      </div>
+      
       <div className="sticky top-0 z-10 bg-background py-4">
         <Button
           variant="outline"
