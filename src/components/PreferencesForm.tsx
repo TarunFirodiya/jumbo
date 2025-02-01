@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, Castle, Building2, Home, Trees } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PreferencesFormProps {
@@ -21,8 +22,8 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
   const [formData, setFormData] = useState({
     location_preference_input: "",
     location_radius: 5,
-    max_budget: "",
-    size: "",
+    max_budget: 50,
+    size: [] as string[],
     lifestyle_cohort: "",
     home_features: [] as string[],
     custom_home_features: [] as string[],
@@ -128,9 +129,22 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
     });
   };
 
-  const handleInputChange = (field: string, value: string | string[] | number) => {
+  const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  const formatBudgetValue = (value: number) => {
+    if (value < 100) {
+      return `${value}L`;
+    }
+    return `${(value / 100).toFixed(1)}Cr`;
+  };
+
+  const bedroomOptions = [
+    { id: "2bhk", label: "2 BHK" },
+    { id: "3bhk", label: "3 BHK" },
+    { id: "4bhk", label: "4 BHK+" },
+  ];
 
   const lifestyleOptions = [
     { title: "Luxury Amenities", icon: Castle, value: "luxury" },
@@ -145,7 +159,6 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Combine custom and predefined features/deal-breakers
     const allHomeFeatures = [
       ...formData.home_features,
       ...formData.custom_home_features,
@@ -170,7 +183,7 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
         <CardContent className="pt-6">
           <div className="space-y-6">
             <div className="space-y-4">
-              <Label>Where are you looking to live?</Label>
+              <Label className="text-sm">Where are you looking to live?</Label>
               <Input
                 ref={autocompleteInput}
                 placeholder="Enter area or locality"
@@ -180,27 +193,52 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
             </div>
 
             <div className="space-y-4">
-              <Label>What's your maximum budget for a home?</Label>
-              <Input
-                type="number"
-                placeholder="Enter amount"
-                value={formData.max_budget}
-                onChange={(e) => handleInputChange("max_budget", e.target.value)}
-              />
+              <Label className="text-sm">What's your maximum budget for a home?</Label>
+              <div className="px-2">
+                <Slider
+                  min={50}
+                  max={600}
+                  step={10}
+                  value={[formData.max_budget]}
+                  onValueChange={(value) => handleInputChange("max_budget", value[0])}
+                  showTooltip
+                  tooltipContent={(value) => formatBudgetValue(value)}
+                />
+                <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+                  <span>50L</span>
+                  <span>6Cr</span>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-4">
-              <Label>How many bedrooms are you looking for?</Label>
-              <Input
-                type="number"
-                placeholder="Number of bedrooms"
-                value={formData.size}
-                onChange={(e) => handleInputChange("size", e.target.value)}
-              />
+              <Label className="text-sm">How many bedrooms are you looking for?</Label>
+              <div className="grid grid-cols-2 gap-4">
+                {bedroomOptions.map((option) => (
+                  <button
+                    type="button"
+                    key={option.id}
+                    onClick={() => {
+                      const sizes = formData.size.includes(option.id)
+                        ? formData.size.filter((s) => s !== option.id)
+                        : [...formData.size, option.id];
+                      handleInputChange("size", sizes);
+                    }}
+                    className={cn(
+                      "p-3 rounded-lg border-2 text-left transition-all",
+                      formData.size.includes(option.id)
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-primary/50"
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-4">
-              <Label>What kind of amenities are you looking for?</Label>
+              <Label className="text-sm">What kind of amenities are you looking for?</Label>
               <div className="grid grid-cols-2 gap-4">
                 {lifestyleOptions.map((option) => (
                   <button
@@ -222,7 +260,7 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
             </div>
 
             <div className="space-y-4">
-              <Label>Which of these does your ideal home have?</Label>
+              <Label className="text-sm">Which of these does your ideal home have?</Label>
               <div className="grid grid-cols-2 gap-4">
                 {homeFeatures.map((feature) => (
                   <button
@@ -264,7 +302,7 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
             </div>
 
             <div className="space-y-4">
-              <Label>Are there any deal-breakers?</Label>
+              <Label className="text-sm">Are there any deal-breakers?</Label>
               <div className="grid grid-cols-2 gap-4">
                 {dealBreakers.map((dealBreaker) => (
                   <button
