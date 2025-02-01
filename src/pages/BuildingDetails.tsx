@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Heart, MapPin, Star, Video, DollarSign, LayoutDashboard, List, MessageSquare } from "lucide-react";
+import { Heart, MapPin, Star, DollarSign, List, MessageSquare } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -80,7 +80,7 @@ export default function BuildingDetails() {
     }
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('user_building_scores')
         .upsert({
           user_id: user.id,
@@ -118,9 +118,9 @@ export default function BuildingDetails() {
     <div className="min-h-screen flex flex-col">
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
             <div>
-              <h1 className="text-xl font-semibold truncate">{building.name}</h1>
+              <h1 className="text-lg sm:text-xl font-semibold truncate">{building.name}</h1>
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <MapPin className="h-3 w-3" />
                 <span className="truncate">{building.locality}, {building.sub_locality}</span>
@@ -149,9 +149,9 @@ export default function BuildingDetails() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 space-y-8 flex-1">
+      <div className="container mx-auto px-4 py-4 sm:py-8 space-y-4 sm:space-y-8 flex-1">
         {building.images && building.images.length > 0 && (
-          <Card className="p-6">
+          <Card className="p-4 sm:p-6">
             <Carousel className="w-full">
               <CarouselContent>
                 {building.images.map((image, index) => (
@@ -166,8 +166,8 @@ export default function BuildingDetails() {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious />
-              <CarouselNext />
+              <CarouselPrevious className="hidden sm:flex" />
+              <CarouselNext className="hidden sm:flex" />
             </Carousel>
           </Card>
         )}
@@ -177,10 +177,6 @@ export default function BuildingDetails() {
             <ScrollArea className="w-full whitespace-nowrap">
               <TabsList className="inline-flex w-max border-b rounded-none p-0">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="videos" disabled={!building.video_thumbnail}>
-                  <Video className="h-4 w-4 mr-2" />
-                  Videos
-                </TabsTrigger>
                 <TabsTrigger value="location">
                   <MapPin className="h-4 w-4 mr-2" />
                   Location
@@ -188,10 +184,6 @@ export default function BuildingDetails() {
                 <TabsTrigger value="price">
                   <DollarSign className="h-4 w-4 mr-2" />
                   Price
-                </TabsTrigger>
-                <TabsTrigger value="layout">
-                  <LayoutDashboard className="h-4 w-4 mr-2" />
-                  Layout
                 </TabsTrigger>
                 <TabsTrigger value="homes">
                   <List className="h-4 w-4 mr-2" />
@@ -211,10 +203,6 @@ export default function BuildingDetails() {
           ) : (
             <TabsList className="w-full justify-start">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="videos" disabled={!building.video_thumbnail}>
-                <Video className="h-4 w-4 mr-2" />
-                Videos
-              </TabsTrigger>
               <TabsTrigger value="location">
                 <MapPin className="h-4 w-4 mr-2" />
                 Location
@@ -222,10 +210,6 @@ export default function BuildingDetails() {
               <TabsTrigger value="price">
                 <DollarSign className="h-4 w-4 mr-2" />
                 Price
-              </TabsTrigger>
-              <TabsTrigger value="layout">
-                <LayoutDashboard className="h-4 w-4 mr-2" />
-                Layout
               </TabsTrigger>
               <TabsTrigger value="homes">
                 <List className="h-4 w-4 mr-2" />
@@ -243,9 +227,9 @@ export default function BuildingDetails() {
           )}
 
           <TabsContent value="overview" className="space-y-4">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Overview</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <Card className="p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold mb-4">Overview</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {building.type && (
                   <div>
                     <p className="text-sm text-muted-foreground">Type</p>
@@ -275,8 +259,8 @@ export default function BuildingDetails() {
           </TabsContent>
 
           <TabsContent value="price" className="space-y-4">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Price Range</h3>
+            <Card className="p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold mb-4">Price Range</h3>
               {building.min_price && building.max_price && (
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Price Range</p>
@@ -289,8 +273,8 @@ export default function BuildingDetails() {
           </TabsContent>
 
           <TabsContent value="location" className="space-y-4">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Location Details</h3>
+            <Card className="p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold mb-4">Location Details</h3>
               <div className="space-y-4">
                 {building.locality && (
                   <div>
@@ -309,8 +293,8 @@ export default function BuildingDetails() {
           </TabsContent>
 
           <TabsContent value="homes" className="space-y-4">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Available Homes</h3>
+            <Card className="p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold mb-4">Available Homes</h3>
               <div className="space-y-4">
                 {listings && listings.length > 0 ? (
                   listings.map((listing) => (
@@ -322,8 +306,6 @@ export default function BuildingDetails() {
               </div>
             </Card>
           </TabsContent>
-
-          {/* Other tab contents would be implemented similarly */}
         </Tabs>
       </div>
     </div>
