@@ -5,6 +5,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { Heart } from 'lucide-react';
 
 interface BuildingsMapProps {
   buildings: Tables<'buildings'>[];
@@ -84,25 +85,76 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
         return;
       }
 
+      // Create marker element
+      const el = document.createElement('div');
+      el.className = 'marker';
+      
+      // Get match score from building data
+      const matchScore = building.match_score || 0.5; // Default to 0.5 if no score
+      
+      // Calculate color based on match score (green gradient)
+      const intensity = Math.floor(matchScore * 255);
+      el.style.backgroundColor = `rgba(0, ${intensity}, 0, 0.8)`;
+      el.style.width = '20px';
+      el.style.height = '20px';
+      el.style.borderRadius = '50%';
+      el.style.border = '2px solid white';
+      el.style.cursor = 'pointer';
+      el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+
       const popup = new mapboxgl.Popup({ offset: 25 })
         .setHTML(`
-          <div class="p-4 max-w-sm">
-            <h3 class="font-semibold text-lg mb-2">${building.name}</h3>
+          <div class="p-4 max-w-sm bg-white rounded-lg shadow-lg">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="font-semibold text-lg">${building.name}</h3>
+              <div class="relative w-10 h-10">
+                <svg class="w-full h-full -rotate-90">
+                  <circle
+                    cx="20"
+                    cy="20"
+                    r="15"
+                    class="stroke-muted fill-none"
+                    stroke-width="4"
+                  />
+                  <circle
+                    cx="20"
+                    cy="20"
+                    r="15"
+                    class="stroke-primary fill-none"
+                    stroke-width="4"
+                    stroke-dasharray="${matchScore * 94.2} 94.2"
+                  />
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center text-xs font-medium">
+                  ${Math.round(matchScore * 100)}%
+                </div>
+              </div>
+            </div>
             <p class="text-sm text-gray-600 mb-2">${building.locality || ''}</p>
             ${building.min_price ? 
               `<p class="text-sm font-medium">₹${(building.min_price/10000000).toFixed(1)} Cr${building.max_price ? 
                 ` - ₹${(building.max_price/10000000).toFixed(1)} Cr` : ''}</p>` 
               : ''}
-            <button 
-              class="mt-2 px-4 py-2 bg-primary text-primary-foreground rounded-md w-full text-sm"
-              onclick="window.location.href='/buildings/${building.id}'"
-            >
-              View Details
-            </button>
+            <div class="mt-2 flex justify-between items-center">
+              <button 
+                class="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm"
+                onclick="window.location.href='/buildings/${building.id}'"
+              >
+                View Details
+              </button>
+              <button 
+                class="p-2 rounded-full hover:bg-gray-100"
+                onclick="event.stopPropagation();"
+              >
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+              </button>
+            </div>
           </div>
         `);
 
-      const marker = new mapboxgl.Marker()
+      const marker = new mapboxgl.Marker(el)
         .setLngLat([building.longitude, building.latitude])
         .setPopup(popup)
         .addTo(map.current!);
