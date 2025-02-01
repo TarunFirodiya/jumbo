@@ -90,7 +90,7 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
       el.className = 'marker';
       
       // Get match score from building data
-      const matchScore = building.match_score || 0.5; // Default to 0.5 if no score
+      const matchScore = (building as any).overall_match_score || 0.5; // Default to 0.5 if no score
       
       // Calculate color based on match score (green gradient)
       const intensity = Math.floor(matchScore * 255);
