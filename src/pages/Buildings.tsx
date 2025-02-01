@@ -212,19 +212,19 @@ export default function Buildings() {
       
       <div className="sticky top-0 z-10 bg-background py-2">
         <Button
-          variant="outline"
+          variant="default"
           onClick={() => setIsMapView(!isMapView)}
-          className="ml-auto block min-w-[120px]"
+          className="ml-auto block rounded-full px-4 py-2 h-auto"
         >
           {isMapView ? (
             <>
               <List className="mr-2 h-4 w-4" />
-              List View
+              Show list
             </>
           ) : (
             <>
               <MapIcon className="mr-2 h-4 w-4" />
-              Map View
+              Show map
             </>
           )}
         </Button>
