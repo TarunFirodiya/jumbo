@@ -101,11 +101,19 @@ export default function Buildings() {
     const calculateScores = async () => {
       if (user && userPreferences && buildings?.length > 0) {
         try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const accessToken = session?.access_token;
+          
+          if (!accessToken) {
+            console.error('No access token available');
+            return;
+          }
+
           const response = await fetch('https://qmeyqhreseuvkrdowzfe.supabase.co/functions/v1/calculate-building-scores', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+              'Authorization': `Bearer ${accessToken}`
             },
             body: JSON.stringify({
               user_id: user.id,
