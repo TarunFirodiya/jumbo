@@ -5,7 +5,6 @@ import { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Heart } from 'lucide-react';
 
 interface BuildingsMapProps {
   buildings: Tables<'buildings'>[];
@@ -40,13 +39,16 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
           center: [77.5946, 12.9716], // Bangalore coordinates
         });
 
-        // Wait for map to load before setting ref
-        initializedMap.on('load', () => {
-          map.current = initializedMap;
-          console.log('Map loaded successfully');
-        });
+        map.current = initializedMap;
 
+        // Add navigation controls after map is initialized
         initializedMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+        // Add markers once map is loaded
+        initializedMap.on('load', () => {
+          console.log('Map loaded, adding markers');
+          addMarkers();
+        });
 
         return () => {
           initializedMap.remove();
@@ -65,8 +67,8 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
     initializeMap();
   }, [toast]);
 
-  // Handle markers
-  useEffect(() => {
+  // Function to add markers
+  const addMarkers = () => {
     if (!map.current) {
       console.log('Map not initialized yet');
       return;
@@ -77,6 +79,9 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
     // Clear existing markers
     markers.current.forEach(marker => marker.remove());
     markers.current = [];
+
+    // Create bounds object to fit markers
+    const bounds = new mapboxgl.LngLatBounds();
 
     // Add new markers
     buildings.forEach(building => {
@@ -157,31 +162,27 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
       const marker = new mapboxgl.Marker(el)
         .setLngLat([building.longitude, building.latitude])
         .setPopup(popup)
-        .addTo(map.current!);
+        .addTo(map.current);
 
       markers.current.push(marker);
+      bounds.extend([building.longitude, building.latitude]);
     });
 
     // Fit map to markers if there are any
     if (markers.current.length > 0) {
-      const bounds = new mapboxgl.LngLatBounds();
-      buildings.forEach(building => {
-        if (building.latitude && building.longitude) {
-          bounds.extend([building.longitude, building.latitude]);
-        }
-      });
       map.current.fitBounds(bounds, {
         padding: 50,
         maxZoom: 15
       });
     }
+  };
 
-    // Cleanup function
-    return () => {
-      markers.current.forEach(marker => marker.remove());
-      markers.current = [];
-    };
-  }, [buildings, navigate]);
+  // Update markers when buildings change
+  useEffect(() => {
+    if (map.current) {
+      addMarkers();
+    }
+  }, [buildings]);
 
   return (
     <div className="w-full h-[calc(100vh-12rem)]">
