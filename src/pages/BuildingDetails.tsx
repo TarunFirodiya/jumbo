@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import ListingCard from "@/components/ListingCard";
 
 export default function BuildingDetails() {
   const { id } = useParams();
@@ -30,6 +31,19 @@ export default function BuildingDetails() {
         .select('*')
         .eq('id', id)
         .single();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: listings } = useQuery({
+    queryKey: ['listings', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('listings')
+        .select('*')
+        .eq('building_id', id);
 
       if (error) throw error;
       return data;
@@ -102,7 +116,6 @@ export default function BuildingDetails() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Sticky Header */}
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
@@ -290,6 +303,21 @@ export default function BuildingDetails() {
                     <p className="text-sm text-muted-foreground">Sub Locality</p>
                     <p className="font-medium">{building.sub_locality}</p>
                   </div>
+                )}
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="homes" className="space-y-4">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Available Homes</h3>
+              <div className="space-y-4">
+                {listings && listings.length > 0 ? (
+                  listings.map((listing) => (
+                    <ListingCard key={listing.id} listing={listing} />
+                  ))
+                ) : (
+                  <p className="text-muted-foreground">No listings available at the moment.</p>
                 )}
               </div>
             </Card>
