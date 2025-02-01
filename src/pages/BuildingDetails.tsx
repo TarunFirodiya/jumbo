@@ -17,6 +17,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import ListingCard from "@/components/ListingCard";
+import LocationMap from '@/components/LocationMap';
 
 export default function BuildingDetails() {
   const { id } = useParams();
@@ -258,9 +259,16 @@ export default function BuildingDetails() {
 
           <TabsContent value="location" className="space-y-4">
             <Card className="p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold mb-4">Location Map</h3>
-              {/* Here you can implement the map view using Google Maps API */}
-              <div id="map" className="h-64 w-full rounded-lg"></div>
+              <h3 className="text-base sm:text-lg font-semibold mb-4">Location</h3>
+              {building.latitude && building.longitude ? (
+                <LocationMap
+                  latitude={building.latitude}
+                  longitude={building.longitude}
+                  buildingName={building.name}
+                />
+              ) : (
+                <p className="text-muted-foreground">Location information not available</p>
+              )}
             </Card>
           </TabsContent>
 
