@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Heart, MapPin, Star, DollarSign, List, MessageSquare } from "lucide-react";
+import { Heart, MapPin, Star, List, MessageSquare } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -181,14 +181,6 @@ export default function BuildingDetails() {
                   <MapPin className="h-4 w-4 mr-2" />
                   Location
                 </TabsTrigger>
-                <TabsTrigger value="price">
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  Price
-                </TabsTrigger>
-                <TabsTrigger value="homes">
-                  <List className="h-4 w-4 mr-2" />
-                  Available Homes
-                </TabsTrigger>
                 <TabsTrigger value="amenities">
                   <List className="h-4 w-4 mr-2" />
                   Amenities
@@ -206,14 +198,6 @@ export default function BuildingDetails() {
               <TabsTrigger value="location">
                 <MapPin className="h-4 w-4 mr-2" />
                 Location
-              </TabsTrigger>
-              <TabsTrigger value="price">
-                <DollarSign className="h-4 w-4 mr-2" />
-                Price
-              </TabsTrigger>
-              <TabsTrigger value="homes">
-                <List className="h-4 w-4 mr-2" />
-                Available Homes
               </TabsTrigger>
               <TabsTrigger value="amenities">
                 <List className="h-4 w-4 mr-2" />
@@ -256,43 +240,8 @@ export default function BuildingDetails() {
                 )}
               </div>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="price" className="space-y-4">
-            <Card className="p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold mb-4">Price Range</h3>
-              {building.min_price && building.max_price && (
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Price Range</p>
-                  <p className="font-medium">
-                    ₹{building.min_price.toLocaleString()} - ₹{building.max_price.toLocaleString()}
-                  </p>
-                </div>
-              )}
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="location" className="space-y-4">
-            <Card className="p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold mb-4">Location Details</h3>
-              <div className="space-y-4">
-                {building.locality && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Locality</p>
-                    <p className="font-medium">{building.locality}</p>
-                  </div>
-                )}
-                {building.sub_locality && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Sub Locality</p>
-                    <p className="font-medium">{building.sub_locality}</p>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="homes" className="space-y-4">
+            {/* Available Homes section merged into Overview */}
             <Card className="p-4 sm:p-6">
               <h3 className="text-base sm:text-lg font-semibold mb-4">Available Homes</h3>
               <div className="space-y-4">
@@ -304,6 +253,28 @@ export default function BuildingDetails() {
                   <p className="text-muted-foreground">No listings available at the moment.</p>
                 )}
               </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="location" className="space-y-4">
+            <Card className="p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold mb-4">Location Map</h3>
+              {/* Here you can implement the map view using Google Maps API */}
+              <div id="map" className="h-64 w-full rounded-lg"></div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="amenities" className="space-y-4">
+            <Card className="p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold mb-4">Amenities</h3>
+              {/* Add amenities details here */}
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="reviews" className="space-y-4">
+            <Card className="p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold mb-4">Reviews</h3>
+              {/* Add reviews details here */}
             </Card>
           </TabsContent>
         </Tabs>
