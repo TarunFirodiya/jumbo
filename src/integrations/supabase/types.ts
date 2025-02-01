@@ -87,6 +87,56 @@ export type Database = {
         }
         Relationships: []
       }
+      listings: {
+        Row: {
+          bathrooms: number | null
+          bedrooms: number | null
+          building_id: string | null
+          building_name: string | null
+          built_up_area: number | null
+          created_at: string
+          facing: string | null
+          floor: number | null
+          id: string
+          maintenance: number | null
+          price: number | null
+        }
+        Insert: {
+          bathrooms?: number | null
+          bedrooms?: number | null
+          building_id?: string | null
+          building_name?: string | null
+          built_up_area?: number | null
+          created_at?: string
+          facing?: string | null
+          floor?: number | null
+          id?: string
+          maintenance?: number | null
+          price?: number | null
+        }
+        Update: {
+          bathrooms?: number | null
+          bedrooms?: number | null
+          building_id?: string | null
+          building_name?: string | null
+          built_up_area?: number | null
+          created_at?: string
+          facing?: string | null
+          floor?: number | null
+          id?: string
+          maintenance?: number | null
+          price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listings_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
