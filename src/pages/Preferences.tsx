@@ -10,6 +10,7 @@ import { LifestyleStep } from "@/components/preferences/LifestyleStep";
 import { FeaturesStep } from "@/components/preferences/FeaturesStep";
 import { DealBreakersStep } from "@/components/preferences/DealBreakersStep";
 import { motion } from "framer-motion";
+import { Json } from "@/integrations/supabase/types";
 
 export default function Preferences() {
   const { toast } = useToast();
@@ -17,7 +18,7 @@ export default function Preferences() {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 6;
   const [formData, setFormData] = useState({
-    preferred_localities: [] as string[],
+    preferred_localities: [] as Json[],
     max_budget: 50,
     bhk_preferences: [] as string[],
     lifestyle_cohort: "",
@@ -140,8 +141,8 @@ export default function Preferences() {
       case 1:
         return (
           <LocationStep
-            value={formData.preferred_localities}
-            onChange={(value) => setFormData({ ...formData, preferred_localities: value })}
+            value={formData.preferred_localities as string[]}
+            onChange={(value) => setFormData({ ...formData, preferred_localities: value as Json[] })}
           />
         );
       case 2:
