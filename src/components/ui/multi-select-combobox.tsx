@@ -49,6 +49,7 @@ export const MultiSelectCombobox = <T extends BaseOption>({
   placeholder,
 }: Props<T>) => {
   const [open, setOpen] = useState(false);
+  console.log("MultiSelectCombobox options:", options); // Debug log
 
   const handleChange = (currentValue: string) => {
     onChange(
@@ -122,25 +123,29 @@ export const MultiSelectCombobox = <T extends BaseOption>({
             aria-label={`Search ${label}`}
           />
           <CommandList>
-            <CommandEmpty>No {label} found.</CommandEmpty>
+            <CommandEmpty>No {label.toLowerCase()} found.</CommandEmpty>
             <CommandGroup>
-              {options.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.label}
-                  onSelect={() => handleChange(option.value)}
-                  aria-selected={value.includes(option.value)}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value.includes(option.value) ? "opacity-100" : "opacity-0"
-                    )}
-                    aria-hidden="true"
-                  />
-                  {renderItem(option)}
-                </CommandItem>
-              ))}
+              {options.length > 0 ? (
+                options.map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    value={option.label}
+                    onSelect={() => handleChange(option.value)}
+                    aria-selected={value.includes(option.value)}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value.includes(option.value) ? "opacity-100" : "opacity-0"
+                      )}
+                      aria-hidden="true"
+                    />
+                    {renderItem(option)}
+                  </CommandItem>
+                ))
+              ) : (
+                <CommandItem disabled>Loading {label.toLowerCase()}...</CommandItem>
+              )}
             </CommandGroup>
           </CommandList>
         </Command>

@@ -65,10 +65,13 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
 
   const fetchLocalities = async () => {
     try {
+      console.log('Fetching localities...');
       const { data, error } = await supabase
         .from('localities')
         .select('locality, latitude, longitude')
         .order('locality');
+
+      console.log('Localities response:', { data, error });
 
       if (error) {
         console.error('Error fetching localities:', error);
@@ -87,6 +90,7 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
         longitude: loc.longitude,
       }));
 
+      console.log('Formatted localities:', formattedLocalities);
       setLocalities(formattedLocalities);
     } catch (error) {
       console.error('Error in fetchLocalities:', error);
