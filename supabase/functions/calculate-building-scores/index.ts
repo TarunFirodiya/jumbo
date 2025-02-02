@@ -6,8 +6,8 @@ const corsHeaders = {
 };
 
 interface UserPreferences {
-  location_latitude: number;
-  location_longitude: number;
+  location_latitude: number | null;
+  location_longitude: number | null;
   max_budget: number;
   amenities: string[];
   bhk_preferences: string[];
@@ -17,17 +17,17 @@ interface UserPreferences {
 
 interface Building {
   id: string;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
   min_price: number;
-  max_price: number;
-  amenities: string[];
-  bhk_types: string[];
+  features: string[];
+  bhk_types: string[] | null;
   locality: string;
 }
 
 function calculateLocationScore(building: Building, preferences: UserPreferences): number {
   if (!preferences.location_latitude || !preferences.location_longitude || !building.latitude || !building.longitude) {
+    console.log('Missing location data for building:', building.id);
     return 0;
   }
 
@@ -38,13 +38,14 @@ function calculateLocationScore(building: Building, preferences: UserPreferences
     building.longitude
   );
 
-  const maxDistance = 20;
+  const maxDistance = 20; // 20km radius
   const score = Math.max(0, 1 - (distance / maxDistance));
   return score;
 }
 
 function calculateBudgetScore(building: Building, preferences: UserPreferences): number {
   if (!preferences.max_budget || !building.min_price) {
+    console.log('Missing budget data for building:', building.id);
     return 0;
   }
 
@@ -58,24 +59,35 @@ function calculateBudgetScore(building: Building, preferences: UserPreferences):
 }
 
 function calculateAmenitiesScore(building: Building, preferences: UserPreferences): number {
-  if (!preferences.amenities?.length || !building.amenities?.length) {
+  if (!preferences.amenities?.length || !building.features?.length) {
+    console.log('Missing amenities data for building:', building.id);
     return 0;
   }
 
-  const matchingAmenities = preferences.amenities.filter(amenity => 
-    building.amenities.includes(amenity)
+  // Convert building features to lowercase for case-insensitive comparison
+  const buildingFeatures = building.features.map(f => f.toLowerCase());
+  const userAmenities = preferences.amenities.map(a => a.toLowerCase());
+
+  const matchingAmenities = userAmenities.filter(amenity => 
+    buildingFeatures.includes(amenity)
   );
 
-  return matchingAmenities.length / preferences.amenities.length;
+  return matchingAmenities.length / userAmenities.length;
 }
 
 function calculateBHKScore(building: Building, preferences: UserPreferences): number {
-  if (!preferences.bhk_preferences?.length || !building.bhk_types?.length) {
+  if (!preferences.bhk_preferences?.length || !building.bhk_types) {
+    console.log('Missing BHK data for building:', building.id);
     return 0;
   }
 
+  // Handle comma-separated BHK types
+  const buildingBHKTypes = building.bhk_types.flatMap(type => 
+    type.split(',').map(t => t.trim())
+  );
+
   const matchingTypes = preferences.bhk_preferences.filter(type => 
-    building.bhk_types.includes(type)
+    buildingBHKTypes.includes(type)
   );
 
   return matchingTypes.length > 0 ? 1 : 0;
@@ -83,14 +95,21 @@ function calculateBHKScore(building: Building, preferences: UserPreferences): nu
 
 function calculateLocalityScore(building: Building, preferences: UserPreferences): number {
   if (!preferences.preferred_localities?.length || !building.locality) {
+    console.log('Missing locality data for building:', building.id);
     return 0;
   }
 
-  return preferences.preferred_localities.includes(building.locality) ? 1 : 0;
+  // Case-insensitive locality comparison
+  const buildingLocality = building.locality.toLowerCase();
+  const preferredLocalities = preferences.preferred_localities.map(l => 
+    typeof l === 'string' ? l.toLowerCase() : ''
+  );
+
+  return preferredLocalities.includes(buildingLocality) ? 1 : 0;
 }
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
+  const R = 6371; // Earth's radius in km
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const a = 
@@ -114,7 +133,6 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -127,7 +145,6 @@ Deno.serve(async (req) => {
       throw new Error('Missing environment variables.');
     }
 
-    // Create Supabase client with service role key for admin access
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     const { user_id } = await req.json();
@@ -138,7 +155,6 @@ Deno.serve(async (req) => {
 
     console.log('Fetching preferences for user:', user_id);
 
-    // Fetch user preferences using service role client
     const { data: preferences, error: preferencesError } = await supabase
       .from('user_preferences')
       .select('*')
@@ -160,7 +176,6 @@ Deno.serve(async (req) => {
 
     console.log('User preferences:', preferences);
 
-    // Fetch buildings using service role client
     const { data: buildings, error: buildingsError } = await supabase
       .from('buildings')
       .select('*');
@@ -180,7 +195,6 @@ Deno.serve(async (req) => {
 
     console.log(`Calculating scores for ${buildings.length} buildings`);
 
-    // Calculate scores for each building
     const buildingScores = buildings.map(building => {
       const locationScore = calculateLocationScore(building, preferences);
       const budgetScore = calculateBudgetScore(building, preferences);
@@ -196,7 +210,6 @@ Deno.serve(async (req) => {
         localityScore
       });
 
-      // Calculate overall score (equal weights for now)
       const overallScore = (
         locationScore * 0.3 +
         budgetScore * 0.3 +
@@ -221,7 +234,6 @@ Deno.serve(async (req) => {
       };
     });
 
-    // Update scores in batches
     const batchSize = 50;
     const batches = chunkArray(buildingScores, batchSize);
 
