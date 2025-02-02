@@ -243,31 +243,31 @@ export default function Buildings() {
                 onClick={() => navigate(`/buildings/${building.id}`)}
               >
                 <div className="aspect-video relative bg-muted">
-                  {/* Match Score Overlay */}
+                  {/* Match Score Overlay with white background */}
                   {buildingScore && (
-                    <div className="absolute top-3 left-3 bg-black/50 rounded-full p-1.5">
-                      <div className="relative w-10 h-10">
+                    <div className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow-sm">
+                      <div className="relative w-8 h-8">
                         <svg className="w-full h-full -rotate-90">
                           <circle
-                            cx="20"
-                            cy="20"
-                            r="18"
+                            cx="16"
+                            cy="16"
+                            r="14"
                             className="stroke-muted/25 fill-none"
                             strokeWidth="4"
                           />
                           <circle
-                            cx="20"
-                            cy="20"
-                            r="18"
+                            cx="16"
+                            cy="16"
+                            r="14"
                             className="stroke-primary fill-none"
                             strokeWidth="4"
-                            strokeDasharray={`${matchScore * 113.1} 113.1`}
+                            strokeDasharray={`${matchScore * 87.96} 87.96`}
                             style={{
                               transition: "stroke-dasharray 0.6s ease",
                             }}
                           />
                         </svg>
-                        <div className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
+                        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-medium">
                           {Math.round(matchScore * 100)}%
                         </div>
                       </div>
@@ -309,17 +309,19 @@ export default function Buildings() {
                 <CardHeader>
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <CardTitle className="text-lg">{building.name}</CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">{building.name}</CardTitle>
+                        {building.google_rating && (
+                          <div className="flex items-center gap-1 text-sm">
+                            <Star className="h-4 w-4 fill-yellow-400 stroke-yellow-400" />
+                            <span className="font-medium">{building.google_rating}</span>
+                          </div>
+                        )}
+                      </div>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <MapPin className="h-4 w-4" />
                         {building.locality}
                       </div>
-                      {building.google_rating && (
-                        <div className="flex items-center gap-1 text-sm mt-1">
-                          <Star className="h-4 w-4 fill-yellow-400 stroke-yellow-400" />
-                          <span className="font-medium">{building.google_rating}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-4 mt-2 text-sm">
@@ -347,7 +349,7 @@ export default function Buildings() {
                   </div>
                   <div className="mt-4">
                     <div className="flex items-baseline">
-                      <span className="text-sm text-muted-foreground mr-1">Starting at</span>
+                      <span className="text-xs text-muted-foreground mr-1">Starting at</span>
                       <span className="text-lg font-semibold">
                         ₹{(building.min_price/10000000).toFixed(1)} Cr
                       </span>
