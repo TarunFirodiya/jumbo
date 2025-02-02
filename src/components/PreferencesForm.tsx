@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Castle, Building2, Home, Trees } from "lucide-react";
+import { Castle, Building2, Home, Trees } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
+import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PreferencesFormProps {
@@ -15,22 +15,35 @@ interface PreferencesFormProps {
   mode?: 'create' | 'edit';
 }
 
+const localities = [
+  { value: "indiranagar", label: "Indiranagar" },
+  { value: "koramangala", label: "Koramangala" },
+  { value: "whitefield", label: "Whitefield" },
+  { value: "jayanagar", label: "Jayanagar" },
+  { value: "jp_nagar", label: "JP Nagar" },
+  { value: "marathahalli", label: "Marathahalli" },
+];
+
+const bhkOptions = [
+  { value: "2bhk", label: "2 BHK" },
+  { value: "3bhk", label: "3 BHK" },
+  { value: "4bhk", label: "4 BHK" },
+  { value: "4bhk_plus", label: "4+ BHK" },
+];
+
 export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: PreferencesFormProps) {
   const { toast } = useToast();
-  const autocompleteInput = useRef<HTMLInputElement>(null);
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    location_preference_input: "",
+    preferred_localities: [] as string[],
+    bhk_preferences: [] as string[],
     location_radius: 5,
     max_budget: 50,
-    size: [] as string[],
     lifestyle_cohort: "",
     home_features: [] as string[],
     custom_home_features: [] as string[],
     deal_breakers: [] as string[],
     custom_deal_breakers: [] as string[],
-    location_latitude: null as number | null,
-    location_longitude: null as number | null,
   });
 
   useEffect(() => {
@@ -42,91 +55,11 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
         deal_breakers: initialData.deal_breakers || [],
         custom_home_features: [],
         custom_deal_breakers: [],
+        preferred_localities: initialData.preferred_localities || [],
+        bhk_preferences: initialData.bhk_preferences || [],
       }));
     }
   }, [initialData]);
-
-  useEffect(() => {
-    const fetchApiKey = async () => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-google-maps-key`,
-          {
-            headers: {
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            },
-          }
-        );
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch API key');
-        }
-        
-        const data = await response.json();
-        setGoogleMapsApiKey(data.apiKey);
-      } catch (error) {
-        console.error('Error fetching Google Maps API key:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load location search. Please try again later.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    fetchApiKey();
-  }, [toast]);
-
-  // Initialize Google Places Autocomplete
-  useEffect(() => {
-    if (!googleMapsApiKey || !window.google || !autocompleteInput.current) return;
-
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    
-    script.onload = () => {
-      initializeAutocomplete();
-    };
-
-    // Only append the script if it hasn't been added yet
-    if (!document.querySelector(`script[src*="maps.googleapis.com"]`)) {
-      document.head.appendChild(script);
-    } else {
-      initializeAutocomplete();
-    }
-  }, [googleMapsApiKey]);
-
-  const initializeAutocomplete = () => {
-    if (!autocompleteInput.current || !window.google) return;
-
-    const bangaloreBounds = new google.maps.LatLngBounds(
-      new google.maps.LatLng(12.864162, 77.438610),
-      new google.maps.LatLng(13.139807, 77.711895)
-    );
-
-    const autocomplete = new google.maps.places.Autocomplete(autocompleteInput.current, {
-      bounds: bangaloreBounds,
-      strictBounds: true,
-      componentRestrictions: { country: "in" },
-      types: ['geocode', 'establishment']
-    });
-
-    autocomplete.addListener('place_changed', () => {
-      const place = autocomplete.getPlace();
-      if (place.geometry) {
-        const lat = place.geometry.location?.lat();
-        const lng = place.geometry.location?.lng();
-        setFormData(prev => ({
-          ...prev,
-          location_preference_input: place.formatted_address || prev.location_preference_input,
-          location_latitude: lat || null,
-          location_longitude: lng || null
-        }));
-      }
-    });
-  };
 
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -139,12 +72,6 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
     return `${(value / 100).toFixed(1)}Cr`;
   };
 
-  const bedroomOptions = [
-    { id: "2bhk", label: "2 BHK" },
-    { id: "3bhk", label: "3 BHK" },
-    { id: "4bhk", label: "4 BHK+" },
-  ];
-
   const lifestyleOptions = [
     { title: "Luxury Amenities", icon: Castle, value: "luxury" },
     { title: "Gated Apartment with Basic Amenities", icon: Building2, value: "gated_basic" },
@@ -154,6 +81,22 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
 
   const homeFeatures = ["Balconies", "Spacious Rooms", "Great Ventilation"];
   const dealBreakers = ["Old construction", "South Facing Door", "Bad Access Roads"];
+
+  const renderSelectedLocalities = (value: string[]) => {
+    if (value.length === 0) return "";
+    if (value.length === 1) {
+      return localities.find(l => l.value === value[0])?.label;
+    }
+    return `${value.length} localities selected`;
+  };
+
+  const renderSelectedBHK = (value: string[]) => {
+    if (value.length === 0) return "";
+    if (value.length === 1) {
+      return bhkOptions.find(b => b.value === value[0])?.label;
+    }
+    return `${value.length} types selected`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,11 +126,14 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
           <div className="space-y-6">
             <div className="space-y-4">
               <Label className="text-sm">Where are you looking to live?</Label>
-              <Input
-                ref={autocompleteInput}
-                placeholder="Enter area or locality"
-                value={formData.location_preference_input}
-                onChange={(e) => handleInputChange("location_preference_input", e.target.value)}
+              <MultiSelectCombobox
+                label="Localities"
+                options={localities}
+                value={formData.preferred_localities}
+                onChange={(value) => handleInputChange("preferred_localities", value)}
+                renderItem={(option) => option.label}
+                renderSelectedItem={renderSelectedLocalities}
+                placeholder="Search localities..."
               />
             </div>
 
@@ -212,28 +158,15 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
 
             <div className="space-y-4">
               <Label className="text-sm">How many bedrooms are you looking for?</Label>
-              <div className="grid grid-cols-2 gap-4">
-                {bedroomOptions.map((option) => (
-                  <button
-                    type="button"
-                    key={option.id}
-                    onClick={() => {
-                      const sizes = formData.size.includes(option.id)
-                        ? formData.size.filter((s) => s !== option.id)
-                        : [...formData.size, option.id];
-                      handleInputChange("size", sizes);
-                    }}
-                    className={cn(
-                      "p-3 rounded-lg border-2 text-left transition-all",
-                      formData.size.includes(option.id)
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-primary/50"
-                    )}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
+              <MultiSelectCombobox
+                label="BHK Types"
+                options={bhkOptions}
+                value={formData.bhk_preferences}
+                onChange={(value) => handleInputChange("bhk_preferences", value)}
+                renderItem={(option) => option.label}
+                renderSelectedItem={renderSelectedBHK}
+                placeholder="Search BHK types..."
+              />
             </div>
 
             <div className="space-y-4">
