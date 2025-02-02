@@ -25,54 +25,67 @@ interface Building {
   locality: string;
 }
 
+interface LocalityCoordinates {
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
+const LOCALITIES: LocalityCoordinates[] = [
+  { name: "whitefield", latitude: 12.9698196, longitude: 77.7499721 },
+  { name: "hsr layout", latitude: 12.9121181, longitude: 77.6445548 },
+  { name: "koramangala", latitude: 12.9352403, longitude: 77.624532 },
+  { name: "jp nagar", latitude: 12.9063433, longitude: 77.5856825 },
+  { name: "marathahalli", latitude: 12.956924, longitude: 77.701127 },
+  { name: "indiranagar", latitude: 12.9783692, longitude: 77.6408356 }
+];
+
 function calculateLocationScore(building: Building, preferences: UserPreferences): number {
-  if (!preferences.location_latitude || !preferences.location_longitude || !building.latitude || !building.longitude) {
-    console.log('Missing location data for building:', building.id);
-    return 0;
+  if (preferences.preferred_localities && preferences.preferred_localities.length > 0) {
+    const buildingLocality = building.locality?.toLowerCase();
+    if (!buildingLocality) return 0;
+
+    const matchingLocality = LOCALITIES.find(l => 
+      l.name === buildingLocality || buildingLocality.includes(l.name)
+    );
+
+    if (matchingLocality) {
+      return 1; // Perfect match
+    }
+
+    let minDistance = Number.MAX_VALUE;
+    if (building.latitude && building.longitude) {
+      preferences.preferred_localities.forEach(locality => {
+        const matchingCoords = LOCALITIES.find(l => l.name === locality);
+        if (matchingCoords) {
+          const distance = calculateDistance(
+            matchingCoords.latitude,
+            matchingCoords.longitude,
+            building.latitude,
+            building.longitude
+          );
+          minDistance = Math.min(minDistance, distance);
+        }
+      });
+
+      const maxDistance = 20;
+      return Math.max(0, 1 - (minDistance / maxDistance));
+    }
   }
 
-  const distance = calculateDistance(
-    preferences.location_latitude,
-    preferences.location_longitude,
-    building.latitude,
-    building.longitude
-  );
-
-  const maxDistance = 20; // 20km radius
-  const score = Math.max(0, 1 - (distance / maxDistance));
-  return score;
-}
-
-function calculateBudgetScore(building: Building, preferences: UserPreferences): number {
-  if (!preferences.max_budget || !building.min_price) {
-    console.log('Missing budget data for building:', building.id);
-    return 0;
+  if (preferences.location_latitude && preferences.location_longitude && 
+      building.latitude && building.longitude) {
+    const distance = calculateDistance(
+      preferences.location_latitude,
+      preferences.location_longitude,
+      building.latitude,
+      building.longitude
+    );
+    const maxDistance = 20; // 20km radius
+    return Math.max(0, 1 - (distance / maxDistance));
   }
 
-  if (building.min_price <= preferences.max_budget) {
-    return 1;
-  }
-
-  const overBudgetRatio = (building.min_price - preferences.max_budget) / preferences.max_budget;
-  const score = Math.max(0, 1 - (overBudgetRatio * 2));
-  return score;
-}
-
-function calculateAmenitiesScore(building: Building, preferences: UserPreferences): number {
-  if (!preferences.amenities?.length || !building.features?.length) {
-    console.log('Missing amenities data for building:', building.id);
-    return 0;
-  }
-
-  // Convert building features to lowercase for case-insensitive comparison
-  const buildingFeatures = building.features.map(f => f.toLowerCase());
-  const userAmenities = preferences.amenities.map(a => a.toLowerCase());
-
-  const matchingAmenities = userAmenities.filter(amenity => 
-    buildingFeatures.includes(amenity)
-  );
-
-  return matchingAmenities.length / userAmenities.length;
+  return 0;
 }
 
 function calculateBHKScore(building: Building, preferences: UserPreferences): number {
@@ -81,55 +94,41 @@ function calculateBHKScore(building: Building, preferences: UserPreferences): nu
     return 0;
   }
 
-  // Handle comma-separated BHK types
-  const buildingBHKTypes = building.bhk_types.flatMap(type => 
-    type.split(',').map(t => t.trim())
-  );
+  const normalizedPreferences = preferences.bhk_preferences.map(pref => {
+    const match = pref.match(/\d+/);
+    return match ? match[0] : '';
+  });
 
-  const matchingTypes = preferences.bhk_preferences.filter(type => 
+  const buildingBHKTypes = building.bhk_types.flatMap(type => {
+    const parts = type.split(',').map(t => t.trim());
+    return parts.map(part => {
+      const match = part.match(/\d+/);
+      return match ? match[0] : '';
+    });
+  });
+
+  console.log('Normalized preferences:', normalizedPreferences);
+  console.log('Building BHK types:', buildingBHKTypes);
+
+  const matchingTypes = normalizedPreferences.filter(type => 
     buildingBHKTypes.includes(type)
   );
 
   return matchingTypes.length > 0 ? 1 : 0;
 }
 
-function calculateLocalityScore(building: Building, preferences: UserPreferences): number {
-  if (!preferences.preferred_localities?.length || !building.locality) {
-    console.log('Missing locality data for building:', building.id);
-    return 0;
-  }
-
-  // Case-insensitive locality comparison
-  const buildingLocality = building.locality.toLowerCase();
-  const preferredLocalities = preferences.preferred_localities.map(l => 
-    typeof l === 'string' ? l.toLowerCase() : ''
+function calculateOverallScore(
+  locationScore: number,
+  budgetScore: number,
+  amenitiesScore: number,
+  bhkScore: number
+): number {
+  return (
+    locationScore * 0.4 +
+    budgetScore * 0.3 +
+    amenitiesScore * 0.2 +
+    bhkScore * 0.1
   );
-
-  return preferredLocalities.includes(buildingLocality) ? 1 : 0;
-}
-
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Earth's radius in km
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
-
-function toRad(degrees: number): number {
-  return degrees * (Math.PI / 180);
-}
-
-function chunkArray<T>(array: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size));
-  }
-  return chunks;
 }
 
 Deno.serve(async (req) => {
@@ -200,22 +199,19 @@ Deno.serve(async (req) => {
       const budgetScore = calculateBudgetScore(building, preferences);
       const amenitiesScore = calculateAmenitiesScore(building, preferences);
       const bhkScore = calculateBHKScore(building, preferences);
-      const localityScore = calculateLocalityScore(building, preferences);
 
       console.log(`Scores for building ${building.id}:`, {
         locationScore,
         budgetScore,
         amenitiesScore,
-        bhkScore,
-        localityScore
+        bhkScore
       });
 
-      const overallScore = (
-        locationScore * 0.3 +
-        budgetScore * 0.3 +
-        amenitiesScore * 0.2 +
-        bhkScore * 0.1 +
-        localityScore * 0.1
+      const overallScore = calculateOverallScore(
+        locationScore,
+        budgetScore,
+        amenitiesScore,
+        bhkScore
       );
 
       return {
@@ -227,7 +223,6 @@ Deno.serve(async (req) => {
         overall_match_score: overallScore,
         amenities_match_score: amenitiesScore,
         bhk_match_score: bhkScore,
-        locality_match_score: localityScore,
         calculated_at: new Date().toISOString(),
         top_callout_1: `${Math.round(locationScore * 100)}% location match`,
         top_callout_2: `${Math.round(budgetScore * 100)}% budget match`,
@@ -274,3 +269,27 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+function toRad(degrees: number): number {
+  return degrees * (Math.PI / 180);
+}
+
+function chunkArray<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+}
