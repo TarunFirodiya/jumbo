@@ -101,34 +101,19 @@ export default function Buildings() {
     const calculateScores = async () => {
       if (user && userPreferences && buildings?.length > 0) {
         try {
-          const { data: { session } } = await supabase.auth.getSession();
-          const accessToken = session?.access_token;
-          
-          if (!accessToken) {
-            console.error('No access token available');
-            return;
-          }
-
-          const response = await fetch('https://qmeyqhreseuvkrdowzfe.supabase.co/functions/v1/calculate-building-scores', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken}`
-            },
-            body: JSON.stringify({
+          const { data, error } = await supabase.functions.invoke('calculate-building-scores', {
+            body: {
               user_id: user.id,
               building_ids: buildings.map(b => b.id)
-            })
+            }
           });
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Error calculating scores:', errorData);
+          if (error) {
+            console.error('Error calculating scores:', error);
             return;
           }
 
-          const result = await response.json();
-          console.log('Score calculation result:', result);
+          console.log('Score calculation result:', data);
           queryClient.invalidateQueries({ queryKey: ['buildingScores'] });
         } catch (error) {
           console.error('Error calculating building scores:', error);
