@@ -33,7 +33,6 @@ const bhkOptions = [
 
 export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: PreferencesFormProps) {
   const { toast } = useToast();
-  const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     preferred_localities: [] as string[],
     bhk_preferences: [] as string[],
