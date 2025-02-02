@@ -12,6 +12,7 @@ interface UserPreferences {
   amenities: string[];
   bhk_preferences: string[];
   preferred_localities: string[];
+  lifestyle_cohort: string;
 }
 
 interface Building {
@@ -120,7 +121,6 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!supabaseUrl || !supabaseServiceRoleKey) {
@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Fetching buildings');
+    console.log('User preferences:', preferences);
 
     // Fetch buildings using service role client
     const { data: buildings, error: buildingsError } = await supabase
@@ -187,6 +187,14 @@ Deno.serve(async (req) => {
       const amenitiesScore = calculateAmenitiesScore(building, preferences);
       const bhkScore = calculateBHKScore(building, preferences);
       const localityScore = calculateLocalityScore(building, preferences);
+
+      console.log(`Scores for building ${building.id}:`, {
+        locationScore,
+        budgetScore,
+        amenitiesScore,
+        bhkScore,
+        localityScore
+      });
 
       // Calculate overall score (equal weights for now)
       const overallScore = (
@@ -233,7 +241,10 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ message: 'Building scores updated successfully' }),
+      JSON.stringify({ 
+        message: 'Building scores updated successfully',
+        scores: buildingScores 
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
