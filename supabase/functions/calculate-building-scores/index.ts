@@ -1,71 +1,95 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-interface BuildingData {
-  id: string;
-  latitude: number | null;
-  longitude: number | null;
-  min_price: number | null;
-  max_price: number | null;
-  amenities_cohort: number | null;
-  features: any;
-  bhk_types: string[];
-  locality: string | null;
-}
-
-interface UserPreferences {
-  location_latitude: number | null;
-  location_longitude: number | null;
-  location_radius: number | null;
-  max_budget: number | null;
-  lifestyle_cohort: string | null;
-  preferred_localities: string[] | null;
-  bhk_preferences: string[] | null;
-  amenities: string[] | null;
-}
-
-interface PreferenceWeights {
-  location_weight: number;
-  budget_weight: number;
-  lifestyle_weight: number;
-  amenities_weight: number;
-  bhk_weight: number;
-  locality_weight: number;
-}
-
-const LIFESTYLE_COHORT_MAP: { [key: string]: number } = {
-  'luxury': 1,
-  'gated_basic': 2,
-  'gated_no_amenities': 3,
-  'villa': 4
 };
 
-function calculateLocalityScore(building: BuildingData, preferences: UserPreferences): number {
-  if (!preferences.preferred_localities || !building.locality) return 0;
-  return preferences.preferred_localities.includes(building.locality) ? 1 : 0;
+interface UserPreferences {
+  location_latitude: number;
+  location_longitude: number;
+  max_budget: number;
+  amenities: string[];
+  bhk_preferences: string[];
+  preferred_localities: string[];
 }
 
-function calculateBHKScore(building: BuildingData, preferences: UserPreferences): number {
-  if (!preferences.bhk_preferences || !building.bhk_types) return 0;
-  const matchingBHK = building.bhk_types.some(bhk => 
-    preferences.bhk_preferences?.includes(bhk)
+interface Building {
+  id: string;
+  latitude: number;
+  longitude: number;
+  min_price: number;
+  max_price: number;
+  amenities: string[];
+  bhk_types: string[];
+  locality: string;
+}
+
+function calculateLocationScore(building: Building, preferences: UserPreferences): number {
+  if (!preferences.location_latitude || !preferences.location_longitude || !building.latitude || !building.longitude) {
+    return 0;
+  }
+
+  const distance = calculateDistance(
+    preferences.location_latitude,
+    preferences.location_longitude,
+    building.latitude,
+    building.longitude
   );
-  return matchingBHK ? 1 : 0;
+
+  // Convert distance to a score between 0 and 1 (closer = higher score)
+  // Assuming max reasonable distance is 20km
+  const maxDistance = 20;
+  const score = Math.max(0, 1 - (distance / maxDistance));
+  return score;
 }
 
-function calculateAmenitiesScore(building: BuildingData, preferences: UserPreferences): number {
-  if (!preferences.amenities || !building.features) return 0;
-  
-  const buildingAmenities = Object.keys(building.features);
+function calculateBudgetScore(building: Building, preferences: UserPreferences): number {
+  if (!preferences.max_budget || !building.min_price) {
+    return 0;
+  }
+
+  // If the minimum price is within budget, give a high score
+  if (building.min_price <= preferences.max_budget) {
+    return 1;
+  }
+
+  // If it's over budget, calculate how much over (max 50% over)
+  const overBudgetRatio = (building.min_price - preferences.max_budget) / preferences.max_budget;
+  const score = Math.max(0, 1 - (overBudgetRatio * 2));
+  return score;
+}
+
+function calculateAmenitiesScore(building: Building, preferences: UserPreferences): number {
+  if (!preferences.amenities?.length || !building.amenities?.length) {
+    return 0;
+  }
+
   const matchingAmenities = preferences.amenities.filter(amenity => 
-    buildingAmenities.includes(amenity)
+    building.amenities.includes(amenity)
   );
-  
+
   return matchingAmenities.length / preferences.amenities.length;
+}
+
+function calculateBHKScore(building: Building, preferences: UserPreferences): number {
+  if (!preferences.bhk_preferences?.length || !building.bhk_types?.length) {
+    return 0;
+  }
+
+  const matchingTypes = preferences.bhk_preferences.filter(type => 
+    building.bhk_types.includes(type)
+  );
+
+  return matchingTypes.length > 0 ? 1 : 0;
+}
+
+function calculateLocalityScore(building: Building, preferences: UserPreferences): number {
+  if (!preferences.preferred_localities?.length || !building.locality) {
+    return 0;
+  }
+
+  return preferences.preferred_localities.includes(building.locality) ? 1 : 0;
 }
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -84,167 +108,6 @@ function toRad(degrees: number): number {
   return degrees * (Math.PI / 180);
 }
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
-    const { user_id, building_ids } = await req.json()
-    console.log('Received request for user_id:', user_id)
-    console.log('Number of building IDs:', building_ids?.length)
-
-    if (!user_id) {
-      return new Response(
-        JSON.stringify({ error: 'user_id is required' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      )
-    }
-
-    const { data: preferences, error: preferencesError } = await supabaseClient
-      .from('user_preferences')
-      .select('*')
-      .eq('user_id', user_id)
-      .maybeSingle();
-
-    if (preferencesError) {
-      console.error('Error fetching preferences:', preferencesError)
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch user preferences', details: preferencesError }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      )
-    }
-
-    const { data: weights } = await supabaseClient
-      .from('user_preference_weights')
-      .select('*')
-      .eq('user_id', user_id)
-      .maybeSingle()
-
-    const preferenceWeights: PreferenceWeights = {
-      location_weight: weights?.location_weight ?? 0.2,
-      budget_weight: weights?.budget_weight ?? 0.2,
-      lifestyle_weight: weights?.lifestyle_weight ?? 0.2,
-      amenities_weight: 0.15,
-      bhk_weight: 0.15,
-      locality_weight: 0.1,
-    }
-
-    const CHUNK_SIZE = 50;
-    const buildingChunks = chunkArray(building_ids || [], CHUNK_SIZE);
-    let allBuildings: BuildingData[] = [];
-
-    for (const chunk of buildingChunks) {
-      const { data: buildings, error: buildingsError } = await supabaseClient
-        .from('buildings')
-        .select('id, latitude, longitude, min_price, max_price, amenities_cohort, features, bhk_types, locality')
-        .in('id', chunk);
-
-      if (buildingsError) {
-        console.error('Error fetching buildings chunk:', buildingsError);
-        continue;
-      }
-
-      allBuildings = allBuildings.concat(buildings);
-    }
-
-    console.log(`Calculating scores for ${allBuildings.length} buildings`);
-
-    const userLifestyleCohort = preferences?.lifestyle_cohort ? 
-      LIFESTYLE_COHORT_MAP[preferences.lifestyle_cohort.toLowerCase()] : null;
-
-    const buildingScores = allBuildings.map((building: BuildingData) => {
-      let locationScore = 0;
-      if (building.latitude && building.longitude && 
-          preferences?.location_latitude && preferences?.location_longitude) {
-        const distance = calculateDistance(
-          preferences.location_latitude,
-          preferences.location_longitude,
-          building.latitude,
-          building.longitude
-        );
-        const maxRadius = preferences.location_radius || 5;
-        locationScore = Math.max(0, 1 - (distance / maxRadius));
-      }
-
-      let budgetScore = 0;
-      if (building.max_price && preferences?.max_budget) {
-        if (building.max_price <= preferences.max_budget) {
-          budgetScore = 1;
-        } else {
-          budgetScore = Math.max(0, 1 - ((building.max_price - preferences.max_budget) / preferences.max_budget));
-        }
-      }
-
-      let lifestyleScore = 0;
-      if (building.amenities_cohort !== null && userLifestyleCohort !== null) {
-        const cohortDiff = Math.abs(building.amenities_cohort - userLifestyleCohort);
-        if (cohortDiff === 0) lifestyleScore = 1;
-        else if (cohortDiff === 1) lifestyleScore = 0.7;
-        else if (cohortDiff === 2) lifestyleScore = 0.4;
-        else lifestyleScore = 0.2;
-      }
-
-      const amenitiesScore = calculateAmenitiesScore(building, preferences);
-      const bhkScore = calculateBHKScore(building, preferences);
-      const localityScore = calculateLocalityScore(building, preferences);
-
-      const overallScore = (
-        locationScore * preferenceWeights.location_weight +
-        budgetScore * preferenceWeights.budget_weight +
-        lifestyleScore * preferenceWeights.lifestyle_weight +
-        amenitiesScore * preferenceWeights.amenities_weight +
-        bhkScore * preferenceWeights.bhk_weight +
-        localityScore * preferenceWeights.locality_weight
-      );
-
-      return {
-        building_id: building.id,
-        user_id,
-        location_match_score: locationScore,
-        budget_match_score: budgetScore,
-        lifestyle_match_score: lifestyleScore,
-        amenities_match_score: amenitiesScore,
-        bhk_match_score: bhkScore,
-        locality_match_score: localityScore,
-        overall_match_score: overallScore,
-        last_calculation_time: new Date().toISOString()
-      };
-    });
-
-    const { error: upsertError } = await supabaseClient
-      .from('user_building_scores')
-      .upsert(buildingScores, {
-        onConflict: 'building_id,user_id'
-      });
-
-    if (upsertError) {
-      console.error('Error upserting scores:', upsertError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to update building scores', details: upsertError }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({ success: true, scores: buildingScores }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
-  } catch (error) {
-    console.error('Error calculating building scores:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    );
-  }
-});
-
 function chunkArray<T>(array: T[], size: number): T[][] {
   const chunks: T[][] = [];
   for (let i = 0; i < array.length; i += size) {
@@ -252,3 +115,114 @@ function chunkArray<T>(array: T[], size: number): T[][] {
   }
   return chunks;
 }
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Missing environment variables.');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    const { user_id } = await req.json();
+
+    if (!user_id) {
+      throw new Error('Missing user_id in request body');
+    }
+
+    // Fetch user preferences
+    const { data: preferences, error: preferencesError } = await supabase
+      .from('user_preferences')
+      .select('*')
+      .eq('user_id', user_id)
+      .single();
+
+    if (preferencesError || !preferences) {
+      throw new Error('Failed to fetch user preferences');
+    }
+
+    // Fetch all buildings
+    const { data: buildings, error: buildingsError } = await supabase
+      .from('buildings')
+      .select('*');
+
+    if (buildingsError || !buildings) {
+      throw new Error('Failed to fetch buildings');
+    }
+
+    // Calculate scores for each building
+    const buildingScores = buildings.map(building => {
+      const locationScore = calculateLocationScore(building, preferences);
+      const budgetScore = calculateBudgetScore(building, preferences);
+      const amenitiesScore = calculateAmenitiesScore(building, preferences);
+      const bhkScore = calculateBHKScore(building, preferences);
+      const localityScore = calculateLocalityScore(building, preferences);
+
+      // Calculate overall score (equal weights for now)
+      const overallScore = (
+        locationScore * 0.3 +
+        budgetScore * 0.3 +
+        amenitiesScore * 0.2 +
+        bhkScore * 0.1 +
+        localityScore * 0.1
+      );
+
+      return {
+        user_id,
+        building_id: building.id,
+        location_match_score: locationScore,
+        budget_match_score: budgetScore,
+        lifestyle_match_score: amenitiesScore,
+        overall_match_score: overallScore,
+        amenities_match_score: amenitiesScore,
+        bhk_match_score: bhkScore,
+        locality_match_score: localityScore,
+        calculated_at: new Date().toISOString(),
+        top_callout_1: `${Math.round(locationScore * 100)}% location match`,
+        top_callout_2: `${Math.round(budgetScore * 100)}% budget match`,
+      };
+    });
+
+    // Update scores in batches
+    const batchSize = 50;
+    const batches = chunkArray(buildingScores, batchSize);
+
+    for (const batch of batches) {
+      const { error: upsertError } = await supabase
+        .from('user_building_scores')
+        .upsert(batch, {
+          onConflict: 'user_id,building_id',
+        });
+
+      if (upsertError) {
+        console.error('Error upserting scores:', upsertError);
+        throw new Error('Failed to update building scores');
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ message: 'Building scores updated successfully' }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      }
+    );
+
+  } catch (error) {
+    console.error('Error:', error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      }
+    );
+  }
+});
