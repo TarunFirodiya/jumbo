@@ -37,8 +37,6 @@ function calculateLocationScore(building: Building, preferences: UserPreferences
     building.longitude
   );
 
-  // Convert distance to a score between 0 and 1 (closer = higher score)
-  // Assuming max reasonable distance is 20km
   const maxDistance = 20;
   const score = Math.max(0, 1 - (distance / maxDistance));
   return score;
@@ -49,12 +47,10 @@ function calculateBudgetScore(building: Building, preferences: UserPreferences):
     return 0;
   }
 
-  // If the minimum price is within budget, give a high score
   if (building.min_price <= preferences.max_budget) {
     return 1;
   }
 
-  // If it's over budget, calculate how much over (max 50% over)
   const overBudgetRatio = (building.min_price - preferences.max_budget) / preferences.max_budget;
   const score = Math.max(0, 1 - (overBudgetRatio * 2));
   return score;
@@ -93,7 +89,7 @@ function calculateLocalityScore(building: Building, preferences: UserPreferences
 }
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Earth's radius in kilometers
+  const R = 6371;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const a = 
@@ -117,6 +113,7 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 }
 
 Deno.serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -124,12 +121,14 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
       throw new Error('Missing environment variables.');
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    // Create Supabase client with service role key for admin access
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     const { user_id } = await req.json();
 
@@ -137,25 +136,49 @@ Deno.serve(async (req) => {
       throw new Error('Missing user_id in request body');
     }
 
-    // Fetch user preferences
+    console.log('Fetching preferences for user:', user_id);
+
+    // Fetch user preferences using service role client
     const { data: preferences, error: preferencesError } = await supabase
       .from('user_preferences')
       .select('*')
       .eq('user_id', user_id)
-      .single();
+      .maybeSingle();
 
-    if (preferencesError || !preferences) {
+    if (preferencesError) {
+      console.error('Error fetching preferences:', preferencesError);
       throw new Error('Failed to fetch user preferences');
     }
 
-    // Fetch all buildings
+    if (!preferences) {
+      console.log('No preferences found for user:', user_id);
+      return new Response(
+        JSON.stringify({ message: 'No preferences found for user' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+      );
+    }
+
+    console.log('Fetching buildings');
+
+    // Fetch buildings using service role client
     const { data: buildings, error: buildingsError } = await supabase
       .from('buildings')
       .select('*');
 
-    if (buildingsError || !buildings) {
+    if (buildingsError) {
+      console.error('Error fetching buildings:', buildingsError);
       throw new Error('Failed to fetch buildings');
     }
+
+    if (!buildings?.length) {
+      console.log('No buildings found');
+      return new Response(
+        JSON.stringify({ message: 'No buildings found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+      );
+    }
+
+    console.log(`Calculating scores for ${buildings.length} buildings`);
 
     // Calculate scores for each building
     const buildingScores = buildings.map(building => {
@@ -193,6 +216,8 @@ Deno.serve(async (req) => {
     // Update scores in batches
     const batchSize = 50;
     const batches = chunkArray(buildingScores, batchSize);
+
+    console.log(`Updating scores in ${batches.length} batches`);
 
     for (const batch of batches) {
       const { error: upsertError } = await supabase
