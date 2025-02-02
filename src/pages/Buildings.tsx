@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Heart, MapIcon, List, MapPin, CalendarDays, Building2, Home } from "lucide-react";
+import { Heart, MapIcon, List, MapPin, CalendarDays, Building2, Home, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -243,6 +243,37 @@ export default function Buildings() {
                 onClick={() => navigate(`/buildings/${building.id}`)}
               >
                 <div className="aspect-video relative bg-muted">
+                  {/* Match Score Overlay */}
+                  {buildingScore && (
+                    <div className="absolute top-3 left-3 bg-black/50 rounded-full p-1.5">
+                      <div className="relative w-10 h-10">
+                        <svg className="w-full h-full -rotate-90">
+                          <circle
+                            cx="20"
+                            cy="20"
+                            r="18"
+                            className="stroke-muted/25 fill-none"
+                            strokeWidth="4"
+                          />
+                          <circle
+                            cx="20"
+                            cy="20"
+                            r="18"
+                            className="stroke-primary fill-none"
+                            strokeWidth="4"
+                            strokeDasharray={`${matchScore * 113.1} 113.1`}
+                            style={{
+                              transition: "stroke-dasharray 0.6s ease",
+                            }}
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
+                          {Math.round(matchScore * 100)}%
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {building.images && building.images.length > 0 ? (
                     <img
                       src={building.images[0]}
@@ -265,7 +296,7 @@ export default function Buildings() {
                   )}
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent card click when clicking heart
+                      e.stopPropagation();
                       handleShortlistToggle(building.id);
                     }}
                     className="absolute top-2 right-2 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
@@ -283,67 +314,43 @@ export default function Buildings() {
                         <MapPin className="h-4 w-4" />
                         {building.locality}
                       </div>
-                    </div>
-                    {buildingScore && (
-                      <div className="relative w-14 h-14 flex-shrink-0">
-                        <svg className="w-full h-full -rotate-90">
-                          <circle
-                            cx="28"
-                            cy="28"
-                            r="24"
-                            className="stroke-muted fill-none"
-                            strokeWidth="6"
-                          />
-                          <circle
-                            cx="28"
-                            cy="28"
-                            r="24"
-                            className="stroke-primary fill-none"
-                            strokeWidth="6"
-                            strokeDasharray={`${matchScore * 150.8} 150.8`}
-                            style={{
-                              transition: "stroke-dasharray 0.6s ease",
-                            }}
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center text-sm font-medium">
-                          {Math.round(matchScore * 100)}%
+                      {building.google_rating && (
+                        <div className="flex items-center gap-1 text-sm mt-1">
+                          <Star className="h-4 w-4 fill-yellow-400 stroke-yellow-400" />
+                          <span className="font-medium">{building.google_rating}</span>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                   <div className="grid grid-cols-3 gap-4 mt-2 text-sm">
                     {building.age && (
-                      <div>
-                        <div className="font-medium flex items-center gap-1">
-                          <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                          <span>{building.age}</span>
-                        </div>
-                        <div className="text-muted-foreground text-xs">Age</div>
+                      <div className="flex items-center gap-1">
+                        <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{building.age}</span>
+                        <span className="text-muted-foreground text-xs">Age</span>
                       </div>
                     )}
                     {building.total_floors && (
-                      <div>
-                        <div className="font-medium flex items-center gap-1">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <span>{building.total_floors}</span>
-                        </div>
-                        <div className="text-muted-foreground text-xs">Floors</div>
+                      <div className="flex items-center gap-1">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{building.total_floors}</span>
+                        <span className="text-muted-foreground text-xs">Floors</span>
                       </div>
                     )}
                     {building.bhk_types && (
-                      <div>
-                        <div className="font-medium flex items-center gap-1">
-                          <Home className="h-4 w-4 text-muted-foreground" />
-                          <span>{building.bhk_types.join(", ")}</span>
-                        </div>
-                        <div className="text-muted-foreground text-xs">BHK</div>
+                      <div className="flex items-center gap-1">
+                        <Home className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{building.bhk_types.join(", ")}</span>
+                        <span className="text-muted-foreground text-xs">BHK</span>
                       </div>
                     )}
                   </div>
                   <div className="mt-4">
-                    <div className="text-lg font-semibold">
-                      {building.min_price && `Starting at ₹${(building.min_price/10000000).toFixed(1)} Cr`}
+                    <div className="flex items-baseline">
+                      <span className="text-sm text-muted-foreground mr-1">Starting at</span>
+                      <span className="text-lg font-semibold">
+                        ₹{(building.min_price/10000000).toFixed(1)} Cr
+                      </span>
                     </div>
                   </div>
                 </CardHeader>
