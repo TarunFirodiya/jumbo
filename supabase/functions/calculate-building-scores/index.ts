@@ -5,26 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface UserPreferences {
-  location_latitude: number | null;
-  location_longitude: number | null;
-  max_budget: number;
-  amenities: string[];
-  bhk_preferences: string[];
-  preferred_localities: string[];
-  lifestyle_cohort: string;
-}
-
-interface Building {
-  id: string;
-  latitude: number | null;
-  longitude: number | null;
-  min_price: number;
-  features: string[];
-  bhk_types: string[] | null;
-  locality: string;
-}
-
 interface LocalityCoordinates {
   name: string;
   latitude: number;
@@ -38,13 +18,15 @@ const LOCALITIES: LocalityCoordinates[] = [
   { name: "jp nagar", latitude: 12.9063433, longitude: 77.5856825 },
   { name: "marathahalli", latitude: 12.956924, longitude: 77.701127 },
   { name: "indiranagar", latitude: 12.9783692, longitude: 77.6408356 }
+  // ... keep existing code (other localities)
 ];
 
-function calculateLocationScore(building: Building, preferences: UserPreferences): number {
+function calculateLocationScore(building: any, preferences: any): number {
   if (preferences.preferred_localities && preferences.preferred_localities.length > 0) {
     const buildingLocality = building.locality?.toLowerCase();
     if (!buildingLocality) return 0;
 
+    // Check if building's locality matches any preferred locality
     const matchingLocality = LOCALITIES.find(l => 
       l.name === buildingLocality || buildingLocality.includes(l.name)
     );
@@ -53,10 +35,11 @@ function calculateLocationScore(building: Building, preferences: UserPreferences
       return 1; // Perfect match
     }
 
+    // If no direct match, calculate distance-based score
     let minDistance = Number.MAX_VALUE;
     if (building.latitude && building.longitude) {
-      preferences.preferred_localities.forEach(locality => {
-        const matchingCoords = LOCALITIES.find(l => l.name === locality);
+      preferences.preferred_localities.forEach((locality: string) => {
+        const matchingCoords = LOCALITIES.find(l => l.name.toLowerCase() === locality.toLowerCase());
         if (matchingCoords) {
           const distance = calculateDistance(
             matchingCoords.latitude,
@@ -68,11 +51,12 @@ function calculateLocationScore(building: Building, preferences: UserPreferences
         }
       });
 
-      const maxDistance = 20;
+      const maxDistance = 20; // 20km radius
       return Math.max(0, 1 - (minDistance / maxDistance));
     }
   }
 
+  // Fallback to user's location coordinates if no preferred localities
   if (preferences.location_latitude && preferences.location_longitude && 
       building.latitude && building.longitude) {
     const distance = calculateDistance(
@@ -88,18 +72,53 @@ function calculateLocationScore(building: Building, preferences: UserPreferences
   return 0;
 }
 
-function calculateBHKScore(building: Building, preferences: UserPreferences): number {
+function calculateBudgetScore(building: any, preferences: any): number {
+  if (!preferences.max_budget || !building.min_price) return 0;
+
+  const maxBudget = preferences.max_budget;
+  const propertyPrice = building.min_price;
+
+  // If property price is within budget
+  if (propertyPrice <= maxBudget) {
+    return 1;
+  }
+
+  // If property price exceeds budget, calculate a decreasing score
+  const priceRatio = maxBudget / propertyPrice;
+  // Score decreases linearly as price increases beyond budget
+  // Returns 0 when price is double the budget or more
+  return Math.max(0, priceRatio - 0.5);
+}
+
+function calculateAmenitiesScore(building: any, preferences: any): number {
+  if (!preferences.amenities || !preferences.amenities.length || !building.features) {
+    return 0;
+  }
+
+  const buildingFeatures = building.features.map((feature: string) => feature.toLowerCase());
+  const userAmenities = preferences.amenities.map((amenity: string) => amenity.toLowerCase());
+
+  const matchingAmenities = userAmenities.filter((amenity: string) => 
+    buildingFeatures.includes(amenity)
+  );
+
+  return matchingAmenities.length / userAmenities.length;
+}
+
+function calculateBHKScore(building: any, preferences: any): number {
   if (!preferences.bhk_preferences?.length || !building.bhk_types) {
     console.log('Missing BHK data for building:', building.id);
     return 0;
   }
 
-  const normalizedPreferences = preferences.bhk_preferences.map(pref => {
+  // Normalize preferences (convert "2BHK" to "2")
+  const normalizedPreferences = preferences.bhk_preferences.map((pref: string) => {
     const match = pref.match(/\d+/);
     return match ? match[0] : '';
   });
 
-  const buildingBHKTypes = building.bhk_types.flatMap(type => {
+  // Handle comma-separated values in building BHK types
+  const buildingBHKTypes = building.bhk_types.flatMap((type: string) => {
     const parts = type.split(',').map(t => t.trim());
     return parts.map(part => {
       const match = part.match(/\d+/);
@@ -123,12 +142,37 @@ function calculateOverallScore(
   amenitiesScore: number,
   bhkScore: number
 ): number {
+  // Adjusted weights to reflect combined location score
   return (
     locationScore * 0.4 +
     budgetScore * 0.3 +
     amenitiesScore * 0.2 +
     bhkScore * 0.1
   );
+}
+
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+function toRad(degrees: number): number {
+  return degrees * (Math.PI / 180);
+}
+
+function chunkArray<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
 }
 
 Deno.serve(async (req) => {
@@ -269,27 +313,3 @@ Deno.serve(async (req) => {
     );
   }
 });
-
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Earth's radius in km
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
-
-function toRad(degrees: number): number {
-  return degrees * (Math.PI / 180);
-}
-
-function chunkArray<T>(array: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size));
-  }
-  return chunks;
-}
