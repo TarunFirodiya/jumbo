@@ -12,6 +12,9 @@ interface BuildingData {
   min_price: number | null;
   max_price: number | null;
   amenities_cohort: number | null;
+  features: any;
+  bhk_types: string[];
+  locality: string | null;
 }
 
 interface UserPreferences {
@@ -20,12 +23,18 @@ interface UserPreferences {
   location_radius: number | null;
   max_budget: number | null;
   lifestyle_cohort: string | null;
+  preferred_localities: string[] | null;
+  bhk_preferences: string[] | null;
+  amenities: string[] | null;
 }
 
 interface PreferenceWeights {
   location_weight: number;
   budget_weight: number;
   lifestyle_weight: number;
+  amenities_weight: number;
+  bhk_weight: number;
+  locality_weight: number;
 }
 
 const LIFESTYLE_COHORT_MAP: { [key: string]: number } = {
@@ -34,6 +43,30 @@ const LIFESTYLE_COHORT_MAP: { [key: string]: number } = {
   'gated_no_amenities': 3,
   'villa': 4
 };
+
+function calculateLocalityScore(building: BuildingData, preferences: UserPreferences): number {
+  if (!preferences.preferred_localities || !building.locality) return 0;
+  return preferences.preferred_localities.includes(building.locality) ? 1 : 0;
+}
+
+function calculateBHKScore(building: BuildingData, preferences: UserPreferences): number {
+  if (!preferences.bhk_preferences || !building.bhk_types) return 0;
+  const matchingBHK = building.bhk_types.some(bhk => 
+    preferences.bhk_preferences?.includes(bhk)
+  );
+  return matchingBHK ? 1 : 0;
+}
+
+function calculateAmenitiesScore(building: BuildingData, preferences: UserPreferences): number {
+  if (!preferences.amenities || !building.features) return 0;
+  
+  const buildingAmenities = Object.keys(building.features);
+  const matchingAmenities = preferences.amenities.filter(amenity => 
+    buildingAmenities.includes(amenity)
+  );
+  
+  return matchingAmenities.length / preferences.amenities.length;
+}
 
 function chunkArray<T>(array: T[], size: number): T[][] {
   const chunks: T[][] = [];
@@ -79,14 +112,6 @@ Deno.serve(async (req) => {
       )
     }
 
-    if (!preferences) {
-      console.log('No preferences found for user:', user_id)
-      return new Response(
-        JSON.stringify({ message: 'No user preferences found', scores: [] }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
     const { data: weights } = await supabaseClient
       .from('user_preference_weights')
       .select('*')
@@ -94,9 +119,12 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     const preferenceWeights: PreferenceWeights = {
-      location_weight: weights?.location_weight ?? 0.33,
-      budget_weight: weights?.budget_weight ?? 0.33,
-      lifestyle_weight: weights?.lifestyle_weight ?? 0.34,
+      location_weight: weights?.location_weight ?? 0.2,
+      budget_weight: weights?.budget_weight ?? 0.2,
+      lifestyle_weight: weights?.lifestyle_weight ?? 0.2,
+      amenities_weight: 0.15,
+      bhk_weight: 0.15,
+      locality_weight: 0.1,
     }
 
     const CHUNK_SIZE = 50;
@@ -106,7 +134,7 @@ Deno.serve(async (req) => {
     for (const chunk of buildingChunks) {
       const { data: buildings, error: buildingsError } = await supabaseClient
         .from('buildings')
-        .select('id, latitude, longitude, min_price, max_price, amenities_cohort')
+        .select('id, latitude, longitude, min_price, max_price, amenities_cohort, features, bhk_types, locality')
         .in('id', chunk);
 
       if (buildingsError) {
@@ -117,26 +145,15 @@ Deno.serve(async (req) => {
       allBuildings = allBuildings.concat(buildings);
     }
 
-    if (allBuildings.length === 0) {
-      console.log('No buildings found to score');
-      return new Response(
-        JSON.stringify({ message: 'No buildings found to score', scores: [] }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
     console.log(`Calculating scores for ${allBuildings.length} buildings`);
 
-    // Map the lifestyle cohort text to number
-    const userLifestyleCohort = preferences.lifestyle_cohort ? 
+    const userLifestyleCohort = preferences?.lifestyle_cohort ? 
       LIFESTYLE_COHORT_MAP[preferences.lifestyle_cohort.toLowerCase()] : null;
-
-    console.log('User lifestyle cohort:', preferences.lifestyle_cohort, 'mapped to:', userLifestyleCohort);
 
     const buildingScores = allBuildings.map((building: BuildingData) => {
       let locationScore = 0;
       if (building.latitude && building.longitude && 
-          preferences.location_latitude && preferences.location_longitude) {
+          preferences?.location_latitude && preferences?.location_longitude) {
         const distance = calculateDistance(
           preferences.location_latitude,
           preferences.location_longitude,
@@ -148,7 +165,7 @@ Deno.serve(async (req) => {
       }
 
       let budgetScore = 0;
-      if (building.max_price && preferences.max_budget) {
+      if (building.max_price && preferences?.max_budget) {
         if (building.max_price <= preferences.max_budget) {
           budgetScore = 1;
         } else {
@@ -165,10 +182,17 @@ Deno.serve(async (req) => {
         else lifestyleScore = 0.2;
       }
 
+      const amenitiesScore = calculateAmenitiesScore(building, preferences);
+      const bhkScore = calculateBHKScore(building, preferences);
+      const localityScore = calculateLocalityScore(building, preferences);
+
       const overallScore = (
         locationScore * preferenceWeights.location_weight +
         budgetScore * preferenceWeights.budget_weight +
-        lifestyleScore * preferenceWeights.lifestyle_weight
+        lifestyleScore * preferenceWeights.lifestyle_weight +
+        amenitiesScore * preferenceWeights.amenities_weight +
+        bhkScore * preferenceWeights.bhk_weight +
+        localityScore * preferenceWeights.locality_weight
       );
 
       return {
@@ -177,6 +201,9 @@ Deno.serve(async (req) => {
         location_match_score: locationScore,
         budget_match_score: budgetScore,
         lifestyle_match_score: lifestyleScore,
+        amenities_match_score: amenitiesScore,
+        bhk_match_score: bhkScore,
+        locality_match_score: localityScore,
         overall_match_score: overallScore,
         last_calculation_time: new Date().toISOString()
       };

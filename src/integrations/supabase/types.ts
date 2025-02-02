@@ -261,6 +261,8 @@ export type Database = {
       }
       user_preferences: {
         Row: {
+          amenities: string[] | null
+          bhk_preferences: string[] | null
           created_at: string | null
           deal_breakers: string[] | null
           home_features: string[] | null
@@ -272,11 +274,14 @@ export type Database = {
           location_radius: number | null
           max_budget: number | null
           notes: string | null
+          preferred_localities: Json[] | null
           size: number | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
+          amenities?: string[] | null
+          bhk_preferences?: string[] | null
           created_at?: string | null
           deal_breakers?: string[] | null
           home_features?: string[] | null
@@ -288,11 +293,14 @@ export type Database = {
           location_radius?: number | null
           max_budget?: number | null
           notes?: string | null
+          preferred_localities?: Json[] | null
           size?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
+          amenities?: string[] | null
+          bhk_preferences?: string[] | null
           created_at?: string | null
           deal_breakers?: string[] | null
           home_features?: string[] | null
@@ -304,6 +312,7 @@ export type Database = {
           location_radius?: number | null
           max_budget?: number | null
           notes?: string | null
+          preferred_localities?: Json[] | null
           size?: number | null
           updated_at?: string | null
           user_id?: string | null
