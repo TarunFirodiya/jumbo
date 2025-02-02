@@ -32,6 +32,7 @@ const bhkOptions = [
 export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: PreferencesFormProps) {
   const { toast } = useToast();
   const [localities, setLocalities] = useState<Locality[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
     preferred_localities: [] as string[],
     bhk_preferences: [] as string[],
@@ -65,10 +66,12 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
 
   const fetchLocalities = async () => {
     try {
+      setIsLoading(true);
       console.log('Fetching localities...');
+      
       const { data, error } = await supabase
         .from('localities')
-        .select('locality, latitude, longitude')
+        .select('id, locality, latitude, longitude')
         .order('locality');
 
       console.log('Localities response:', { data, error });
@@ -83,11 +86,21 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
         return;
       }
 
+      if (!data || data.length === 0) {
+        console.log('No localities found in the database');
+        toast({
+          title: "Warning",
+          description: "No localities found in the database.",
+          variant: "default",
+        });
+        return;
+      }
+
       const formattedLocalities = data.map(loc => ({
-        value: loc.locality.toLowerCase(),
-        label: loc.locality,
-        latitude: loc.latitude,
-        longitude: loc.longitude,
+        value: loc.locality?.toLowerCase() || '',
+        label: loc.locality || '',
+        latitude: loc.latitude || '',
+        longitude: loc.longitude || '',
       }));
 
       console.log('Formatted localities:', formattedLocalities);
@@ -99,6 +112,8 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
         description: "An unexpected error occurred while loading localities.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -185,8 +200,11 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
                 onChange={(value) => handleInputChange("preferred_localities", value)}
                 renderItem={(option) => option.label}
                 renderSelectedItem={renderSelectedLocalities}
-                placeholder="Search localities..."
+                placeholder={isLoading ? "Loading localities..." : "Search localities..."}
               />
+              {localities.length === 0 && !isLoading && (
+                <p className="text-sm text-muted-foreground">No localities available. Please try again later.</p>
+              )}
             </div>
 
             <div className="space-y-4">
