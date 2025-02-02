@@ -1,27 +1,33 @@
 import { useState } from "react";
-import { PreferencesForm } from "@/components/PreferencesForm";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import ProgressIndicator from "@/components/ui/progress-indicator";
 import { LocationStep } from "@/components/preferences/LocationStep";
 import { BudgetStep } from "@/components/preferences/BudgetStep";
+import { BHKStep } from "@/components/preferences/BHKStep";
+import { LifestyleStep } from "@/components/preferences/LifestyleStep";
+import { FeaturesStep } from "@/components/preferences/FeaturesStep";
+import { DealBreakersStep } from "@/components/preferences/DealBreakersStep";
 import { motion } from "framer-motion";
 
 export default function Preferences() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 6;
   const [formData, setFormData] = useState({
     preferred_localities: [] as string[],
     max_budget: 50,
     bhk_preferences: [] as string[],
     lifestyle_cohort: "",
     home_features: [] as string[],
+    custom_home_features: [] as string[],
     deal_breakers: [] as string[],
+    custom_deal_breakers: [] as string[],
   });
 
-  const handleSubmit = async (formData: any) => {
+  const handleSubmit = async () => {
     try {
       const {
         data: { user },
@@ -41,8 +47,8 @@ export default function Preferences() {
         preferred_localities: formData.preferred_localities,
         max_budget: formData.max_budget,
         lifestyle_cohort: formData.lifestyle_cohort,
-        home_features: formData.home_features,
-        deal_breakers: formData.deal_breakers,
+        home_features: [...formData.home_features, ...formData.custom_home_features],
+        deal_breakers: [...formData.deal_breakers, ...formData.custom_deal_breakers],
         bhk_preferences: formData.bhk_preferences,
       }, {
         onConflict: 'user_id',
@@ -74,6 +80,20 @@ export default function Preferences() {
     }
   };
 
+  const handleNext = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      handleSubmit();
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 1:
@@ -90,6 +110,42 @@ export default function Preferences() {
             onChange={(value) => setFormData({ ...formData, max_budget: value })}
           />
         );
+      case 3:
+        return (
+          <BHKStep
+            value={formData.bhk_preferences}
+            onChange={(value) => setFormData({ ...formData, bhk_preferences: value })}
+          />
+        );
+      case 4:
+        return (
+          <LifestyleStep
+            value={formData.lifestyle_cohort}
+            onChange={(value) => setFormData({ ...formData, lifestyle_cohort: value })}
+          />
+        );
+      case 5:
+        return (
+          <FeaturesStep
+            value={formData.home_features}
+            onChange={(value) => setFormData({ ...formData, home_features: value })}
+            onAddCustom={(value) => setFormData({ 
+              ...formData, 
+              custom_home_features: [...formData.custom_home_features, value] 
+            })}
+          />
+        );
+      case 6:
+        return (
+          <DealBreakersStep
+            value={formData.deal_breakers}
+            onChange={(value) => setFormData({ ...formData, deal_breakers: value })}
+            onAddCustom={(value) => setFormData({ 
+              ...formData, 
+              custom_deal_breakers: [...formData.custom_deal_breakers, value] 
+            })}
+          />
+        );
       default:
         return null;
     }
@@ -98,7 +154,12 @@ export default function Preferences() {
   return (
     <div className="container max-w-2xl mx-auto py-8">
       <div className="bg-primary p-8 rounded-lg mb-8">
-        <ProgressIndicator currentStep={currentStep} onStepChange={setCurrentStep} />
+        <ProgressIndicator 
+          currentStep={currentStep} 
+          totalSteps={totalSteps}
+          onNext={handleNext}
+          onBack={handleBack}
+        />
       </div>
       <motion.div
         key={currentStep}
