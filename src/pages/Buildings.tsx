@@ -205,29 +205,27 @@ export default function Buildings() {
 
   return (
     <div className="container mx-auto px-4">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Spam-Free Home Search</h1>
-        <p className="text-muted-foreground mt-2">1000+ ready-to-move homes in Bangalore</p>
-      </div>
-      
       <div className="sticky top-0 z-10 bg-background py-2">
-        <Button
-          variant="default"
-          onClick={() => setIsMapView(!isMapView)}
-          className="ml-auto block rounded-full px-4 py-2 h-auto"
-        >
-          {isMapView ? (
-            <>
-              <List className="mr-2 h-4 w-4" />
-              Show list
-            </>
-          ) : (
-            <>
-              <MapIcon className="mr-2 h-4 w-4" />
-              Show map
-            </>
-          )}
-        </Button>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">1000+ Ready To Move Homes in Bangalore</p>
+          <Button
+            variant="outline"
+            onClick={() => setIsMapView(!isMapView)}
+            className="ml-auto flex items-center gap-2 rounded-full px-4 py-2 h-auto bg-[#F3F4F6] hover:bg-[#E5E7EB] text-black border-none"
+          >
+            {isMapView ? (
+              <>
+                <List className="h-4 w-4" />
+                Show list
+              </>
+            ) : (
+              <>
+                <MapIcon className="h-4 w-4" />
+                Show map
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {buildingsLoading ? (
