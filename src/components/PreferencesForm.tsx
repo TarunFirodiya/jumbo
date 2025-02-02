@@ -15,14 +15,12 @@ interface PreferencesFormProps {
   mode?: 'create' | 'edit';
 }
 
-const localities = [
-  { value: "indiranagar", label: "Indiranagar" },
-  { value: "koramangala", label: "Koramangala" },
-  { value: "whitefield", label: "Whitefield" },
-  { value: "jayanagar", label: "Jayanagar" },
-  { value: "jp_nagar", label: "JP Nagar" },
-  { value: "marathahalli", label: "Marathahalli" },
-];
+interface Locality {
+  value: string;
+  label: string;
+  latitude: string;
+  longitude: string;
+}
 
 const bhkOptions = [
   { value: "2bhk", label: "2 BHK" },
@@ -33,6 +31,7 @@ const bhkOptions = [
 
 export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: PreferencesFormProps) {
   const { toast } = useToast();
+  const [localities, setLocalities] = useState<Locality[]>([]);
   const [formData, setFormData] = useState({
     preferred_localities: [] as string[],
     bhk_preferences: [] as string[],
@@ -44,6 +43,10 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
     deal_breakers: [] as string[],
     custom_deal_breakers: [] as string[],
   });
+
+  useEffect(() => {
+    fetchLocalities();
+  }, []);
 
   useEffect(() => {
     if (initialData) {
@@ -59,6 +62,41 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
       }));
     }
   }, [initialData]);
+
+  const fetchLocalities = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('localities')
+        .select('locality, latitude, longitude')
+        .order('locality');
+
+      if (error) {
+        console.error('Error fetching localities:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load localities. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const formattedLocalities = data.map(loc => ({
+        value: loc.locality.toLowerCase(),
+        label: loc.locality,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+      }));
+
+      setLocalities(formattedLocalities);
+    } catch (error) {
+      console.error('Error in fetchLocalities:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while loading localities.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -109,10 +147,21 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
       ...formData.custom_deal_breakers,
     ];
 
+    // Find the selected localities with their coordinates
+    const selectedLocalitiesWithCoords = formData.preferred_localities.map(localityValue => {
+      const locality = localities.find(l => l.value === localityValue);
+      return {
+        value: localityValue,
+        latitude: locality?.latitude,
+        longitude: locality?.longitude,
+      };
+    });
+
     const dataToSubmit = {
       ...formData,
       home_features: allHomeFeatures,
       deal_breakers: allDealBreakers,
+      preferred_localities: selectedLocalitiesWithCoords,
     };
 
     onSubmit(dataToSubmit);

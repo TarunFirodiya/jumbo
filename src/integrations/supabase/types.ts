@@ -137,6 +137,33 @@ export type Database = {
           },
         ]
       }
+      localities: {
+        Row: {
+          city: string | null
+          created_at: string
+          id: number
+          latitude: string | null
+          locality: string | null
+          longitude: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          id?: number
+          latitude?: string | null
+          locality?: string | null
+          longitude?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          id?: number
+          latitude?: string | null
+          locality?: string | null
+          longitude?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
