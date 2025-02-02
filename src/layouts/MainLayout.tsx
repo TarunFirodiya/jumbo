@@ -17,6 +17,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const location = useLocation();
   const { toast } = useToast();
   const isAuthPage = location.pathname === "/auth";
+  const isPreferencesPage = location.pathname === "/preferences";
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -38,7 +39,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <main className="container mx-auto px-4 py-8">
         {children}
       </main>
-      {!isAuthPage && (
+      {!isAuthPage && !isPreferencesPage && (
         <div className="fixed bottom-0 left-0 right-0 z-50 p-4">
           <div className="container mx-auto">
             <NavBar items={tabs} />

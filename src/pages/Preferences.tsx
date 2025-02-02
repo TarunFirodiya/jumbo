@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +26,47 @@ export default function Preferences() {
     deal_breakers: [] as string[],
     custom_deal_breakers: [] as string[],
   });
+
+  // Fetch existing preferences
+  useEffect(() => {
+    const fetchPreferences = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: preferences, error } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (preferences) {
+          setFormData(prev => ({
+            ...prev,
+            preferred_localities: preferences.preferred_localities || [],
+            max_budget: preferences.max_budget || 50,
+            bhk_preferences: preferences.bhk_preferences || [],
+            lifestyle_cohort: preferences.lifestyle_cohort || "",
+            home_features: preferences.home_features || [],
+            deal_breakers: preferences.deal_breakers || [],
+            custom_home_features: [],
+            custom_deal_breakers: [],
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching preferences:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load your preferences",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchPreferences();
+  }, [toast]);
 
   const handleSubmit = async () => {
     try {
@@ -153,14 +194,6 @@ export default function Preferences() {
 
   return (
     <div className="container max-w-2xl mx-auto py-8">
-      <div className="mb-8">
-        <ProgressIndicator 
-          currentStep={currentStep} 
-          totalSteps={totalSteps}
-          onNext={handleNext}
-          onBack={handleBack}
-        />
-      </div>
       <motion.div
         key={currentStep}
         initial={{ opacity: 0, x: 20 }}
@@ -171,6 +204,15 @@ export default function Preferences() {
       >
         {renderCurrentStep()}
       </motion.div>
+      
+      <div className="mt-8">
+        <ProgressIndicator 
+          currentStep={currentStep} 
+          totalSteps={totalSteps}
+          onNext={handleNext}
+          onBack={handleBack}
+        />
+      </div>
     </div>
   );
 }
