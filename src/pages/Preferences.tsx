@@ -153,7 +153,7 @@ export default function Preferences() {
 
   return (
     <div className="container max-w-2xl mx-auto py-8">
-      <div className="bg-primary p-8 rounded-lg mb-8">
+      <div className="mb-8">
         <ProgressIndicator 
           currentStep={currentStep} 
           totalSteps={totalSteps}
@@ -167,6 +167,7 @@ export default function Preferences() {
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -20 }}
         transition={{ duration: 0.3 }}
+        className="mb-8"
       >
         {renderCurrentStep()}
       </motion.div>
