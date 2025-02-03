@@ -173,6 +173,7 @@ export type Database = {
           lifestyle_match_score: number | null
           locality_match_score: number | null
           location_match_score: number | null
+          notes: string | null
           overall_match_score: number | null
           shortlisted: boolean | null
           top_callout_1: string | null
@@ -190,6 +191,7 @@ export type Database = {
           lifestyle_match_score?: number | null
           locality_match_score?: number | null
           location_match_score?: number | null
+          notes?: string | null
           overall_match_score?: number | null
           shortlisted?: boolean | null
           top_callout_1?: string | null
@@ -207,6 +209,7 @@ export type Database = {
           lifestyle_match_score?: number | null
           locality_match_score?: number | null
           location_match_score?: number | null
+          notes?: string | null
           overall_match_score?: number | null
           shortlisted?: boolean | null
           top_callout_1?: string | null

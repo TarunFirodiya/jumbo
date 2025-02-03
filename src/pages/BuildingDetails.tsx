@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Heart, MapPin, Star, List, MessageSquare } from "lucide-react";
+import { Heart, MapPin, Star, List, MessageSquare, StickyNote } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -18,6 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import ListingCard from "@/components/ListingCard";
 import LocationMap from '@/components/LocationMap';
+import BuildingNotes from "@/components/BuildingNotes";
 
 export default function BuildingDetails() {
   const { id } = useParams();
@@ -186,6 +187,10 @@ export default function BuildingDetails() {
                   <List className="h-4 w-4 mr-2" />
                   Amenities
                 </TabsTrigger>
+                <TabsTrigger value="notes">
+                  <StickyNote className="h-4 w-4 mr-2" />
+                  Notes
+                </TabsTrigger>
                 <TabsTrigger value="reviews" disabled={!building.google_rating}>
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Reviews
@@ -204,7 +209,11 @@ export default function BuildingDetails() {
                 <List className="h-4 w-4 mr-2" />
                 Amenities
               </TabsTrigger>
-              <TabsTrigger value="reviews" disabled={!building.google_rating}>
+              <TabsTrigger value="notes">
+                <StickyNote className="h-4 w-4 mr-2" />
+                Notes
+              </TabsTrigger>
+              <TabsTrigger value="reviews" disabled={!building?.google_rating}>
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Reviews
               </TabsTrigger>
@@ -242,7 +251,6 @@ export default function BuildingDetails() {
               </div>
             </Card>
 
-            {/* Available Homes section merged into Overview */}
             <Card className="p-4 sm:p-6">
               <h3 className="text-base sm:text-lg font-semibold mb-4">Available Homes</h3>
               <div className="space-y-4">
@@ -276,6 +284,13 @@ export default function BuildingDetails() {
             <Card className="p-4 sm:p-6">
               <h3 className="text-base sm:text-lg font-semibold mb-4">Amenities</h3>
               {/* Add amenities details here */}
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="notes" className="space-y-4">
+            <Card className="p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold mb-4">Notes</h3>
+              {building && <BuildingNotes buildingId={building.id} />}
             </Card>
           </TabsContent>
 
