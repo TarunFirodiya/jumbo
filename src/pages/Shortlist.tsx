@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -16,6 +19,8 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { Heart } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type ShortlistedBuilding = {
   building_id: string;
@@ -33,99 +38,11 @@ type ShortlistedBuilding = {
   } | null;
 };
 
-const columns: ColumnDef<ShortlistedBuilding>[] = [
-  {
-    accessorKey: "buildings",
-    header: "Property",
-    cell: ({ row }) => {
-      const building = row.original.buildings;
-      if (!building) return null;
-      
-      return (
-        <div className="flex items-center gap-4">
-          <div className="h-12 w-12 overflow-hidden rounded-md">
-            {building.images?.[0] ? (
-              <img
-                src={building.images[0]}
-                alt={building.name}
-                className="h-full w-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = "/placeholder.svg";
-                  target.className = "h-6 w-6 opacity-50";
-                }}
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-muted">
-                <img 
-                  src="/placeholder.svg" 
-                  alt="Placeholder" 
-                  className="h-6 w-6 opacity-50"
-                />
-              </div>
-            )}
-          </div>
-          <div>
-            <div className="font-medium">{building.name}</div>
-            <div className="text-sm text-muted-foreground">
-              {building.type}
-            </div>
-          </div>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "buildings",
-    header: "Location",
-    cell: ({ row }) => {
-      const building = row.original.buildings;
-      if (!building) return null;
-      
-      return (
-        <div>
-          {building.locality}
-          {building.sub_locality && `, ${building.sub_locality}`}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "buildings",
-    header: "Price Range",
-    cell: ({ row }) => {
-      const building = row.original.buildings;
-      if (!building) return null;
-      
-      return (
-        <div>
-          {building.min_price && 
-            `₹${(building.min_price/10000000).toFixed(1)} Cr`}
-          {building.max_price && 
-            ` - ₹${(building.max_price/10000000).toFixed(1)} Cr`}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "buildings",
-    header: "Details",
-    cell: ({ row }) => {
-      const building = row.original.buildings;
-      if (!building) return null;
-      
-      return (
-        <div className="text-sm text-muted-foreground">
-          {building.total_floors && `${building.total_floors} floors`}
-          {building.age && ` • ${building.age} years old`}
-        </div>
-      );
-    },
-  },
-];
-
 export default function Shortlist() {
-  const { data: shortlistedBuildings, isLoading } = useQuery({
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const { data: shortlistedBuildings, isLoading, refetch } = useQuery({
     queryKey: ['shortlistedBuildings'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -156,6 +73,156 @@ export default function Shortlist() {
       return data;
     },
   });
+
+  const toggleShortlist = async (buildingId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Please login",
+        description: "You need to be logged in to shortlist buildings",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('user_building_scores')
+        .upsert({
+          user_id: user.id,
+          building_id: buildingId,
+          shortlisted: false,
+        }, {
+          onConflict: 'user_id,building_id',
+        });
+
+      if (error) throw error;
+
+      await refetch();
+      toast({
+        title: "Removed from shortlist",
+        description: "Building has been removed from your shortlist",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Could not update shortlist",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const columns: ColumnDef<ShortlistedBuilding>[] = [
+    {
+      accessorKey: "buildings",
+      header: "Property",
+      cell: ({ row }) => {
+        const building = row.original.buildings;
+        if (!building) return null;
+        
+        return (
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 overflow-hidden rounded-md">
+              {building.images?.[0] ? (
+                <img
+                  src={building.images[0]}
+                  alt={building.name}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/placeholder.svg";
+                    target.className = "h-6 w-6 opacity-50";
+                  }}
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-muted">
+                  <img 
+                    src="/placeholder.svg" 
+                    alt="Placeholder" 
+                    className="h-6 w-6 opacity-50"
+                  />
+                </div>
+              )}
+            </div>
+            <div>
+              <div className="font-medium">{building.name}</div>
+              <div className="text-sm text-muted-foreground">
+                {building.type}
+              </div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "buildings",
+      header: "Location",
+      cell: ({ row }) => {
+        const building = row.original.buildings;
+        if (!building) return null;
+        
+        return (
+          <div>
+            {building.locality}
+            {building.sub_locality && `, ${building.sub_locality}`}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "buildings",
+      header: "Price Range",
+      cell: ({ row }) => {
+        const building = row.original.buildings;
+        if (!building) return null;
+        
+        return (
+          <div>
+            {building.min_price && 
+              `₹${(building.min_price/10000000).toFixed(1)} Cr`}
+            {building.max_price && 
+              ` - ₹${(building.max_price/10000000).toFixed(1)} Cr`}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "buildings",
+      header: "Details",
+      cell: ({ row }) => {
+        const building = row.original.buildings;
+        if (!building) return null;
+        
+        return (
+          <div className="text-sm text-muted-foreground">
+            {building.total_floors && `${building.total_floors} floors`}
+            {building.age && ` • ${building.age} years old`}
+          </div>
+        );
+      },
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const building = row.original.buildings;
+        if (!building) return null;
+
+        return (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleShortlist(building.id);
+            }}
+            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+          >
+            <Heart className="h-5 w-5 fill-current" />
+          </Button>
+        );
+      },
+    },
+  ];
 
   const table = useReactTable({
     data: shortlistedBuildings || [],
@@ -201,6 +268,13 @@ export default function Shortlist() {
                     <TableRow
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        const building = row.original.buildings;
+                        if (building) {
+                          navigate(`/buildings/${building.id}`);
+                        }
+                      }}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>
