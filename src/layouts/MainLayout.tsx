@@ -3,11 +3,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { NavBar } from "@/components/ui/tubelight-navbar";
-import { Home, Heart, Settings } from "lucide-react";
+import { Home, Heart, Route, Settings } from "lucide-react";
 
 const tabs = [
   { name: "Home", url: "/buildings", icon: Home },
   { name: "Shortlist", url: "/shortlist", icon: Heart },
+  { name: "Visits", url: "/visits", icon: Route },
   { name: "Settings", url: "/settings", icon: Settings },
 ];
 
