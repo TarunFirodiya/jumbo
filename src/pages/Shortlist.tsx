@@ -14,16 +14,26 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Heart } from "lucide-react";
+import { Heart, StickyNote, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ShortlistedBuilding = {
   building_id: string;
+  overall_match_score: number | null;
+  notes: string | null;
   buildings: {
     id: string;
     name: string;
@@ -52,6 +62,8 @@ export default function Shortlist() {
         .from('user_building_scores')
         .select(`
           building_id,
+          overall_match_score,
+          notes,
           buildings (
             id,
             name,
@@ -73,6 +85,44 @@ export default function Shortlist() {
       return data;
     },
   });
+
+  const updateNotes = async (buildingId: string, notes: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Please login",
+        description: "You need to be logged in to update notes",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('user_building_scores')
+        .upsert({
+          user_id: user.id,
+          building_id: buildingId,
+          notes: notes,
+        }, {
+          onConflict: 'user_id,building_id',
+        });
+
+      if (error) throw error;
+
+      await refetch();
+      toast({
+        title: "Notes updated",
+        description: "Your notes have been saved successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Could not update notes",
+        variant: "destructive",
+      });
+    }
+  };
 
   const toggleShortlist = async (buildingId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -161,10 +211,27 @@ export default function Shortlist() {
         const building = row.original.buildings;
         if (!building) return null;
         
+        // Fix duplicate location display
+        const location = building.locality;
+        const subLocation = building.sub_locality;
+        const displayLocation = subLocation && subLocation !== location
+          ? `${location}, ${subLocation}`
+          : location;
+        
+        return <div>{displayLocation}</div>;
+      },
+    },
+    {
+      accessorKey: "overall_match_score",
+      header: "Match Score",
+      cell: ({ row }) => {
+        const score = row.original.overall_match_score;
+        if (!score) return null;
+        
         return (
-          <div>
-            {building.locality}
-            {building.sub_locality && `, ${building.sub_locality}`}
+          <div className="flex items-center gap-1">
+            <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+            <span>{Math.round(score * 100)}%</span>
           </div>
         );
       },
@@ -205,20 +272,45 @@ export default function Shortlist() {
       id: "actions",
       cell: ({ row }) => {
         const building = row.original.buildings;
+        const notes = row.original.notes;
         if (!building) return null;
 
         return (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleShortlist(building.id);
-            }}
-            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-          >
-            <Heart className="h-5 w-5 fill-current" />
-          </Button>
+          <div className="flex gap-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <StickyNote className="h-5 w-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Notes for {building.name}</DialogTitle>
+                </DialogHeader>
+                <Textarea
+                  defaultValue={notes || ""}
+                  placeholder="Add your notes here..."
+                  className="min-h-[200px]"
+                  onChange={(e) => updateNotes(building.id, e.target.value)}
+                />
+              </DialogContent>
+            </Dialog>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleShortlist(building.id);
+              }}
+              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+            >
+              <Heart className="h-5 w-5 fill-current" />
+            </Button>
+          </div>
         );
       },
     },
@@ -232,6 +324,7 @@ export default function Shortlist() {
 
   return (
     <div className="container mx-auto px-4">
+      <h1 className="text-3xl font-bold mb-6 mt-8">Your Shortlist</h1>
       <div className="mt-8">
         {isLoading ? (
           <Skeleton className="h-[400px] w-full" />
