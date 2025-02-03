@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,56 +14,66 @@ interface LocationMapProps {
 type PlaceType = 'hospital' | 'school' | 'restaurant';
 
 const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, buildingName }) => {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [places, setPlaces] = useState<google.maps.places.PlacesService | null>(null);
-  const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
-  const { toast } = useToast();
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
   const [selectedTypes, setSelectedTypes] = useState<PlaceType[]>([]);
+  const { toast } = useToast();
+  const markers = useRef<mapboxgl.Marker[]>([]);
 
   useEffect(() => {
     const initializeMap = async () => {
       try {
-        // Get Google Maps API key from Supabase Edge Function
-        const { data: { apiKey }, error } = await supabase.functions.invoke('get-google-maps-key');
+        // Get Mapbox token from Supabase Edge Function
+        const { data: { token }, error } = await supabase.functions.invoke('get-mapbox-token');
         
-        if (error || !apiKey) {
-          throw new Error('Failed to get Google Maps API key');
+        if (error || !token) {
+          throw new Error('Failed to get Mapbox token');
         }
 
-        // Load Google Maps script
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-        script.async = true;
-        script.onload = () => {
-          if (!mapRef.current) return;
+        if (!mapContainer.current) return;
 
-          // Create map instance
-          const mapInstance = new google.maps.Map(mapRef.current, {
-            center: { lat: latitude, lng: longitude },
-            zoom: 15, // This zoom level shows roughly 2km radius
+        // Initialize Mapbox
+        mapboxgl.accessToken = token;
+        
+        const mapInstance = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: [longitude, latitude],
+          zoom: 15,
+          pitch: 45,
+        });
+
+        // Add navigation controls
+        mapInstance.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+        // Add building marker
+        new mapboxgl.Marker({
+          color: '#000000',
+        })
+          .setLngLat([longitude, latitude])
+          .setPopup(new mapboxgl.Popup().setHTML(`<h3>${buildingName}</h3>`))
+          .addTo(mapInstance);
+
+        map.current = mapInstance;
+
+        // Add 3D building layer
+        mapInstance.on('load', () => {
+          mapInstance.addLayer({
+            'id': '3d-buildings',
+            'source': 'composite',
+            'source-layer': 'building',
+            'filter': ['==', 'extrude', 'true'],
+            'type': 'fill-extrusion',
+            'minzoom': 14,
+            'paint': {
+              'fill-extrusion-color': '#aaa',
+              'fill-extrusion-height': ['get', 'height'],
+              'fill-extrusion-base': ['get', 'min_height'],
+              'fill-extrusion-opacity': 0.6
+            }
           });
+        });
 
-          // Add building marker
-          new google.maps.Marker({
-            position: { lat: latitude, lng: longitude },
-            map: mapInstance,
-            title: buildingName,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 10,
-              fillColor: '#000',
-              fillOpacity: 1,
-              strokeWeight: 2,
-              strokeColor: '#fff',
-            },
-          });
-
-          setMap(mapInstance);
-          setPlaces(new google.maps.places.PlacesService(mapInstance));
-        };
-
-        document.head.appendChild(script);
       } catch (error) {
         console.error('Error initializing map:', error);
         toast({
@@ -73,47 +85,63 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
     };
 
     initializeMap();
+
+    return () => {
+      if (map.current) {
+        map.current.remove();
+      }
+    };
   }, [latitude, longitude, buildingName, toast]);
 
-  const searchNearbyPlaces = (type: PlaceType) => {
-    if (!places || !map) return;
+  const searchNearbyPlaces = async (type: PlaceType) => {
+    if (!map.current) return;
 
-    const request = {
-      location: { lat: latitude, lng: longitude },
-      radius: 2000, // 2km in meters
-      type: type,
-    };
+    // Clear existing markers
+    markers.current.forEach(marker => marker.remove());
+    markers.current = [];
 
-    places.nearbySearch(request, (results, status) => {
-      if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-        // Clear existing markers of this type
-        markers.forEach(marker => marker.setMap(null));
-        
-        const newMarkers = results.map(place => {
-          if (!place.geometry?.location) return null;
+    // Define search radius (in meters)
+    const radius = 2000;
 
-          return new google.maps.Marker({
-            position: place.geometry.location,
-            map,
-            title: place.name,
-            icon: {
-              url: place.icon as string,
-              scaledSize: new google.maps.Size(24, 24),
-            },
-          });
-        }).filter((marker): marker is google.maps.Marker => marker !== null);
+    try {
+      // Use Mapbox's geocoding API to find nearby places
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${type}.json?` +
+        `proximity=${longitude},${latitude}&` +
+        `radius=${radius}&` +
+        `access_token=${mapboxgl.accessToken}`
+      );
 
-        setMarkers(newMarkers);
-      }
-    });
+      const data = await response.json();
+
+      // Add markers for each place
+      data.features.forEach((place: any) => {
+        const marker = new mapboxgl.Marker({
+          color: '#FF0000',
+          scale: 0.7,
+        })
+          .setLngLat(place.center)
+          .setPopup(new mapboxgl.Popup().setHTML(`<h4>${place.text}</h4>`))
+          .addTo(map.current!);
+
+        markers.current.push(marker);
+      });
+    } catch (error) {
+      console.error('Error searching nearby places:', error);
+      toast({
+        title: "Search Error",
+        description: "Failed to find nearby places",
+        variant: "destructive",
+      });
+    }
   };
 
   const togglePlaceType = (type: PlaceType) => {
     if (selectedTypes.includes(type)) {
       setSelectedTypes(selectedTypes.filter(t => t !== type));
       // Clear markers when deselecting
-      markers.forEach(marker => marker.setMap(null));
-      setMarkers([]);
+      markers.current.forEach(marker => marker.remove());
+      markers.current = [];
     } else {
       setSelectedTypes([...selectedTypes, type]);
       searchNearbyPlaces(type);
@@ -145,7 +173,7 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
           Restaurants
         </Button>
       </div>
-      <div ref={mapRef} className="h-[400px] w-full rounded-lg" />
+      <div ref={mapContainer} className="h-[400px] w-full rounded-lg" />
     </div>
   );
 };
