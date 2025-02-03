@@ -10,6 +10,7 @@ import Buildings from "./pages/Buildings";
 import BuildingDetails from "./pages/BuildingDetails";
 import Shortlist from "./pages/Shortlist";
 import Settings from "./pages/Settings";
+import Visits from "./pages/Visits";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/buildings" element={<Buildings />} />
             <Route path="/buildings/:id" element={<BuildingDetails />} />
             <Route path="/shortlist" element={<Shortlist />} />
+            <Route path="/visits" element={<Visits />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/" element={<Navigate to="/auth" replace />} />
           </Routes>
