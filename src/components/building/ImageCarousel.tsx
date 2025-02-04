@@ -8,6 +8,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { cn } from "@/lib/utils";
+import { type EmblaCarouselType } from 'embla-carousel-react';
 
 interface ImageCarouselProps {
   images: string[];
@@ -15,6 +16,7 @@ interface ImageCarouselProps {
 
 export function ImageCarousel({ images }: ImageCarouselProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [emblaRef, setEmblaRef] = useState<EmblaCarouselType | null>(null);
 
   if (!images?.length) return null;
 
@@ -22,7 +24,12 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
     <div className="w-full aspect-video relative">
       <Carousel
         className="w-full h-full"
-        onSelect={(index: number) => setCurrentSlide(index)}
+        setApi={setEmblaRef}
+        onSelect={() => {
+          if (emblaRef) {
+            setCurrentSlide(emblaRef.selectedScrollSnap());
+          }
+        }}
       >
         <CarouselContent>
           {images.map((image, index) => (
@@ -47,7 +54,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
                 "w-2 h-2 rounded-full transition-all",
                 currentSlide === index ? "bg-white scale-125" : "bg-white/50"
               )}
-              onClick={() => setCurrentSlide(index)}
+              onClick={() => emblaRef?.scrollTo(index)}
             />
           ))}
         </div>
