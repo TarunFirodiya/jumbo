@@ -188,7 +188,7 @@ export default function Buildings() {
     });
   }, [buildings, buildingScores]);
 
-return (
+  return (
     <div className="container mx-auto px-4">
       <div className="sticky top-0 z-10 bg-background py-2">
         <div className="flex items-center justify-between">
@@ -355,5 +355,3 @@ return (
     </div>
   );
 }
-
-export default Buildings;
