@@ -188,7 +188,7 @@ export default function Buildings() {
     });
   }, [buildings, buildingScores]);
 
-  return (
+return (
     <div className="container mx-auto px-4">
       <div className="sticky top-0 z-10 bg-background py-2">
         <div className="flex items-center justify-between">
@@ -243,7 +243,6 @@ export default function Buildings() {
                 onClick={() => navigate(`/buildings/${building.id}`)}
               >
                 <div className="aspect-video relative bg-muted">
-                  {/* Match Score Overlay with white background */}
                   {buildingScore && (
                     <div className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow-sm">
                       <div className="relative w-8 h-8">
@@ -273,7 +272,6 @@ export default function Buildings() {
                       </div>
                     </div>
                   )}
-
                   {building.images && building.images.length > 0 ? (
                     <img
                       src={building.images[0]}
@@ -307,47 +305,40 @@ export default function Buildings() {
                   </button>
                 </div>
                 <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{building.name}</CardTitle>
-                        {building.google_rating && (
-                          <div className="flex items-center gap-1 text-sm">
-                            <Star className="h-4 w-4 fill-yellow-400 stroke-yellow-400" />
-                            <span className="font-medium">{building.google_rating}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4" />
-                        {building.locality}
-                      </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{building.name}</CardTitle>
+                      {building.google_rating && (
+                        <div className="flex items-center gap-1 text-sm">
+                          <Star className="h-4 w-4 fill-yellow-400 stroke-yellow-400" />
+                          <span className="font-medium">{building.google_rating}</span>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 mt-2 text-sm">
-                    {building.age && (
-                      <div className="flex items-center gap-1">
-                        <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{building.age}</span>
-                        <span className="text-muted-foreground text-xs">Age</span>
-                      </div>
-                    )}
-                    {building.total_floors && (
-                      <div className="flex items-center gap-1">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{building.total_floors}</span>
-                        <span className="text-muted-foreground text-xs">Floors</span>
-                      </div>
-                    )}
-                    {building.bhk_types && (
-                      <div className="flex items-center gap-1">
-                        <Home className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{building.bhk_types.join(", ")}</span>
-                        <span className="text-muted-foreground text-xs">BHK</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-4">
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      <span>{building.locality}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-sm">
+                      {building.age && (
+                        <div className="flex items-center gap-1">
+                          <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{building.age}</span>
+                        </div>
+                      )}
+                      {building.total_floors && (
+                        <div className="flex items-center gap-1">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{building.total_floors}</span>
+                        </div>
+                      )}
+                      {building.bhk_types && (
+                        <div className="flex items-center gap-1">
+                          <Home className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{building.bhk_types.join(", ")}</span>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex items-baseline">
                       <span className="text-xs text-muted-foreground mr-1">Starting at</span>
                       <span className="text-lg font-semibold">
@@ -364,3 +355,5 @@ export default function Buildings() {
     </div>
   );
 }
+
+export default Buildings;
