@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import {
   Carousel,
@@ -21,7 +22,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
     <div className="w-full aspect-video relative">
       <Carousel
         className="w-full h-full"
-        onSelect={(index) => setCurrentSlide(index)}
+        onSelect={(index: number) => setCurrentSlide(index)}
       >
         <CarouselContent>
           {images.map((image, index) => (
