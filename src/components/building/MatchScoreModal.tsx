@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
 interface MatchScoreModalProps {
@@ -13,43 +14,41 @@ interface MatchScoreModalProps {
 }
 
 export function MatchScoreModal({ open, onOpenChange, scores }: MatchScoreModalProps) {
-  const renderMatchScoreCircle = (score: number, label: string) => (
-    <div className="relative flex flex-col items-center">
-      <svg className="w-24 h-24 -rotate-90">
-        <circle
-          cx="48"
-          cy="48"
-          r="36"
-          className="stroke-muted fill-none"
-          strokeWidth="6"
-        />
-        <circle
-          cx="48"
-          cy="48"
-          r="36"
-          className="stroke-primary fill-none transition-all duration-1000 ease-out"
-          strokeWidth="6"
-          strokeDasharray={`${score * 226.2} 226.2`}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-semibold">{Math.round(score * 100)}%</span>
-        <span className="text-xs text-muted-foreground">{label}</span>
-      </div>
-    </div>
-  );
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Match Score Breakdown</DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-6 py-4">
-          {renderMatchScoreCircle(scores.overall_match_score || 0, "Overall")}
-          {renderMatchScoreCircle(scores.location_match_score || 0, "Location")}
-          {renderMatchScoreCircle(scores.budget_match_score || 0, "Budget")}
-          {renderMatchScoreCircle(scores.lifestyle_match_score || 0, "Lifestyle")}
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Overall Match</span>
+              <span className="font-medium">{Math.round(scores.overall_match_score * 100)}%</span>
+            </div>
+            <Progress value={scores.overall_match_score * 100} className="h-2" />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Location Match</span>
+              <span className="font-medium">{Math.round(scores.location_match_score * 100)}%</span>
+            </div>
+            <Progress value={scores.location_match_score * 100} className="h-2" />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Budget Match</span>
+              <span className="font-medium">{Math.round(scores.budget_match_score * 100)}%</span>
+            </div>
+            <Progress value={scores.budget_match_score * 100} className="h-2" />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Lifestyle Match</span>
+              <span className="font-medium">{Math.round(scores.lifestyle_match_score * 100)}%</span>
+            </div>
+            <Progress value={scores.lifestyle_match_score * 100} className="h-2" />
+          </div>
         </div>
       </DialogContent>
     </Dialog>

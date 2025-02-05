@@ -9,15 +9,13 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import BuildingsMap from "@/components/BuildingsMap";
 import { Progress } from "@/components/ui/progress";
-
-type ToggleShortlistParams = {
-  buildingId: string;
-};
+import { MatchScoreModal } from "@/components/building/MatchScoreModal";
 
 export default function Buildings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isMapView, setIsMapView] = useState(false);
+  const [selectedBuildingScore, setSelectedBuildingScore] = useState<any>(null);
   const navigate = useNavigate();
 
   const { data: user } = useQuery({
@@ -97,96 +95,9 @@ export default function Buildings() {
     }
   }, [user, userPreferences, navigate, toast]);
 
-  useEffect(() => {
-    const calculateScores = async () => {
-      if (user && userPreferences && buildings?.length > 0) {
-        try {
-          const { data, error } = await supabase.functions.invoke('calculate-building-scores', {
-            body: {
-              user_id: user.id,
-              building_ids: buildings.map(b => b.id)
-            }
-          });
-
-          if (error) {
-            console.error('Error calculating scores:', error);
-            return;
-          }
-
-          console.log('Score calculation result:', data);
-          queryClient.invalidateQueries({ queryKey: ['buildingScores'] });
-        } catch (error) {
-          console.error('Error calculating building scores:', error);
-        }
-      }
-    };
-
-    calculateScores();
-  }, [user, userPreferences, buildings, queryClient]);
-
-  const toggleShortlistMutation = useMutation({
-    mutationFn: async ({ buildingId }: ToggleShortlistParams) => {
-      if (!user) throw new Error("User not authenticated");
-
-      const currentScore = buildingScores?.[buildingId];
-      const isCurrentlyShortlisted = currentScore?.shortlisted || false;
-
-      if (currentScore) {
-        const { error } = await supabase
-          .from('user_building_scores')
-          .update({ shortlisted: !isCurrentlyShortlisted })
-          .eq('building_id', buildingId)
-          .eq('user_id', user.id);
-        
-        if (error) throw error;
-        return { buildingId, shortlisted: !isCurrentlyShortlisted };
-      } else {
-        const { error } = await supabase
-          .from('user_building_scores')
-          .insert({
-            building_id: buildingId,
-            user_id: user.id,
-            shortlisted: true,
-          });
-        
-        if (error) throw error;
-        return { buildingId, shortlisted: true };
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['buildingScores'] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleShortlistToggle = (buildingId: string) => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to shortlist properties",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toggleShortlistMutation.mutate({ buildingId });
+  const handleScoreClick = (buildingScore: any) => {
+    setSelectedBuildingScore(buildingScore);
   };
-
-  const sortedBuildings = useMemo(() => {
-    if (!buildings || !buildingScores) return buildings;
-
-    return [...buildings].sort((a, b) => {
-      const scoreA = buildingScores[a.id]?.overall_match_score || 0;
-      const scoreB = buildingScores[b.id]?.overall_match_score || 0;
-      return scoreB - scoreA; // Sort in descending order
-    });
-  }, [buildings, buildingScores]);
 
   return (
     <div className="container mx-auto px-4">
@@ -228,10 +139,10 @@ export default function Buildings() {
           </CardContent>
         </Card>
       ) : isMapView ? (
-        <BuildingsMap buildings={sortedBuildings} />
+        <BuildingsMap buildings={buildings} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedBuildings?.map((building) => {
+          {buildings?.map((building) => {
             const buildingScore = buildingScores?.[building.id];
             const matchScore = buildingScore?.overall_match_score || 0;
             const isShortlisted = buildingScore?.shortlisted || false;
@@ -244,7 +155,13 @@ export default function Buildings() {
               >
                 <div className="aspect-video relative bg-muted">
                   {buildingScore && (
-                    <div className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow-sm">
+                    <div 
+                      className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow-sm cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleScoreClick(buildingScore);
+                      }}
+                    >
                       <div className="relative w-8 h-8">
                         <svg className="w-full h-full -rotate-90">
                           <circle
@@ -352,6 +269,17 @@ export default function Buildings() {
           })}
         </div>
       )}
+
+      <MatchScoreModal
+        open={!!selectedBuildingScore}
+        onOpenChange={(open) => !open && setSelectedBuildingScore(null)}
+        scores={selectedBuildingScore || {
+          overall_match_score: 0,
+          location_match_score: 0,
+          budget_match_score: 0,
+          lifestyle_match_score: 0,
+        }}
+      />
     </div>
   );
 }
