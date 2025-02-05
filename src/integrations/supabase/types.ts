@@ -233,44 +233,6 @@ export type Database = {
           },
         ]
       }
-      user_preference_weights: {
-        Row: {
-          budget_weight: number | null
-          created_at: string | null
-          id: string
-          lifestyle_weight: number | null
-          location_weight: number | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          budget_weight?: number | null
-          created_at?: string | null
-          id?: string
-          lifestyle_weight?: number | null
-          location_weight?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          budget_weight?: number | null
-          created_at?: string | null
-          id?: string
-          lifestyle_weight?: number | null
-          location_weight?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_preference_weights_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_preferences: {
         Row: {
           amenities: string[] | null
@@ -280,8 +242,6 @@ export type Database = {
           home_features: string[] | null
           id: string
           lifestyle_cohort: string | null
-          location_latitude: number | null
-          location_longitude: number | null
           location_preference_input: string | null
           location_radius: number | null
           max_budget: number | null
@@ -299,8 +259,6 @@ export type Database = {
           home_features?: string[] | null
           id?: string
           lifestyle_cohort?: string | null
-          location_latitude?: number | null
-          location_longitude?: number | null
           location_preference_input?: string | null
           location_radius?: number | null
           max_budget?: number | null
@@ -318,8 +276,6 @@ export type Database = {
           home_features?: string[] | null
           id?: string
           lifestyle_cohort?: string | null
-          location_latitude?: number | null
-          location_longitude?: number | null
           location_preference_input?: string | null
           location_radius?: number | null
           max_budget?: number | null
