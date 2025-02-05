@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Heart, MapIcon, List, MapPin, CalendarDays, Building2, Home, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -97,6 +98,48 @@ export default function Buildings() {
 
   const handleScoreClick = (buildingScore: any) => {
     setSelectedBuildingScore(buildingScore);
+  };
+
+  const handleShortlistToggle = async (buildingId: string) => {
+    if (!user) {
+      toast({
+        title: "Please login",
+        description: "You need to be logged in to shortlist buildings",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const currentShortlistStatus = buildingScores?.[buildingId]?.shortlisted || false;
+      const { error } = await supabase
+        .from('user_building_scores')
+        .upsert({
+          user_id: user.id,
+          building_id: buildingId,
+          shortlisted: !currentShortlistStatus,
+        }, {
+          onConflict: 'user_id,building_id',
+        });
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['buildingScores'] });
+      
+      toast({
+        title: currentShortlistStatus ? "Removed from shortlist" : "Added to shortlist",
+        description: currentShortlistStatus 
+          ? "Building has been removed from your shortlist"
+          : "Building has been added to your shortlist",
+      });
+    } catch (error) {
+      console.error('Error toggling shortlist:', error);
+      toast({
+        title: "Error",
+        description: "Could not update shortlist",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
