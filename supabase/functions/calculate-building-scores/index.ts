@@ -18,58 +18,24 @@ const LOCALITIES: LocalityCoordinates[] = [
   { name: "jp nagar", latitude: 12.9063433, longitude: 77.5856825 },
   { name: "marathahalli", latitude: 12.956924, longitude: 77.701127 },
   { name: "indiranagar", latitude: 12.9783692, longitude: 77.6408356 }
-  // ... keep existing code (other localities)
 ];
 
 function calculateLocationScore(building: any, preferences: any): number {
-  if (preferences.preferred_localities && preferences.preferred_localities.length > 0) {
-    const buildingLocality = building.locality?.toLowerCase();
-    if (!buildingLocality) return 0;
-
-    // Check if building's locality matches any preferred locality
-    const matchingLocality = LOCALITIES.find(l => 
-      l.name === buildingLocality || buildingLocality.includes(l.name)
-    );
-
-    if (matchingLocality) {
-      return 1; // Perfect match
-    }
-
-    // If no direct match, calculate distance-based score
-    let minDistance = Number.MAX_VALUE;
-    if (building.latitude && building.longitude) {
-      preferences.preferred_localities.forEach((locality: string) => {
-        const matchingCoords = LOCALITIES.find(l => l.name.toLowerCase() === locality.toLowerCase());
-        if (matchingCoords) {
-          const distance = calculateDistance(
-            matchingCoords.latitude,
-            matchingCoords.longitude,
-            building.latitude,
-            building.longitude
-          );
-          minDistance = Math.min(minDistance, distance);
-        }
-      });
-
-      const maxDistance = 20; // 20km radius
-      return Math.max(0, 1 - (minDistance / maxDistance));
-    }
+  if (!building.latitude || !building.longitude || 
+      !preferences.location_latitude || !preferences.location_longitude) {
+    return 0;
   }
 
-  // Fallback to user's location coordinates if no preferred localities
-  if (preferences.location_latitude && preferences.location_longitude && 
-      building.latitude && building.longitude) {
-    const distance = calculateDistance(
-      preferences.location_latitude,
-      preferences.location_longitude,
-      building.latitude,
-      building.longitude
-    );
-    const maxDistance = 20; // 20km radius
-    return Math.max(0, 1 - (distance / maxDistance));
-  }
+  const distance = calculateDistance(
+    preferences.location_latitude,
+    preferences.location_longitude,
+    building.latitude,
+    building.longitude
+  );
 
-  return 0;
+  // Score decreases linearly up to 20km
+  const maxDistance = 20; // 20km radius
+  return Math.max(0, 1 - (distance / maxDistance));
 }
 
 function calculateBudgetScore(building: any, preferences: any): number {
@@ -77,17 +43,22 @@ function calculateBudgetScore(building: any, preferences: any): number {
 
   const maxBudget = preferences.max_budget;
   const propertyPrice = building.min_price;
+  const priceRatio = propertyPrice / maxBudget;
 
-  // If property price is within budget
-  if (propertyPrice <= maxBudget) {
+  // If price is within budget
+  if (priceRatio <= 1) {
     return 1;
   }
 
-  // If property price exceeds budget, calculate a decreasing score
-  const priceRatio = maxBudget / propertyPrice;
-  // Score decreases linearly as price increases beyond budget
-  // Returns 0 when price is double the budget or more
-  return Math.max(0, priceRatio - 0.5);
+  // If price is between 100% and 120% of budget
+  if (priceRatio <= 1.2) {
+    // Linear decrease from 1 to 0.5 between 100% and 120% of budget
+    return 1 - ((priceRatio - 1) * 2.5);
+  }
+
+  // If price is above 120% of budget
+  // Exponential decrease after 120% of budget
+  return Math.max(0, 0.5 * Math.exp(-(priceRatio - 1.2) * 3));
 }
 
 function calculateAmenitiesScore(building: any, preferences: any): number {
@@ -142,7 +113,7 @@ function calculateOverallScore(
   amenitiesScore: number,
   bhkScore: number
 ): number {
-  // Adjusted weights to reflect combined location score
+  // Keep existing weights
   return (
     locationScore * 0.4 +
     budgetScore * 0.3 +
