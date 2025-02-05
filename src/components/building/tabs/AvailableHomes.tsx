@@ -11,12 +11,10 @@ export function AvailableHomes({ listings }: AvailableHomesProps) {
   if (!listings?.length) return null;
 
   return (
-    <Card className="p-6">
-      <div className="space-y-4">
-        {listings.map((listing) => (
-          <ListingCard key={listing.id} listing={listing} />
-        ))}
-      </div>
-    </Card>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {listings.map((listing) => (
+        <ListingCard key={listing.id} listing={listing} />
+      ))}
+    </div>
   );
 }
