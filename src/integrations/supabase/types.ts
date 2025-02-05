@@ -12,7 +12,6 @@ export type Database = {
       buildings: {
         Row: {
           age: string | null
-          amenities_cohort: number | null
           bhk_types: string[] | null
           created_at: string | null
           data_source: string | null
@@ -21,6 +20,7 @@ export type Database = {
           id: string
           images: string[] | null
           latitude: number | null
+          lifestyle_cohort: number | null
           locality: string | null
           longitude: number | null
           map_link: string | null
@@ -37,7 +37,6 @@ export type Database = {
         }
         Insert: {
           age?: string | null
-          amenities_cohort?: number | null
           bhk_types?: string[] | null
           created_at?: string | null
           data_source?: string | null
@@ -46,6 +45,7 @@ export type Database = {
           id?: string
           images?: string[] | null
           latitude?: number | null
+          lifestyle_cohort?: number | null
           locality?: string | null
           longitude?: number | null
           map_link?: string | null
@@ -62,7 +62,6 @@ export type Database = {
         }
         Update: {
           age?: string | null
-          amenities_cohort?: number | null
           bhk_types?: string[] | null
           created_at?: string | null
           data_source?: string | null
@@ -71,6 +70,7 @@ export type Database = {
           id?: string
           images?: string[] | null
           latitude?: number | null
+          lifestyle_cohort?: number | null
           locality?: string | null
           longitude?: number | null
           map_link?: string | null
@@ -242,12 +242,9 @@ export type Database = {
           home_features: string[] | null
           id: string
           lifestyle_cohort: string | null
-          location_preference_input: string | null
-          location_radius: number | null
           max_budget: number | null
           notes: string | null
           preferred_localities: Json[] | null
-          size: number | null
           updated_at: string | null
           user_id: string | null
         }
@@ -259,12 +256,9 @@ export type Database = {
           home_features?: string[] | null
           id?: string
           lifestyle_cohort?: string | null
-          location_preference_input?: string | null
-          location_radius?: number | null
           max_budget?: number | null
           notes?: string | null
           preferred_localities?: Json[] | null
-          size?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -276,12 +270,9 @@ export type Database = {
           home_features?: string[] | null
           id?: string
           lifestyle_cohort?: string | null
-          location_preference_input?: string | null
-          location_radius?: number | null
           max_budget?: number | null
           notes?: string | null
           preferred_localities?: Json[] | null
-          size?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
