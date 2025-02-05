@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +14,7 @@ import { ImageCarousel } from "@/components/building/ImageCarousel";
 import { BuildingHeader } from "@/components/building/BuildingHeader";
 import { BasicDetails } from "@/components/building/BasicDetails";
 import { MatchScoreModal } from "@/components/building/MatchScoreModal";
+import { AmenitiesGrid } from "@/components/building/AmenitiesGrid";
 
 export default function BuildingDetails() {
   const { id } = useParams();
@@ -210,7 +212,11 @@ export default function BuildingDetails() {
           <TabsContent value="amenities">
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Amenities</h3>
-              {/* Add amenities content here */}
+              {building.features && Array.isArray(building.features) ? (
+                <AmenitiesGrid features={building.features} />
+              ) : (
+                <p className="text-muted-foreground">No amenities information available</p>
+              )}
             </Card>
           </TabsContent>
 
