@@ -3,7 +3,7 @@ import {
   Car, Wifi, Dumbbell, Building2, Gamepad2, 
   Building, Trees, Home, Shield, Droplet, 
   ShoppingBag, Ghost, Sun, Video, Trees as Garden,
-  Users, Running, Check, LucideIcon
+  Users, Footprints, Check, LucideIcon
 } from "lucide-react";
 
 // Map amenities to icons using available Lucide icons
@@ -25,7 +25,7 @@ const amenityIconMap: Record<string, LucideIcon> = {
   "Auditorium": Video,
   "Cricket/Hockey Ground": Garden,
   "Maintenance staff": Users,
-  "Jogging Track": Running,
+  "Jogging Track": Footprints,
 };
 
 const DEFAULT_ICON = Check;
