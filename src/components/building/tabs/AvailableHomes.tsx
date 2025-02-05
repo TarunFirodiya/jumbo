@@ -12,7 +12,6 @@ export function AvailableHomes({ listings }: AvailableHomesProps) {
 
   return (
     <Card className="p-6">
-      <h3 className="text-lg font-semibold mb-4">Available Homes</h3>
       <div className="space-y-4">
         {listings.map((listing) => (
           <ListingCard key={listing.id} listing={listing} />
