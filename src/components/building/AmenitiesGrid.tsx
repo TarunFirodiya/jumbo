@@ -1,34 +1,34 @@
 
 import { 
-  Car, Wifi, Pool, Dumbbell, Basketball, Tennis, Play, 
-  Elevator, Park, Home, Shield, Droplets, ShoppingBag,
-  Waves, Sun, MonitorPlay, TreePine, Users, Footprints,
-  BadgeCheck, IconProps
+  Car, Wifi, Dumbbell, Building2, Gamepad2, 
+  Building, Trees, Home, Shield, Droplet, 
+  ShoppingBag, Ghost, Sun, Video, Trees as Garden,
+  Users, Running, Check, LucideIcon
 } from "lucide-react";
 
-// Map amenities to icons
-const amenityIconMap: Record<string, React.ComponentType<IconProps>> = {
+// Map amenities to icons using available Lucide icons
+const amenityIconMap: Record<string, LucideIcon> = {
   "Visitor Parking": Car,
-  "Swimming pool": Pool,
+  "Swimming pool": Droplet,
   "Gym": Dumbbell,
-  "Basketball Court": Basketball,
-  "Tennis Court": Tennis,
-  "Kids Play Area": Play,
-  "Lift": Elevator,
-  "Open/Green space": Park,
+  "Basketball Court": Gamepad2,
+  "Tennis Court": Gamepad2,
+  "Kids Play Area": Ghost,
+  "Lift": Building2,
+  "Open/Green space": Trees,
   "Club house": Home,
   "Security": Shield,
-  "Water treatment plant": Droplets,
+  "Water treatment plant": Droplet,
   "Shops": ShoppingBag,
-  "Pool Table": Waves,
+  "Pool Table": Gamepad2,
   "Solar Water Heater": Sun,
-  "Auditorium": MonitorPlay,
-  "Cricket/Hockey Ground": TreePine,
+  "Auditorium": Video,
+  "Cricket/Hockey Ground": Garden,
   "Maintenance staff": Users,
-  "Jogging Track": Footprints,
+  "Jogging Track": Running,
 };
 
-const DEFAULT_ICON = BadgeCheck;
+const DEFAULT_ICON = Check;
 
 interface AmenitiesGridProps {
   features: string[];

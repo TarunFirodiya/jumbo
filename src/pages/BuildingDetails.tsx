@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -213,7 +212,7 @@ export default function BuildingDetails() {
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Amenities</h3>
               {building.features && Array.isArray(building.features) ? (
-                <AmenitiesGrid features={building.features} />
+                <AmenitiesGrid features={building.features.map(f => String(f))} />
               ) : (
                 <p className="text-muted-foreground">No amenities information available</p>
               )}
