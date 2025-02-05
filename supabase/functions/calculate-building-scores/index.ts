@@ -97,9 +97,6 @@ function calculateBHKScore(building: any, preferences: any): number {
     });
   });
 
-  console.log('Normalized preferences:', normalizedPreferences);
-  console.log('Building BHK types:', buildingBHKTypes);
-
   const matchingTypes = normalizedPreferences.filter(type => 
     buildingBHKTypes.includes(type)
   );
@@ -113,7 +110,6 @@ function calculateOverallScore(
   amenitiesScore: number,
   bhkScore: number
 ): number {
-  // Keep existing weights
   return (
     locationScore * 0.4 +
     budgetScore * 0.3 +
@@ -147,6 +143,7 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 }
 
 Deno.serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -161,10 +158,16 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    const { user_id } = await req.json();
+    const { user_id, building_ids } = await req.json();
 
     if (!user_id) {
-      throw new Error('Missing user_id in request body');
+      return new Response(
+        JSON.stringify({ error: 'Missing user_id in request body' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     console.log('Fetching preferences for user:', user_id);
@@ -177,14 +180,23 @@ Deno.serve(async (req) => {
 
     if (preferencesError) {
       console.error('Error fetching preferences:', preferencesError);
-      throw new Error('Failed to fetch user preferences');
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch user preferences' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     if (!preferences) {
       console.log('No preferences found for user:', user_id);
       return new Response(
         JSON.stringify({ message: 'No preferences found for user' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+        { 
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
 
@@ -192,18 +204,28 @@ Deno.serve(async (req) => {
 
     const { data: buildings, error: buildingsError } = await supabase
       .from('buildings')
-      .select('*');
+      .select('*')
+      .in('id', building_ids || []);
 
     if (buildingsError) {
       console.error('Error fetching buildings:', buildingsError);
-      throw new Error('Failed to fetch buildings');
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch buildings' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     if (!buildings?.length) {
       console.log('No buildings found');
       return new Response(
         JSON.stringify({ message: 'No buildings found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+        { 
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
 
@@ -258,7 +280,13 @@ Deno.serve(async (req) => {
 
       if (upsertError) {
         console.error('Error upserting scores:', upsertError);
-        throw new Error('Failed to update building scores');
+        return new Response(
+          JSON.stringify({ error: 'Failed to update building scores' }),
+          { 
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
     }
 
