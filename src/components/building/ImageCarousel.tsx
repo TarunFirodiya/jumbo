@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import {
   Carousel,
@@ -8,7 +7,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { cn } from "@/lib/utils";
-import { type EmblaCarouselType } from 'embla-carousel-react';
+import { type UseEmblaCarouselType } from 'embla-carousel-react';
 
 interface ImageCarouselProps {
   images: string[];
@@ -16,7 +15,7 @@ interface ImageCarouselProps {
 
 export function ImageCarousel({ images }: ImageCarouselProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [emblaRef, setEmblaRef] = useState<EmblaCarouselType | null>(null);
+  const [emblaRef, setEmblaRef] = useState<UseEmblaCarouselType[1] | null>(null);
 
   if (!images?.length) return null;
 
