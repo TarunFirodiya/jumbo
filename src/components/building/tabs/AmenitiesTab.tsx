@@ -1,9 +1,10 @@
 
 import { Card } from "@/components/ui/card";
 import { AmenitiesGrid } from "../AmenitiesGrid";
+import { Json } from "@/integrations/supabase/types";
 
 interface AmenitiesTabProps {
-  features: string[] | null;
+  features: Json | null;
 }
 
 export function AmenitiesTab({ features }: AmenitiesTabProps) {

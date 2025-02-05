@@ -95,7 +95,7 @@ export default function BuildingDetails() {
           </TabsContent>
 
           <TabsContent value="amenities">
-            <AmenitiesTab features={building.features || []} />
+            <AmenitiesTab features={building.features} />
           </TabsContent>
 
           <TabsContent value="reviews">
