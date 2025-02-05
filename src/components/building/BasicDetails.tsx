@@ -1,44 +1,41 @@
-import { Button } from "@/components/ui/button";
+
+import { Building, Clock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 interface BasicDetailsProps {
-  type?: string;
   totalFloors?: number;
   age?: string | null;
   pricePsqft?: number;
   minPrice?: number;
   maxPrice?: number;
-  onFindHome: () => void;
 }
 
 export function BasicDetails({
-  type,
   totalFloors,
   age,
   pricePsqft,
   minPrice,
   maxPrice,
-  onFindHome,
 }: BasicDetailsProps) {
   return (
     <Card className="p-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {type && (
-          <div>
-            <p className="text-sm text-muted-foreground">Type</p>
-            <p className="font-medium">{type}</p>
-          </div>
-        )}
         {totalFloors && (
           <div>
-            <p className="text-sm text-muted-foreground">Total Floors</p>
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <Building className="h-4 w-4" />
+              Total Floors
+            </p>
             <p className="font-medium">{totalFloors}</p>
           </div>
         )}
         {age !== null && (
           <div>
-            <p className="text-sm text-muted-foreground">Age</p>
-            <p className="font-medium">{age} years</p>
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Age
+            </p>
+            <p className="font-medium">{age}</p>
           </div>
         )}
         {pricePsqft && (
@@ -57,12 +54,6 @@ export function BasicDetails({
           </div>
         )}
       </div>
-      <Button 
-        className="mt-6 w-full sm:w-auto"
-        onClick={onFindHome}
-      >
-        Find a Home
-      </Button>
     </Card>
   );
 }

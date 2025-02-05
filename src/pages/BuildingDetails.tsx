@@ -55,13 +55,11 @@ export default function BuildingDetails() {
 
       <div className="container mx-auto px-4 py-8 space-y-8">
         <BasicDetails
-          type={building.type}
           totalFloors={building.total_floors}
           age={building.age}
           pricePsqft={building.price_psqft}
           minPrice={building.min_price}
           maxPrice={building.max_price}
-          onFindHome={() => navigate(`/buildings/${id}/listings`)}
         />
 
         <Tabs defaultValue="overview" className="w-full">
@@ -97,7 +95,7 @@ export default function BuildingDetails() {
           </TabsContent>
 
           <TabsContent value="amenities">
-            <AmenitiesTab features={building.features ? building.features.map(f => String(f)) : []} />
+            <AmenitiesTab features={building.features || []} />
           </TabsContent>
 
           <TabsContent value="reviews">
