@@ -1,3 +1,4 @@
+
 import { MapPin, Heart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -5,19 +6,19 @@ import { cn } from "@/lib/utils";
 interface BuildingHeaderProps {
   name: string;
   locality: string;
-  subLocality: string;
   googleRating?: number;
   isShortlisted: boolean;
   onToggleShortlist: () => void;
+  startingPrice?: number;
 }
 
 export function BuildingHeader({
   name,
   locality,
-  subLocality,
   googleRating,
   isShortlisted,
   onToggleShortlist,
+  startingPrice,
 }: BuildingHeaderProps) {
   const renderStars = (rating: number) => {
     return Array(5).fill(0).map((_, i) => (
@@ -37,8 +38,13 @@ export function BuildingHeader({
         <h1 className="text-2xl font-semibold">{name}</h1>
         <div className="flex items-center gap-2 text-muted-foreground">
           <MapPin className="h-4 w-4" />
-          <span>{locality}{subLocality && `, ${subLocality}`}</span>
+          <span>{locality}</span>
         </div>
+        {startingPrice && (
+          <div className="mt-1 text-sm font-medium">
+            Starting at ₹{(startingPrice/10000000).toFixed(1)} Cr
+          </div>
+        )}
       </div>
       <div className="flex items-center gap-4">
         {googleRating && (

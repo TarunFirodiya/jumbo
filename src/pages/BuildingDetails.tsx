@@ -34,22 +34,24 @@ export default function BuildingDetails() {
     return <div className="container mx-auto px-4 py-8">Building not found</div>;
   }
 
+  const startingPrice = listings?.length ? Math.min(...listings.map(l => l.price)) : building.min_price;
+
   return (
     <div className="min-h-screen flex flex-col">
-      <ImageCarousel images={building.images || []} />
-
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 py-4">
           <BuildingHeader
             name={building.name}
             locality={building.locality || ''}
-            subLocality={building.sub_locality}
             googleRating={building.google_rating}
             isShortlisted={isShortlisted || false}
             onToggleShortlist={toggleShortlist}
+            startingPrice={startingPrice}
           />
         </div>
       </div>
+
+      <ImageCarousel images={building.images || []} />
 
       <div className="container mx-auto px-4 py-8 space-y-8">
         <BasicDetails
@@ -95,7 +97,7 @@ export default function BuildingDetails() {
           </TabsContent>
 
           <TabsContent value="amenities">
-            <AmenitiesTab features={building.features} />
+            <AmenitiesTab features={building.features ? building.features.map(f => String(f)) : []} />
           </TabsContent>
 
           <TabsContent value="reviews">
