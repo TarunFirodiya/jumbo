@@ -166,8 +166,9 @@ export default function Shortlist() {
 
   const columns: ColumnDef<ShortlistedBuilding>[] = [
     {
-      id: "buildings",
+      id: "property",
       header: "Property",
+      accessorFn: (row) => row.buildings?.name,
       cell: ({ row }) => {
         const building = row.original.buildings;
         if (!building) return null;
@@ -207,13 +208,13 @@ export default function Shortlist() {
       },
     },
     {
-      accessorKey: "buildings",
+      id: "location",
       header: "Location",
+      accessorFn: (row) => row.buildings?.locality,
       cell: ({ row }) => {
         const building = row.original.buildings;
         if (!building) return null;
         
-        // Fix duplicate location display
         const location = building.locality;
         const subLocation = building.sub_locality;
         const displayLocation = subLocation && subLocation !== location
