@@ -2,19 +2,19 @@ import { Label } from "@/components/ui/label";
 import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
 
 interface BHKStepProps {
-  value: string[];
-  onChange: (value: string[]) => void;
+  value: number[];
+  onChange: (value: number[]) => void;
 }
 
 const bhkOptions = [
-  { value: "2bhk", label: "2 BHK" },
-  { value: "3bhk", label: "3 BHK" },
-  { value: "4bhk", label: "4 BHK" },
-  { value: "4bhk_plus", label: "4+ BHK" },
+  { value: 2, label: "2 BHK" },
+  { value: 3, label: "3 BHK" },
+  { value: 4, label: "4 BHK" },
+  { value: 5, label: "5 BHK" },
 ];
 
 export function BHKStep({ value, onChange }: BHKStepProps) {
-  const renderSelectedBHK = (value: string[]) => {
+  const renderSelectedBHK = (value: number[]) => {
     if (value.length === 0) return "";
     if (value.length === 1) {
       return bhkOptions.find(b => b.value === value[0])?.label;

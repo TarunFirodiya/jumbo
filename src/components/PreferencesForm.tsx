@@ -25,17 +25,17 @@ const localities = [
 ];
 
 const bhkOptions = [
-  { value: "2bhk", label: "2 BHK" },
-  { value: "3bhk", label: "3 BHK" },
-  { value: "4bhk", label: "4 BHK" },
-  { value: "4bhk_plus", label: "4+ BHK" },
+  { value: 2, label: "2 BHK" },
+  { value: 3, label: "3 BHK" },
+  { value: 4, label: "4 BHK" },
+  { value: 5, label: "5 BHK" },
 ];
 
 export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: PreferencesFormProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     preferred_localities: [] as string[],
-    bhk_preferences: [] as string[],
+    bhk_preferences: [] as number[],
     location_radius: 5,
     max_budget: 50,
     lifestyle_cohort: "",
@@ -89,7 +89,7 @@ export function PreferencesForm({ initialData, onSubmit, mode = 'create' }: Pref
     return `${value.length} localities selected`;
   };
 
-  const renderSelectedBHK = (value: string[]) => {
+  const renderSelectedBHK = (value: number[]) => {
     if (value.length === 0) return "";
     if (value.length === 1) {
       return bhkOptions.find(b => b.value === value[0])?.label;
