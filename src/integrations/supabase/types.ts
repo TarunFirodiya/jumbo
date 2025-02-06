@@ -11,8 +11,8 @@ export type Database = {
     Tables: {
       buildings: {
         Row: {
-          age: string | null
-          bhk_types: string[] | null
+          age: number | null
+          bhk_types: number[] | null
           created_at: string | null
           data_source: string | null
           features: Json | null
@@ -36,8 +36,8 @@ export type Database = {
           video_thumbnail: string | null
         }
         Insert: {
-          age?: string | null
-          bhk_types?: string[] | null
+          age?: number | null
+          bhk_types?: number[] | null
           created_at?: string | null
           data_source?: string | null
           features?: Json | null
@@ -61,8 +61,8 @@ export type Database = {
           video_thumbnail?: string | null
         }
         Update: {
-          age?: string | null
-          bhk_types?: string[] | null
+          age?: number | null
+          bhk_types?: number[] | null
           created_at?: string | null
           data_source?: string | null
           features?: Json | null
@@ -236,7 +236,7 @@ export type Database = {
       user_preferences: {
         Row: {
           amenities: string[] | null
-          bhk_preferences: string[] | null
+          bhk_preferences: number[] | null
           created_at: string | null
           deal_breakers: string[] | null
           home_features: string[] | null
@@ -250,7 +250,7 @@ export type Database = {
         }
         Insert: {
           amenities?: string[] | null
-          bhk_preferences?: string[] | null
+          bhk_preferences?: number[] | null
           created_at?: string | null
           deal_breakers?: string[] | null
           home_features?: string[] | null
@@ -264,7 +264,7 @@ export type Database = {
         }
         Update: {
           amenities?: string[] | null
-          bhk_preferences?: string[] | null
+          bhk_preferences?: number[] | null
           created_at?: string | null
           deal_breakers?: string[] | null
           home_features?: string[] | null
