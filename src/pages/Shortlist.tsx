@@ -28,7 +28,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { Heart, StickyNote, Star } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 type Building = {
   id: string;
@@ -40,7 +39,7 @@ type Building = {
   max_price: number | null;
   images: string[] | null;
   total_floors: number | null;
-  age: string | null;
+  age: number | null;
 };
 
 type ShortlistedBuilding = {
@@ -84,7 +83,7 @@ export default function Shortlist() {
         .order('calculated_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as ShortlistedBuilding[];
     },
   });
 
@@ -225,8 +224,9 @@ export default function Shortlist() {
       },
     },
     {
-      accessorKey: "overall_match_score",
+      id: "match_score",
       header: "Match Score",
+      accessorFn: (row) => row.overall_match_score,
       cell: ({ row }) => {
         const score = row.original.overall_match_score;
         if (!score) return null;
@@ -240,8 +240,9 @@ export default function Shortlist() {
       },
     },
     {
-      accessorKey: "buildings",
+      id: "price_range",
       header: "Price Range",
+      accessorFn: (row) => row.buildings?.min_price,
       cell: ({ row }) => {
         const building = row.original.buildings;
         if (!building) return null;
@@ -257,8 +258,9 @@ export default function Shortlist() {
       },
     },
     {
-      accessorKey: "buildings",
+      id: "details",
       header: "Details",
+      accessorFn: (row) => row.buildings?.total_floors,
       cell: ({ row }) => {
         const building = row.original.buildings;
         if (!building) return null;
@@ -273,6 +275,7 @@ export default function Shortlist() {
     },
     {
       id: "actions",
+      header: "Actions",
       cell: ({ row }) => {
         const building = row.original.buildings;
         const notes = row.original.notes;

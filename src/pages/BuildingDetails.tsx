@@ -33,9 +33,9 @@ export default function BuildingDetails() {
     return <div className="container mx-auto px-4 py-8">Building not found</div>;
   }
 
-  const startingPrice = listings?.length 
+  const startingPrice = (listings?.length 
     ? Math.min(...listings.map(l => Number(l.price || 0))) 
-    : Number(building.min_price || 0);
+    : Number(building.min_price || 0)).toString();
 
   return (
     <div className="min-h-screen flex flex-col">
