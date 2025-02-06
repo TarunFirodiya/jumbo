@@ -366,23 +366,28 @@ export default function Buildings() {
                       </div>
                     </div>
                   )}
-                  {building.images && building.images.length > 0 ? (
+                  {building.images && building.images.length > 0 && building.images[0] !== "No photo available" ? (
                     <img
                       src={building.images[0]}
-                      alt={building.name}
+                      alt={building.name || "Building"}
                       className="object-cover w-full h-full"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.src = "/placeholder.svg";
-                        target.className = "w-16 h-16 opacity-50 m-auto";
+                        const placeholders = [
+                          'https://images.unsplash.com/photo-1487958449943-2429e8be8625',
+                          'https://images.unsplash.com/photo-1524230572899-a752b3835840',
+                          'https://images.unsplash.com/photo-1488972685288-c3fd157d7c7a',
+                          'https://images.unsplash.com/photo-1496307653780-42ee777d4833'
+                        ];
+                        target.src = placeholders[Math.floor(Math.random() * placeholders.length)];
                       }}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <img 
-                        src="/placeholder.svg" 
-                        alt="Placeholder" 
-                        className="w-16 h-16 opacity-50"
+                        src="https://images.unsplash.com/photo-1487958449943-2429e8be8625"
+                        alt="Building placeholder"
+                        className="object-cover w-full h-full"
                       />
                     </div>
                   )}
