@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -34,7 +33,7 @@ export default function BuildingDetails() {
     return <div className="container mx-auto px-4 py-8">Building not found</div>;
   }
 
-  const startingPrice = listings?.length ? Math.min(...listings.map(l => l.price)) : building.min_price;
+  const startingPrice = listings?.length ? Math.min(...listings.map(l => Number(l.price))) : Number(building.min_price);
 
   return (
     <div className="min-h-screen flex flex-col">

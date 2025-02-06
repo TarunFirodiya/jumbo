@@ -30,22 +30,24 @@ import {
 import { Heart, StickyNote, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+type Building = {
+  id: string;
+  name: string;
+  type: string | null;
+  locality: string | null;
+  sub_locality: string | null;
+  min_price: number | null;
+  max_price: number | null;
+  images: string[] | null;
+  total_floors: number | null;
+  age: string | null;
+};
+
 type ShortlistedBuilding = {
   building_id: string;
   overall_match_score: number | null;
   notes: string | null;
-  buildings: {
-    id: string;
-    name: string;
-    type: string | null;
-    locality: string | null;
-    sub_locality: string | null;
-    min_price: number | null;
-    max_price: number | null;
-    images: string[] | null;
-    total_floors: number | null;
-    age: string | null;
-  } | null;
+  buildings: Building | null;
 };
 
 export default function Shortlist() {
@@ -164,7 +166,7 @@ export default function Shortlist() {
 
   const columns: ColumnDef<ShortlistedBuilding>[] = [
     {
-      accessorKey: "buildings",
+      id: "buildings",
       header: "Property",
       cell: ({ row }) => {
         const building = row.original.buildings;

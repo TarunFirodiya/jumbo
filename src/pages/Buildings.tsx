@@ -82,7 +82,7 @@ export default function Buildings() {
       const matchesPrice = building.min_price >= priceRange[0] * 10000000 && 
                           building.min_price <= priceRange[1] * 10000000;
       const matchesBHK = selectedBHK.length === 0 || 
-                        building.bhk_types?.some(bhk => selectedBHK.includes(bhk));
+                        building.bhk_types?.some(bhk => selectedBHK.includes(String(bhk)));
       const matchesLocality = selectedLocalities.length === 0 || 
                             selectedLocalities.includes(building.locality);
 
