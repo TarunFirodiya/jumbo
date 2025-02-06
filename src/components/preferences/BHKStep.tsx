@@ -1,12 +1,12 @@
 import { Label } from "@/components/ui/label";
-import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
+import { MultiSelectCombobox, BaseOption } from "@/components/ui/multi-select-combobox";
 
 interface BHKStepProps {
   value: number[];
   onChange: (value: number[]) => void;
 }
 
-const bhkOptions = [
+const bhkOptions: BaseOption<number>[] = [
   { value: 2, label: "2 BHK" },
   { value: 3, label: "3 BHK" },
   { value: 4, label: "4 BHK" },

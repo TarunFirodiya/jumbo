@@ -12,20 +12,31 @@ import { DealBreakersStep } from "@/components/preferences/DealBreakersStep";
 import { motion } from "framer-motion";
 import { Json } from "@/integrations/supabase/types";
 
+interface FormData {
+  preferred_localities: Json[];
+  max_budget: number;
+  bhk_preferences: number[];
+  lifestyle_cohort: string;
+  home_features: string[];
+  custom_home_features: string[];
+  deal_breakers: string[];
+  custom_deal_breakers: string[];
+}
+
 export default function Preferences() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 6;
-  const [formData, setFormData] = useState({
-    preferred_localities: [] as Json[],
+  const [formData, setFormData] = useState<FormData>({
+    preferred_localities: [],
     max_budget: 50,
-    bhk_preferences: [] as string[],
+    bhk_preferences: [],
     lifestyle_cohort: "",
-    home_features: [] as string[],
-    custom_home_features: [] as string[],
-    deal_breakers: [] as string[],
-    custom_deal_breakers: [] as string[],
+    home_features: [],
+    custom_home_features: [],
+    deal_breakers: [],
+    custom_deal_breakers: [],
   });
 
   // Fetch existing preferences

@@ -22,24 +22,22 @@ import {
 // Utility imports
 import { cn } from "@/lib/utils";
 
-export interface BaseOption {
+export interface BaseOption<T = string> {
   label: string;
-  value: string;
+  value: T;
 }
 
-export type Option<T extends BaseOption = BaseOption> = T;
-
-interface Props<T extends BaseOption> {
+interface Props<T> {
   label: string;
-  renderItem: (option: T) => React.ReactNode;
-  renderSelectedItem: (value: string[]) => React.ReactNode;
-  options: T[];
-  value: string[];
-  onChange: (value: string[]) => void;
+  renderItem: (option: BaseOption<T>) => React.ReactNode;
+  renderSelectedItem: (value: T[]) => React.ReactNode;
+  options: BaseOption<T>[];
+  value: T[];
+  onChange: (value: T[]) => void;
   placeholder?: string;
 }
 
-export const MultiSelectCombobox = <T extends BaseOption>({
+export const MultiSelectCombobox = <T extends string | number>({
   label,
   renderItem,
   renderSelectedItem,
@@ -50,7 +48,7 @@ export const MultiSelectCombobox = <T extends BaseOption>({
 }: Props<T>) => {
   const [open, setOpen] = useState(false);
 
-  const handleChange = (currentValue: string) => {
+  const handleChange = (currentValue: T) => {
     onChange(
       value.includes(currentValue)
         ? value.filter((val) => val !== currentValue)
@@ -126,7 +124,7 @@ export const MultiSelectCombobox = <T extends BaseOption>({
             <CommandGroup>
               {options.map((option) => (
                 <CommandItem
-                  key={option.value}
+                  key={String(option.value)}
                   value={option.label}
                   onSelect={() => handleChange(option.value)}
                   aria-selected={value.includes(option.value)}
