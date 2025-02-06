@@ -33,9 +33,9 @@ export default function BuildingDetails() {
     return <div className="container mx-auto px-4 py-8">Building not found</div>;
   }
 
-  const startingPrice = (listings?.length 
+  const startingPrice = listings?.length 
     ? Math.min(...listings.map(l => Number(l.price || 0))) 
-    : Number(building.min_price || 0)).toString();
+    : Number(building.min_price || 0);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -57,7 +57,7 @@ export default function BuildingDetails() {
       <div className="container mx-auto px-4 py-8 space-y-8">
         <BasicDetails
           totalFloors={building.total_floors}
-          age={building.age}
+          age={building.age?.toString()}
           pricePsqft={building.price_psqft}
           minPrice={building.min_price}
           maxPrice={building.max_price}
