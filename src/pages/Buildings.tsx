@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { MatchScoreModal } from "@/components/building/MatchScoreModal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Toggle } from "@/components/ui/toggle";
+import { Switch } from "@/components/ui/switch";
 
 export default function Buildings() {
   const { toast } = useToast();
@@ -219,14 +219,11 @@ export default function Buildings() {
           </div>
           <div className="flex items-center gap-2">
             <Label htmlFor="show-all" className="text-sm">Show all homes</Label>
-            <Toggle
+            <Switch
               id="show-all"
-              pressed={showAllHomes}
-              onPressedChange={setShowAllHomes}
-              aria-label="Toggle show all homes"
-            >
-              {showAllHomes ? 'All' : 'Matched'}
-            </Toggle>
+              isSelected={showAllHomes}
+              onChange={setShowAllHomes}
+            />
           </div>
           <Button
             variant="outline"
