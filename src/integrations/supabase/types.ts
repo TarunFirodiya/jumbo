@@ -163,15 +163,12 @@ export type Database = {
       }
       user_building_scores: {
         Row: {
-          amenities_match_score: number | null
-          bhk_match_score: number | null
           budget_match_score: number | null
           building_id: string | null
           calculated_at: string | null
           id: string
           last_calculation_time: string | null
           lifestyle_match_score: number | null
-          locality_match_score: number | null
           location_match_score: number | null
           notes: string | null
           overall_match_score: number | null
@@ -181,15 +178,12 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
-          amenities_match_score?: number | null
-          bhk_match_score?: number | null
           budget_match_score?: number | null
           building_id?: string | null
           calculated_at?: string | null
           id?: string
           last_calculation_time?: string | null
           lifestyle_match_score?: number | null
-          locality_match_score?: number | null
           location_match_score?: number | null
           notes?: string | null
           overall_match_score?: number | null
@@ -199,15 +193,12 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
-          amenities_match_score?: number | null
-          bhk_match_score?: number | null
           budget_match_score?: number | null
           building_id?: string | null
           calculated_at?: string | null
           id?: string
           last_calculation_time?: string | null
           lifestyle_match_score?: number | null
-          locality_match_score?: number | null
           location_match_score?: number | null
           notes?: string | null
           overall_match_score?: number | null
