@@ -1,314 +1,256 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-interface LocalityCoordinates {
-  name: string;
-  latitude: number;
-  longitude: number;
 }
 
-const LOCALITIES: LocalityCoordinates[] = [
-  { name: "whitefield", latitude: 12.9698196, longitude: 77.7499721 },
-  { name: "hsr layout", latitude: 12.9121181, longitude: 77.6445548 },
-  { name: "koramangala", latitude: 12.9352403, longitude: 77.624532 },
-  { name: "jp nagar", latitude: 12.9063433, longitude: 77.5856825 },
-  { name: "marathahalli", latitude: 12.956924, longitude: 77.701127 },
-  { name: "indiranagar", latitude: 12.9783692, longitude: 77.6408356 }
-];
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371 // Earth radius in km
+  const toRad = (x: number) => (x * Math.PI) / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
 
-function calculateLocationScore(building: any, preferences: any): number {
-  if (!building.latitude || !building.longitude || 
-      !preferences.location_latitude || !preferences.location_longitude) {
-    return 0;
+function normalize(value: number, min: number, max: number): number {
+  return Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))
+}
+
+function calculateBudgetScore(userBudget: number, minPrice: number, maxPrice: number): number {
+  if (!userBudget || !minPrice) return 0;
+  
+  maxPrice = maxPrice || minPrice;
+  
+  if (maxPrice < userBudget * 0.8 || minPrice > userBudget * 1.2) {
+    return 0 // Out of range
   }
 
-  const distance = calculateDistance(
-    preferences.location_latitude,
-    preferences.location_longitude,
-    building.latitude,
-    building.longitude
-  );
-
-  // Score decreases linearly up to 20km
-  const maxDistance = 20; // 20km radius
-  return Math.max(0, 1 - (distance / maxDistance));
+  const overlap = Math.max(0, Math.min(maxPrice, userBudget) - Math.max(minPrice, userBudget * 0.8))
+  return normalize(overlap, 0, userBudget * 0.4)
 }
 
-function calculateBudgetScore(building: any, preferences: any): number {
-  if (!preferences.max_budget || !building.min_price) return 0;
-
-  const maxBudget = preferences.max_budget;
-  const propertyPrice = building.min_price;
-  const priceRatio = propertyPrice / maxBudget;
-
-  // If price is within budget
-  if (priceRatio <= 1) {
-    return 1;
-  }
-
-  // If price is between 100% and 120% of budget
-  if (priceRatio <= 1.2) {
-    // Linear decrease from 1 to 0.5 between 100% and 120% of budget
-    return 1 - ((priceRatio - 1) * 2.5);
-  }
-
-  // If price is above 120% of budget
-  // Exponential decrease after 120% of budget
-  return Math.max(0, 0.5 * Math.exp(-(priceRatio - 1.2) * 3));
+function calculateGoogleRatingScore(rating: number | null): number {
+  if (!rating) return 0;
+  
+  if (rating >= 4.5) return 90 + (rating - 4.5) * 10
+  if (rating >= 3.5) return normalize(rating, 3.5, 4.5) * 60
+  if (rating >= 2.5) return normalize(rating, 2.5, 3.5) * 50
+  return 0
 }
 
-function calculateAmenitiesScore(building: any, preferences: any): number {
-  if (!preferences.amenities || !preferences.amenities.length || !building.features) {
-    return 0;
-  }
-
-  const buildingFeatures = building.features.map((feature: string) => feature.toLowerCase());
-  const userAmenities = preferences.amenities.map((amenity: string) => amenity.toLowerCase());
-
-  const matchingAmenities = userAmenities.filter((amenity: string) => 
-    buildingFeatures.includes(amenity)
-  );
-
-  return matchingAmenities.length / userAmenities.length;
+function calculateLifestyleScore(buildingCohort: number | null, age: number | null): number {
+  if (!buildingCohort || !age) return 0;
+  return normalize(buildingCohort - age * 2, 0, 20) // Penalizing older buildings
 }
 
-function calculateBHKScore(building: any, preferences: any): number {
-  if (!preferences.bhk_preferences?.length || !building.bhk_types) {
-    console.log('Missing BHK data for building:', building.id);
-    return 0;
-  }
-
-  // Normalize preferences (convert "2BHK" to "2")
-  const normalizedPreferences = preferences.bhk_preferences.map((pref: string) => {
-    const match = pref.match(/\d+/);
-    return match ? match[0] : '';
-  });
-
-  // Handle comma-separated values in building BHK types
-  const buildingBHKTypes = building.bhk_types.flatMap((type: string) => {
-    const parts = type.split(',').map(t => t.trim());
-    return parts.map(part => {
-      const match = part.match(/\d+/);
-      return match ? match[0] : '';
-    });
-  });
-
-  const matchingTypes = normalizedPreferences.filter(type => 
-    buildingBHKTypes.includes(type)
-  );
-
-  return matchingTypes.length > 0 ? 1 : 0;
+function jaccardSimilarity(set1: string[], set2: string[]): number {
+  if (!set1.length || !set2.length) return 0;
+  
+  const intersection = set1.filter(value => set2.includes(value)).length
+  const union = new Set([...set1, ...set2]).size
+  return (intersection / union) * 100
 }
 
-function calculateOverallScore(
-  locationScore: number,
-  budgetScore: number,
-  amenitiesScore: number,
-  bhkScore: number
-): number {
-  return (
-    locationScore * 0.4 +
-    budgetScore * 0.3 +
-    amenitiesScore * 0.2 +
-    bhkScore * 0.1
-  );
-}
-
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Earth's radius in km
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
-
-function toRad(degrees: number): number {
-  return degrees * (Math.PI / 180);
-}
-
-function chunkArray<T>(array: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size));
-  }
-  return chunks;
-}
-
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const { user_id } = await req.json()
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
     if (!supabaseUrl || !supabaseServiceRoleKey) {
-      throw new Error('Missing environment variables.');
+      throw new Error('Missing environment variables.')
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
 
-    const { user_id, building_ids } = await req.json();
-
-    if (!user_id) {
-      return new Response(
-        JSON.stringify({ error: 'Missing user_id in request body' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    console.log('Fetching preferences for user:', user_id);
-
+    // Get user preferences
     const { data: preferences, error: preferencesError } = await supabase
       .from('user_preferences')
       .select('*')
       .eq('user_id', user_id)
-      .maybeSingle();
+      .single()
 
     if (preferencesError) {
-      console.error('Error fetching preferences:', preferencesError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch user preferences' }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      console.error('Error fetching preferences:', preferencesError)
+      throw preferencesError
     }
 
-    if (!preferences) {
-      console.log('No preferences found for user:', user_id);
-      return new Response(
-        JSON.stringify({ message: 'No preferences found for user' }),
-        { 
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+    // Get shortlisted buildings
+    const { data: shortlistedData, error: shortlistedError } = await supabase
+      .from('user_shortlisted_buildings')
+      .select('shortlisted_building_ids')
+      .eq('user_id', user_id)
+      .single()
+
+    if (shortlistedError && shortlistedError.code !== 'PGRST116') { // Ignore not found error
+      console.error('Error fetching shortlisted buildings:', shortlistedError)
+      throw shortlistedError
     }
 
-    console.log('User preferences:', preferences);
+    const shortlistedBuildingIds = shortlistedData?.shortlisted_building_ids || []
 
+    // Get all buildings
     const { data: buildings, error: buildingsError } = await supabase
       .from('buildings')
       .select('*')
-      .in('id', building_ids || []);
 
     if (buildingsError) {
-      console.error('Error fetching buildings:', buildingsError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch buildings' }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      console.error('Error fetching buildings:', buildingsError)
+      throw buildingsError
     }
 
-    if (!buildings?.length) {
-      console.log('No buildings found');
-      return new Response(
-        JSON.stringify({ message: 'No buildings found' }),
-        { 
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    console.log('Processing scores for user preferences:', preferences)
+
+    const scores = buildings
+      .filter(building => {
+        // Filter by BHK if preferences exist
+        if (preferences.bhk_preferences?.length) {
+          return preferences.bhk_preferences.some(bhk => 
+            building.bhk_types?.includes(bhk)
+          )
         }
-      );
-    }
+        return true
+      })
+      .map(building => {
+        // Location score (Haversine distance from nearest preferred locality)
+        let locationScore = 0
+        if (preferences.preferred_localities?.length && building.latitude && building.longitude) {
+          const locationDistances = preferences.preferred_localities.map(loc => 
+            haversineDistance(
+              (loc as any).latitude, 
+              (loc as any).longitude, 
+              building.latitude, 
+              building.longitude
+            )
+          )
+          locationScore = normalize(Math.min(...locationDistances), 0, 10)
+        }
 
-    console.log(`Calculating scores for ${buildings.length} buildings`);
+        // Budget score
+        const budgetScore = calculateBudgetScore(
+          preferences.max_budget,
+          building.min_price,
+          building.max_price
+        )
 
-    const buildingScores = buildings.map(building => {
-      const locationScore = calculateLocationScore(building, preferences);
-      const budgetScore = calculateBudgetScore(building, preferences);
-      const amenitiesScore = calculateAmenitiesScore(building, preferences);
-      const bhkScore = calculateBHKScore(building, preferences);
+        // Lifestyle score using lifestyle_cohort
+        const lifestyleScore = calculateLifestyleScore(
+          building.lifestyle_cohort,
+          building.age
+        )
 
-      console.log(`Scores for building ${building.id}:`, {
-        locationScore,
-        budgetScore,
-        amenitiesScore,
-        bhkScore
-      });
+        // Feature matching using home_features
+        const featureScore = jaccardSimilarity(
+          preferences.home_features || [],
+          (building.features as string[]) || []
+        )
 
-      const overallScore = calculateOverallScore(
-        locationScore,
-        budgetScore,
-        amenitiesScore,
-        bhkScore
-      );
+        // Google rating score
+        const googleRatingScore = calculateGoogleRatingScore(building.google_rating)
 
-      return {
-        user_id,
-        building_id: building.id,
-        location_match_score: locationScore,
-        budget_match_score: budgetScore,
-        lifestyle_match_score: amenitiesScore,
-        overall_match_score: overallScore,
-        amenities_match_score: amenitiesScore,
-        bhk_match_score: bhkScore,
-        calculated_at: new Date().toISOString(),
-        top_callout_1: `${Math.round(locationScore * 100)}% location match`,
-        top_callout_2: `${Math.round(budgetScore * 100)}% budget match`,
-      };
-    });
-
-    const batchSize = 50;
-    const batches = chunkArray(buildingScores, batchSize);
-
-    console.log(`Updating scores in ${batches.length} batches`);
-
-    for (const batch of batches) {
-      const { error: upsertError } = await supabase
-        .from('user_building_scores')
-        .upsert(batch, {
-          onConflict: 'user_id,building_id',
-        });
-
-      if (upsertError) {
-        console.error('Error upserting scores:', upsertError);
-        return new Response(
-          JSON.stringify({ error: 'Failed to update building scores' }),
-          { 
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        // Apply deal-breaker penalty
+        if (preferences.deal_breakers?.some(db => 
+          building.features && (building.features as string[]).includes(db)
+        )) {
+          return {
+            building_id: building.id,
+            user_id,
+            location_match_score: 0,
+            budget_match_score: 0,
+            lifestyle_match_score: 0,
+            overall_match_score: 0,
+            amenities_match_score: featureScore,
+            bhk_match_score: preferences.bhk_preferences?.some(bhk => building.bhk_types?.includes(bhk)) ? 100 : 0,
+            calculated_at: new Date().toISOString(),
+            top_callout_1: `${Math.round(locationScore)}% location match`,
+            top_callout_2: `${Math.round(budgetScore)}% budget match`
           }
-        );
-      }
+        }
+
+        // Learning from shortlisting behavior
+        let shortlistBoost = 0
+        if (shortlistedBuildingIds.includes(building.id)) {
+          shortlistBoost = 10 // Direct boost for a shortlisted building
+        } else {
+          // Find similarity with shortlisted buildings
+          const similarShortlisted = buildings.filter(b =>
+            shortlistedBuildingIds.includes(b.id) &&
+            b.latitude && b.longitude && building.latitude && building.longitude &&
+            haversineDistance(b.latitude, b.longitude, building.latitude, building.longitude) < 2 &&
+            calculateBudgetScore(preferences.max_budget, b.min_price, b.max_price) > 50
+          )
+          if (similarShortlisted.length > 0) {
+            shortlistBoost = 5 // Boost similar buildings
+          }
+        }
+
+        // Final weighted score
+        const overallScore =
+          locationScore * 0.3 +
+          budgetScore * 0.2 +
+          lifestyleScore * 0.1 +
+          featureScore * 0.1 +
+          googleRatingScore * 0.1 +
+          shortlistBoost
+
+        return {
+          building_id: building.id,
+          user_id,
+          location_match_score: locationScore,
+          budget_match_score: budgetScore,
+          lifestyle_match_score: lifestyleScore,
+          overall_match_score: overallScore / 100,
+          amenities_match_score: featureScore,
+          bhk_match_score: preferences.bhk_preferences?.some(bhk => building.bhk_types?.includes(bhk)) ? 100 : 0,
+          calculated_at: new Date().toISOString(),
+          top_callout_1: `${Math.round(locationScore)}% location match`,
+          top_callout_2: `${Math.round(budgetScore)}% budget match`
+        }
+      })
+
+    // Update scores in database
+    const { error: upsertError } = await supabase
+      .from('user_building_scores')
+      .upsert(scores, {
+        onConflict: 'user_id,building_id'
+      })
+
+    if (upsertError) {
+      console.error('Error upserting scores:', upsertError)
+      throw upsertError
     }
 
     return new Response(
       JSON.stringify({ 
         message: 'Building scores updated successfully',
-        scores: buildingScores 
+        scores 
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       }
-    );
+    )
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       }
-    );
+    )
   }
-});
+})

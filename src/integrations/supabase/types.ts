@@ -321,7 +321,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_shortlisted_buildings: {
+        Row: {
+          shortlisted_building_ids: string[] | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_building_scores_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       binary_quantize:
