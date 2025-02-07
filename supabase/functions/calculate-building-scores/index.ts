@@ -155,76 +155,46 @@ Deno.serve(async (req: Request) => {
 
         // Budget score with conversion from lakhs to rupees
         const budgetScore = calculateBudgetScore(
-          preferences.max_budget,
-          building.min_price,
-          building.max_price
+          preferences.max_budget || 0,
+          building.min_price || 0,
+          building.max_price || building.min_price || 0
         )
 
         // Lifestyle score using building age and cohort
         const lifestyleScore = calculateLifestyleScore(
-          building.lifestyle_cohort,
-          building.age
+          building.lifestyle_cohort || 0,
+          building.age || 0
         )
 
         console.log('Scores for building:', building.id, {
-          locationScore,
-          budgetScore,
-          lifestyleScore
+          locationScore: locationScore / 100,
+          budgetScore: budgetScore / 100,
+          lifestyleScore: lifestyleScore / 100
         });
 
-        // Feature matching using home_features
-        const featureScore = jaccardSimilarity(
-          preferences.home_features || [],
-          (building.features as string[]) || []
-        )
-
-        // Google rating score
-        const googleRatingScore = calculateGoogleRatingScore(building.google_rating)
-
-        // Apply deal-breaker penalty
-        if (preferences.deal_breakers?.some(db => 
-          building.features && (building.features as string[]).includes(db)
-        )) {
-          return {
-            building_id: building.id,
-            user_id,
-            location_match_score: 0,
-            budget_match_score: 0,
-            lifestyle_match_score: 0,
-            overall_match_score: 0,
-            amenities_match_score: featureScore,
-            bhk_match_score: preferences.bhk_preferences?.some(bhk => building.bhk_types?.includes(bhk)) ? 100 : 0,
-            calculated_at: new Date().toISOString(),
-            top_callout_1: `${Math.round(locationScore)}% location match`,
-            top_callout_2: `${Math.round(budgetScore)}% budget match`
-          }
-        }
-
-        // Learning from shortlisting behavior
+        // Apply shortlist boost
         let shortlistBoost = 0
         if (shortlistedBuildingIds.includes(building.id)) {
-          shortlistBoost = 10
+          shortlistBoost = 0.1 // 10% boost
         } else {
           const similarShortlisted = buildings.filter(b =>
             shortlistedBuildingIds.includes(b.id) &&
             b.latitude && b.longitude && building.latitude && building.longitude &&
             haversineDistance(b.latitude, b.longitude, building.latitude, building.longitude) < 2 &&
-            Math.abs(b.min_price - building.min_price) / b.min_price < 0.2
+            Math.abs((b.min_price || 0) - (building.min_price || 0)) / (b.min_price || 1) < 0.2
           )
           if (similarShortlisted.length > 0) {
-            shortlistBoost = 5
+            shortlistBoost = 0.05 // 5% boost
           }
         }
 
         // Final weighted score
-        const overallScore = (
-          locationScore * 0.3 +
-          budgetScore * 0.3 +
-          lifestyleScore * 0.3 +
-          featureScore * 0.1 +
-          googleRatingScore * 0.1 +
+        const overallScore = Math.min(1, Math.max(0,
+          (locationScore / 100) * 0.3 +
+          (budgetScore / 100) * 0.3 +
+          (lifestyleScore / 100) * 0.3 +
           shortlistBoost
-        ) / 100 // Convert to 0-1 scale
+        ))
 
         return {
           building_id: building.id,
@@ -233,8 +203,6 @@ Deno.serve(async (req: Request) => {
           budget_match_score: budgetScore / 100,
           lifestyle_match_score: lifestyleScore / 100,
           overall_match_score: overallScore,
-          amenities_match_score: featureScore,
-          bhk_match_score: preferences.bhk_preferences?.some(bhk => building.bhk_types?.includes(bhk)) ? 100 : 0,
           calculated_at: new Date().toISOString(),
           top_callout_1: `${Math.round(locationScore)}% location match`,
           top_callout_2: `${Math.round(budgetScore)}% budget match`

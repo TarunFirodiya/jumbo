@@ -41,6 +41,26 @@ export default function Buildings() {
     },
   });
 
+  // Add this query to trigger score calculation
+  const { data: calculatedScores } = useQuery({
+    queryKey: ['calculateScores', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      
+      const { data, error } = await supabase.functions.invoke('calculate-building-scores', {
+        body: { user_id: user.id }
+      });
+      
+      if (error) {
+        console.error('Error calculating scores:', error);
+        throw error;
+      }
+      
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const { data: userPreferences } = useQuery({
     queryKey: ['userPreferences', user?.id],
     queryFn: async () => {
@@ -99,12 +119,12 @@ export default function Buildings() {
   const bhkTypes = ["2bhk", "3bhk", "4bhk", "4bhk_plus"];
 
   const { data: buildingScores } = useQuery({
-    queryKey: ['buildingScores', user?.id],
+    queryKey: ['buildingScores', user?.id, calculatedScores],
     queryFn: async () => {
       if (!user) return null;
       const { data, error } = await supabase
         .from('user_building_scores')
-        .select('building_id, shortlisted, overall_match_score')
+        .select('*')
         .eq('user_id', user.id);
 
       if (error) {
@@ -115,10 +135,13 @@ export default function Buildings() {
       return data.reduce((acc, score) => {
         acc[score.building_id] = {
           shortlisted: score.shortlisted,
-          overall_match_score: score.overall_match_score
+          overall_match_score: score.overall_match_score,
+          location_match_score: score.location_match_score,
+          budget_match_score: score.budget_match_score,
+          lifestyle_match_score: score.lifestyle_match_score,
         };
         return acc;
-      }, {} as Record<string, { shortlisted: boolean; overall_match_score: number | null }>);
+      }, {} as Record<string, any>);
     },
     enabled: !!user,
   });
