@@ -282,6 +282,7 @@ export default function Buildings() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredBuildings?.map((building) => {
+            console.log('Building images:', building.images);
             const buildingScore = buildingScores?.[building.id];
             const matchScore = buildingScore?.overall_match_score || 0;
             const isShortlisted = buildingScore?.shortlisted || false;
