@@ -134,7 +134,7 @@ Deno.serve(async (req: Request) => {
       .map(building => {
         console.log('Processing building:', building.id, building.name);
         
-        // Location score calculation remains the same
+        // Calculate location score using a more generous radius
         let locationScore = 0;
         if (preferences.preferred_localities?.length && building.latitude && building.longitude) {
           const locationDistances = preferences.preferred_localities.map(loc => 
@@ -145,7 +145,9 @@ Deno.serve(async (req: Request) => {
               building.longitude
             )
           );
-          locationScore = normalize(Math.min(...locationDistances), 0, 10);
+          // Now normalize between 0-5km instead of 0-10km for a more generous score
+          // 0km = 100%, 5km = 0%
+          locationScore = normalize(Math.min(...locationDistances), 0, 5);
         }
 
         // Budget score with conversion from lakhs to rupees
