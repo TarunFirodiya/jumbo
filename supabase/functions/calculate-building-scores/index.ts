@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const corsHeaders = {
@@ -25,14 +24,17 @@ function normalize(value: number, min: number, max: number): number {
 function calculateBudgetScore(userBudget: number, minPrice: number, maxPrice: number): number {
   if (!userBudget || !minPrice) return 0;
   
+  // Convert user budget from lakhs to rupees (1L = 100,000)
+  const userBudgetInRupees = userBudget * 100000;
+  
   maxPrice = maxPrice || minPrice;
   
-  if (maxPrice < userBudget * 0.8 || minPrice > userBudget * 1.2) {
+  if (maxPrice < userBudgetInRupees * 0.8 || minPrice > userBudgetInRupees * 1.2) {
     return 0 // Out of range
   }
 
-  const overlap = Math.max(0, Math.min(maxPrice, userBudget) - Math.max(minPrice, userBudget * 0.8))
-  return normalize(overlap, 0, userBudget * 0.4)
+  const overlap = Math.max(0, Math.min(maxPrice, userBudgetInRupees) - Math.max(minPrice, userBudgetInRupees * 0.8))
+  return normalize(overlap, 0, userBudgetInRupees * 0.4)
 }
 
 function calculateGoogleRatingScore(rating: number | null): number {
@@ -46,7 +48,15 @@ function calculateGoogleRatingScore(rating: number | null): number {
 
 function calculateLifestyleScore(buildingCohort: number | null, age: number | null): number {
   if (!buildingCohort || !age) return 0;
-  return normalize(buildingCohort - age * 2, 0, 20) // Penalizing older buildings
+  
+  // Normalize age to a 0-100 scale where newer buildings get higher scores
+  const ageScore = Math.max(0, 100 - (age * 5)); // 20 year old building would get 0
+  
+  // Compare building cohort with normalized age score
+  const cohortScore = normalize(buildingCohort * 20, 0, 100); // Convert cohort (1-5) to 0-100
+  
+  // Combined score weighted towards the cohort
+  return (cohortScore * 0.7 + ageScore * 0.3);
 }
 
 function jaccardSimilarity(set1: string[], set2: string[]): number {
@@ -65,6 +75,8 @@ Deno.serve(async (req: Request) => {
 
   try {
     const { user_id } = await req.json()
+    
+    console.log('Processing scores for user:', user_id);
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -87,6 +99,8 @@ Deno.serve(async (req: Request) => {
       throw preferencesError
     }
 
+    console.log('User preferences:', preferences);
+
     // Get shortlisted buildings
     const { data: shortlistedData, error: shortlistedError } = await supabase
       .from('user_shortlisted_buildings')
@@ -94,7 +108,7 @@ Deno.serve(async (req: Request) => {
       .eq('user_id', user_id)
       .single()
 
-    if (shortlistedError && shortlistedError.code !== 'PGRST116') { // Ignore not found error
+    if (shortlistedError && shortlistedError.code !== 'PGRST116') {
       console.error('Error fetching shortlisted buildings:', shortlistedError)
       throw shortlistedError
     }
@@ -111,11 +125,10 @@ Deno.serve(async (req: Request) => {
       throw buildingsError
     }
 
-    console.log('Processing scores for user preferences:', preferences)
+    console.log('Processing scores for buildings:', buildings.length);
 
     const scores = buildings
       .filter(building => {
-        // Filter by BHK if preferences exist
         if (preferences.bhk_preferences?.length) {
           return preferences.bhk_preferences.some(bhk => 
             building.bhk_types?.includes(bhk)
@@ -124,7 +137,9 @@ Deno.serve(async (req: Request) => {
         return true
       })
       .map(building => {
-        // Location score (Haversine distance from nearest preferred locality)
+        console.log('Processing building:', building.id, building.name);
+        
+        // Location score
         let locationScore = 0
         if (preferences.preferred_localities?.length && building.latitude && building.longitude) {
           const locationDistances = preferences.preferred_localities.map(loc => 
@@ -138,18 +153,24 @@ Deno.serve(async (req: Request) => {
           locationScore = normalize(Math.min(...locationDistances), 0, 10)
         }
 
-        // Budget score
+        // Budget score with conversion from lakhs to rupees
         const budgetScore = calculateBudgetScore(
           preferences.max_budget,
           building.min_price,
           building.max_price
         )
 
-        // Lifestyle score using lifestyle_cohort
+        // Lifestyle score using building age and cohort
         const lifestyleScore = calculateLifestyleScore(
           building.lifestyle_cohort,
           building.age
         )
+
+        console.log('Scores for building:', building.id, {
+          locationScore,
+          budgetScore,
+          lifestyleScore
+        });
 
         // Feature matching using home_features
         const featureScore = jaccardSimilarity(
@@ -182,36 +203,36 @@ Deno.serve(async (req: Request) => {
         // Learning from shortlisting behavior
         let shortlistBoost = 0
         if (shortlistedBuildingIds.includes(building.id)) {
-          shortlistBoost = 10 // Direct boost for a shortlisted building
+          shortlistBoost = 10
         } else {
-          // Find similarity with shortlisted buildings
           const similarShortlisted = buildings.filter(b =>
             shortlistedBuildingIds.includes(b.id) &&
             b.latitude && b.longitude && building.latitude && building.longitude &&
             haversineDistance(b.latitude, b.longitude, building.latitude, building.longitude) < 2 &&
-            calculateBudgetScore(preferences.max_budget, b.min_price, b.max_price) > 50
+            Math.abs(b.min_price - building.min_price) / b.min_price < 0.2
           )
           if (similarShortlisted.length > 0) {
-            shortlistBoost = 5 // Boost similar buildings
+            shortlistBoost = 5
           }
         }
 
         // Final weighted score
-        const overallScore =
+        const overallScore = (
           locationScore * 0.3 +
-          budgetScore * 0.2 +
-          lifestyleScore * 0.1 +
+          budgetScore * 0.3 +
+          lifestyleScore * 0.3 +
           featureScore * 0.1 +
           googleRatingScore * 0.1 +
           shortlistBoost
+        ) / 100 // Convert to 0-1 scale
 
         return {
           building_id: building.id,
           user_id,
-          location_match_score: locationScore,
-          budget_match_score: budgetScore,
-          lifestyle_match_score: lifestyleScore,
-          overall_match_score: overallScore / 100,
+          location_match_score: locationScore / 100,
+          budget_match_score: budgetScore / 100,
+          lifestyle_match_score: lifestyleScore / 100,
+          overall_match_score: overallScore,
           amenities_match_score: featureScore,
           bhk_match_score: preferences.bhk_preferences?.some(bhk => building.bhk_types?.includes(bhk)) ? 100 : 0,
           calculated_at: new Date().toISOString(),
