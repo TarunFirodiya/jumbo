@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const corsHeaders = {
@@ -116,6 +117,23 @@ Deno.serve(async (req: Request) => {
       throw buildingsError
     }
 
+    // Get all existing shortlisted buildings for the user
+    const { data: shortlistedBuildings, error: shortlistedError } = await supabase
+      .from('user_building_scores')
+      .select('building_id, shortlisted')
+      .eq('user_id', user_id);
+
+    if (shortlistedError) {
+      console.error('Error fetching shortlisted buildings:', shortlistedError)
+      throw shortlistedError
+    }
+
+    // Create a map of building_id to shortlisted status
+    const shortlistedMap = (shortlistedBuildings || []).reduce((acc, item) => {
+      acc[item.building_id] = item.shortlisted || false;
+      return acc;
+    }, {} as Record<string, boolean>);
+
     console.log('Processing scores for buildings:', buildings.length);
 
     const scores = buildings
@@ -176,19 +194,11 @@ Deno.serve(async (req: Request) => {
           lifestyleScore: lifestyleScore / 100
         });
 
-        // Get existing shortlist status
-        const { data: existingScore } = await supabase
-          .from('user_building_scores')
-          .select('shortlisted')
-          .eq('building_id', building.id)
-          .eq('user_id', user_id)
-          .maybeSingle();
-
         // Add bonus for Google rating (up to 10% boost)
         const ratingBonus = building.google_rating ? Math.min((building.google_rating / 5) * 0.1, 0.1) : 0;
         
         // Add bonus for shortlisted buildings (5% boost)
-        const shortlistedBonus = existingScore?.shortlisted ? 0.05 : 0;
+        const shortlistedBonus = shortlistedMap[building.id] ? 0.05 : 0;
 
         // Final weighted score with bonuses
         const baseScore = Math.min(1, Math.max(0,
