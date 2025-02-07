@@ -17,8 +17,13 @@ interface ImageCarouselProps {
 export function ImageCarousel({ images }: ImageCarouselProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [emblaRef, setEmblaRef] = useState<UseEmblaCarouselType[1] | null>(null);
+  const [failedImages, setFailedImages] = useState<Record<number, boolean>>({});
 
   if (!images?.length) return null;
+
+  const handleImageError = (index: number) => {
+    setFailedImages(prev => ({ ...prev, [index]: true }));
+  };
 
   return (
     <div className="w-full aspect-video relative">
@@ -35,11 +40,22 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
           {images.map((image, index) => (
             <CarouselItem key={index}>
               <div className="aspect-video w-full overflow-hidden">
-                <img
-                  src={image}
-                  alt={`Image ${index + 1}`}
-                  className="w-full h-full object-cover"
-                />
+                {failedImages[index] ? (
+                  <div className="w-full h-full bg-muted flex items-center justify-center">
+                    <img 
+                      src="https://images.unsplash.com/photo-1487958449943-2429e8be8625"
+                      alt={`Building placeholder ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <img
+                    src={image}
+                    alt={`Image ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    onError={() => handleImageError(index)}
+                  />
+                )}
               </div>
             </CarouselItem>
           ))}
