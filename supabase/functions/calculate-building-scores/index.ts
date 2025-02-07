@@ -176,12 +176,29 @@ Deno.serve(async (req: Request) => {
           lifestyleScore: lifestyleScore / 100
         });
 
-        // Final weighted score
-        const overallScore = Math.min(1, Math.max(0,
+        // Get existing shortlist status
+        const { data: existingScore } = await supabase
+          .from('user_building_scores')
+          .select('shortlisted')
+          .eq('building_id', building.id)
+          .eq('user_id', user_id)
+          .maybeSingle();
+
+        // Add bonus for Google rating (up to 10% boost)
+        const ratingBonus = building.google_rating ? Math.min((building.google_rating / 5) * 0.1, 0.1) : 0;
+        
+        // Add bonus for shortlisted buildings (5% boost)
+        const shortlistedBonus = existingScore?.shortlisted ? 0.05 : 0;
+
+        // Final weighted score with bonuses
+        const baseScore = Math.min(1, Math.max(0,
           (locationScore / 100) * 0.3 +
           (budgetScore / 100) * 0.3 +
           (lifestyleScore / 100) * 0.4
         ));
+
+        // Apply bonuses
+        const overallScore = Math.min(1, baseScore * (1 + ratingBonus + shortlistedBonus));
 
         return {
           building_id: building.id,

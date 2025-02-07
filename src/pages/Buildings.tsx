@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Heart, MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, SlidersHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,7 +41,6 @@ export default function Buildings() {
     },
   });
 
-  // Add this query to trigger score calculation
   const { data: calculatedScores } = useQuery({
     queryKey: ['calculateScores', user?.id],
     queryFn: async () => {
@@ -82,7 +80,6 @@ export default function Buildings() {
     enabled: !!user,
   });
 
-  // Move buildingScores query before filteredBuildings
   const { data: buildingScores } = useQuery({
     queryKey: ['buildingScores', user?.id, calculatedScores],
     queryFn: async () => {
@@ -125,10 +122,22 @@ export default function Buildings() {
   });
 
   const filteredBuildings = useMemo(() => {
-    if (!buildings) return [];
+    if (!buildings || !buildingScores) return [];
     
-    // First get buildings that match filters
-    const filtered = buildings.filter(building => {
+    // First filter buildings based on match scores > 50%
+    const matchScoreFiltered = buildings.filter(building => {
+      const scores = buildingScores[building.id];
+      if (!scores) return false;
+      
+      return (
+        scores.location_match_score > 0.5 &&
+        scores.budget_match_score > 0.5 &&
+        scores.lifestyle_match_score > 0.5
+      );
+    });
+    
+    // Then apply user filters
+    const filtered = matchScoreFiltered.filter(building => {
       const matchesSearch = building.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesPrice = building.min_price >= priceRange[0] * 10000000 && 
                           building.min_price <= priceRange[1] * 10000000;
@@ -140,11 +149,11 @@ export default function Buildings() {
       return matchesSearch && matchesPrice && matchesBHK && matchesLocality;
     });
 
-    // Then sort by overall match score if available
+    // Sort by overall match score
     return filtered.sort((a, b) => {
-      const scoreA = buildingScores?.[a.id]?.overall_match_score || 0;
-      const scoreB = buildingScores?.[b.id]?.overall_match_score || 0;
-      return scoreB - scoreA; // Sort in descending order
+      const scoreA = buildingScores[a.id]?.overall_match_score || 0;
+      const scoreB = buildingScores[b.id]?.overall_match_score || 0;
+      return scoreB - scoreA;
     });
   }, [buildings, searchTerm, priceRange, selectedBHK, selectedLocalities, buildingScores]);
 
