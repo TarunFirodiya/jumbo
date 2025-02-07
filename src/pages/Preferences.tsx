@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -153,8 +152,8 @@ export default function Preferences() {
       case 1:
         return (
           <LocationStep
-            value={formData.preferred_localities as string[]}
-            onChange={(value) => setFormData({ ...formData, preferred_localities: value as Json[] })}
+            value={formData.preferred_localities}
+            onChange={(value) => setFormData({ ...formData, preferred_localities: value })}
           />
         );
       case 2:
