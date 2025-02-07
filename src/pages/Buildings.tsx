@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Heart, MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, ArrowRight } from "lucide-react";
+import { Heart, MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, ArrowRight, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +13,7 @@ import { MatchScoreModal } from "@/components/building/MatchScoreModal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { ImageCarousel } from "@/components/building/ImageCarousel";
 
 export default function Buildings() {
   const { toast } = useToast();
@@ -294,7 +295,7 @@ export default function Buildings() {
                 <div className="aspect-video relative bg-muted">
                   {buildingScore && (
                     <div 
-                      className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow-sm cursor-pointer"
+                      className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow-sm cursor-pointer z-10"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleScoreClick(buildingScore);
@@ -327,22 +328,8 @@ export default function Buildings() {
                       </div>
                     </div>
                   )}
-                  {building.images && building.images.length > 0 && building.images[0] !== "No photo available" ? (
-                    <img
-                      src={building.images[0]}
-                      alt={building.name || "Building"}
-                      className="object-cover w-full h-full"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        const placeholders = [
-                          'https://images.unsplash.com/photo-1487958449943-2429e8be8625',
-                          'https://images.unsplash.com/photo-1524230572899-a752b3835840',
-                          'https://images.unsplash.com/photo-1488972685288-c3fd157d7c7a',
-                          'https://images.unsplash.com/photo-1496307653780-42ee777d4833'
-                        ];
-                        target.src = placeholders[Math.floor(Math.random() * placeholders.length)];
-                      }}
-                    />
+                  {building.images && building.images.length > 0 ? (
+                    <ImageCarousel images={building.images} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <img 
@@ -357,7 +344,7 @@ export default function Buildings() {
                       e.stopPropagation();
                       handleShortlistToggle(building.id);
                     }}
-                    className="absolute top-2 right-2 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
+                    className="absolute top-2 right-2 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
                   >
                     <Heart
                       className={isShortlisted ? "fill-red-500 stroke-red-500" : ""}
@@ -382,20 +369,20 @@ export default function Buildings() {
                     <div className="grid grid-cols-3 gap-2 text-sm">
                       {building.age && (
                         <div className="flex items-center gap-1">
-                          <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{building.age}</span>
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{building.age} years</span>
                         </div>
                       )}
                       {building.total_floors && (
                         <div className="flex items-center gap-1">
                           <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{building.total_floors}</span>
+                          <span className="font-medium">{building.total_floors} floors</span>
                         </div>
                       )}
                       {building.bhk_types && (
                         <div className="flex items-center gap-1">
                           <Home className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{building.bhk_types.join(", ")}</span>
+                          <span className="font-medium">{building.bhk_types.join(", ")} BHK</span>
                         </div>
                       )}
                     </div>
