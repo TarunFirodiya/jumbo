@@ -19,12 +19,14 @@ export function useBuildingScore(id: string) {
         .select('*')
         .eq('building_id', id)
         .eq('user_id', user.id)
-        .maybeSingle();
+        .maybeSingle();  // Changed from .single() to .maybeSingle()
 
       if (error) {
         console.error('Error fetching building score:', error);
         return null;
       }
+      
+      // data will be null if no row exists
       return data;
     },
   });
