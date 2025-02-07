@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Heart, MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, SlidersHorizontal } from "lucide-react";
+import { Heart, MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,16 +11,8 @@ import BuildingsMap from "@/components/BuildingsMap";
 import { Progress } from "@/components/ui/progress";
 import { MatchScoreModal } from "@/components/building/MatchScoreModal";
 import { Input } from "@/components/ui/input";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Toggle } from "@/components/ui/toggle";
 
 export default function Buildings() {
   const { toast } = useToast();
@@ -29,9 +21,7 @@ export default function Buildings() {
   const [selectedBuildingScore, setSelectedBuildingScore] = useState<any>(null);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [priceRange, setPriceRange] = useState([0, 100]);
-  const [selectedBHK, setSelectedBHK] = useState<string[]>([]);
-  const [selectedLocalities, setSelectedLocalities] = useState<string[]>([]);
+  const [showAllHomes, setShowAllHomes] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -124,8 +114,8 @@ export default function Buildings() {
   const filteredBuildings = useMemo(() => {
     if (!buildings || !buildingScores) return [];
     
-    // First filter buildings based on match scores > 50%
-    const matchScoreFiltered = buildings.filter(building => {
+    // Filter buildings based on match scores only if showAllHomes is false
+    const matchScoreFiltered = showAllHomes ? buildings : buildings.filter(building => {
       const scores = buildingScores[building.id];
       if (!scores) return false;
       
@@ -136,18 +126,10 @@ export default function Buildings() {
       );
     });
     
-    // Then apply user filters
-    const filtered = matchScoreFiltered.filter(building => {
-      const matchesSearch = building.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesPrice = building.min_price >= priceRange[0] * 10000000 && 
-                          building.min_price <= priceRange[1] * 10000000;
-      const matchesBHK = selectedBHK.length === 0 || 
-                        building.bhk_types?.some(bhk => selectedBHK.includes(String(bhk)));
-      const matchesLocality = selectedLocalities.length === 0 || 
-                            selectedLocalities.includes(building.locality);
-
-      return matchesSearch && matchesPrice && matchesBHK && matchesLocality;
-    });
+    // Apply search filter
+    const filtered = matchScoreFiltered.filter(building => 
+      building.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     // Sort by overall match score
     return filtered.sort((a, b) => {
@@ -155,7 +137,7 @@ export default function Buildings() {
       const scoreB = buildingScores[b.id]?.overall_match_score || 0;
       return scoreB - scoreA;
     });
-  }, [buildings, searchTerm, priceRange, selectedBHK, selectedLocalities, buildingScores]);
+  }, [buildings, searchTerm, buildingScores, showAllHomes]);
 
   const localities = useMemo(() => {
     if (!buildings) return [];
@@ -235,89 +217,17 @@ export default function Buildings() {
               className="pl-9"
             />
           </div>
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <SlidersHorizontal className="h-4 w-4" />
-                Filters
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>Filters</SheetTitle>
-              </SheetHeader>
-              <div className="py-6 space-y-6">
-                <div className="space-y-4">
-                  <Label>Price Range (Cr)</Label>
-                  <Slider
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={priceRange}
-                    onValueChange={setPriceRange}
-                  />
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>₹{priceRange[0]} Cr</span>
-                    <span>₹{priceRange[1]} Cr</span>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <Label>BHK Type</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {bhkTypes.map((type) => (
-                      <div key={type} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={type}
-                          checked={selectedBHK.includes(type)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedBHK([...selectedBHK, type]);
-                            } else {
-                              setSelectedBHK(selectedBHK.filter(t => t !== type));
-                            }
-                          }}
-                        />
-                        <label
-                          htmlFor={type}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {type.toUpperCase()}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <Label>Locality</Label>
-                  <div className="grid grid-cols-1 gap-2 max-h-[200px] overflow-y-auto">
-                    {localities.map((locality) => (
-                      <div key={locality} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={locality}
-                          checked={selectedLocalities.includes(locality)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedLocalities([...selectedLocalities, locality]);
-                            } else {
-                              setSelectedLocalities(selectedLocalities.filter(l => l !== locality));
-                            }
-                          }}
-                        />
-                        <label
-                          htmlFor={locality}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {locality}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="show-all" className="text-sm">Show all homes</Label>
+            <Toggle
+              id="show-all"
+              pressed={showAllHomes}
+              onPressedChange={setShowAllHomes}
+              aria-label="Toggle show all homes"
+            >
+              {showAllHomes ? 'All' : 'Matched'}
+            </Toggle>
+          </div>
           <Button
             variant="outline"
             onClick={() => setIsMapView(!isMapView)}
