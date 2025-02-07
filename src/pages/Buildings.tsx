@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Heart, MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, SlidersHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,6 +82,35 @@ export default function Buildings() {
     enabled: !!user,
   });
 
+  // Move buildingScores query before filteredBuildings
+  const { data: buildingScores } = useQuery({
+    queryKey: ['buildingScores', user?.id, calculatedScores],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('user_building_scores')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error fetching building scores:', error);
+        throw error;
+      }
+      console.log('Building scores:', data);
+      return data.reduce((acc, score) => {
+        acc[score.building_id] = {
+          shortlisted: score.shortlisted,
+          overall_match_score: score.overall_match_score,
+          location_match_score: score.location_match_score,
+          budget_match_score: score.budget_match_score,
+          lifestyle_match_score: score.lifestyle_match_score,
+        };
+        return acc;
+      }, {} as Record<string, any>);
+    },
+    enabled: !!user,
+  });
+
   const { data: buildings, isLoading: buildingsLoading } = useQuery({
     queryKey: ['buildings'],
     queryFn: async () => {
@@ -125,34 +155,6 @@ export default function Buildings() {
   }, [buildings]);
 
   const bhkTypes = ["2bhk", "3bhk", "4bhk", "4bhk_plus"];
-
-  const { data: buildingScores } = useQuery({
-    queryKey: ['buildingScores', user?.id, calculatedScores],
-    queryFn: async () => {
-      if (!user) return null;
-      const { data, error } = await supabase
-        .from('user_building_scores')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error fetching building scores:', error);
-        throw error;
-      }
-      console.log('Building scores:', data);
-      return data.reduce((acc, score) => {
-        acc[score.building_id] = {
-          shortlisted: score.shortlisted,
-          overall_match_score: score.overall_match_score,
-          location_match_score: score.location_match_score,
-          budget_match_score: score.budget_match_score,
-          lifestyle_match_score: score.lifestyle_match_score,
-        };
-        return acc;
-      }, {} as Record<string, any>);
-    },
-    enabled: !!user,
-  });
 
   useEffect(() => {
     if (user && userPreferences === null) {
