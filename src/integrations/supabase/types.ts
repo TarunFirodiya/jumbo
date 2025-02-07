@@ -173,8 +173,6 @@ export type Database = {
           notes: string | null
           overall_match_score: number | null
           shortlisted: boolean | null
-          top_callout_1: string | null
-          top_callout_2: string | null
           user_id: string | null
         }
         Insert: {
@@ -188,8 +186,6 @@ export type Database = {
           notes?: string | null
           overall_match_score?: number | null
           shortlisted?: boolean | null
-          top_callout_1?: string | null
-          top_callout_2?: string | null
           user_id?: string | null
         }
         Update: {
@@ -203,8 +199,6 @@ export type Database = {
           notes?: string | null
           overall_match_score?: number | null
           shortlisted?: boolean | null
-          top_callout_1?: string | null
-          top_callout_2?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -272,39 +266,6 @@ export type Database = {
             foreignKeyName: "user_preferences_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_preferred_buildings: {
-        Row: {
-          building_id: string
-          created_at: string | null
-          user_id: string
-        }
-        Insert: {
-          building_id: string
-          created_at?: string | null
-          user_id: string
-        }
-        Update: {
-          building_id?: string
-          created_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_preferred_buildings_building_id_fkey"
-            columns: ["building_id"]
-            isOneToOne: false
-            referencedRelation: "buildings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_preferred_buildings_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
