@@ -97,7 +97,8 @@ export default function Buildings() {
   const filteredBuildings = useMemo(() => {
     if (!buildings) return [];
     
-    return buildings.filter(building => {
+    // First get buildings that match filters
+    const filtered = buildings.filter(building => {
       const matchesSearch = building.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesPrice = building.min_price >= priceRange[0] * 10000000 && 
                           building.min_price <= priceRange[1] * 10000000;
@@ -108,7 +109,14 @@ export default function Buildings() {
 
       return matchesSearch && matchesPrice && matchesBHK && matchesLocality;
     });
-  }, [buildings, searchTerm, priceRange, selectedBHK, selectedLocalities]);
+
+    // Then sort by overall match score if available
+    return filtered.sort((a, b) => {
+      const scoreA = buildingScores?.[a.id]?.overall_match_score || 0;
+      const scoreB = buildingScores?.[b.id]?.overall_match_score || 0;
+      return scoreB - scoreA; // Sort in descending order
+    });
+  }, [buildings, searchTerm, priceRange, selectedBHK, selectedLocalities, buildingScores]);
 
   const localities = useMemo(() => {
     if (!buildings) return [];

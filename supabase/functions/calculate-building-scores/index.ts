@@ -64,14 +64,6 @@ function calculateLifestyleScore(buildingCohort: number | null, userCohort: numb
   return Math.max(0, 1 - (cohortDifference * 0.25)); // Reduce score by 25% for each level difference
 }
 
-function jaccardSimilarity(set1: string[], set2: string[]): number {
-  if (!set1.length || !set2.length) return 0;
-  
-  const intersection = set1.filter(value => set2.includes(value)).length
-  const union = new Set([...set1, ...set2]).size
-  return (intersection / union) * 100
-}
-
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -134,20 +126,35 @@ Deno.serve(async (req: Request) => {
       .map(building => {
         console.log('Processing building:', building.id, building.name);
         
-        // Calculate location score using a more generous radius
+        // Calculate location score with improved distance weighting
         let locationScore = 0;
         if (preferences.preferred_localities?.length && building.latitude && building.longitude) {
-          const locationDistances = preferences.preferred_localities.map(loc => 
-            haversineDistance(
+          const locationDistances = preferences.preferred_localities.map(loc => {
+            const distance = haversineDistance(
               (loc as any).latitude, 
               (loc as any).longitude, 
               building.latitude, 
               building.longitude
-            )
-          );
-          // Now normalize between 0-5km instead of 0-10km for a more generous score
-          // 0km = 100%, 5km = 0%
-          locationScore = normalize(Math.min(...locationDistances), 0, 5);
+            );
+            console.log('Distance calculation:', {
+              buildingName: building.name,
+              buildingLocation: `${building.latitude},${building.longitude}`,
+              preferredLocation: `${(loc as any).latitude},${(loc as any).longitude}`,
+              distanceKm: distance
+            });
+            return distance;
+          });
+          
+          // Calculate location score based on closest preferred location
+          // 0-2km: 100-80%, 2-5km: 80-50%, 5-10km: 50-0%
+          const minDistance = Math.min(...locationDistances);
+          if (minDistance <= 2) {
+            locationScore = 100 - (minDistance / 2) * 20; // 100% at 0km, 80% at 2km
+          } else if (minDistance <= 5) {
+            locationScore = 80 - ((minDistance - 2) / 3) * 30; // 80% at 2km, 50% at 5km
+          } else if (minDistance <= 10) {
+            locationScore = 50 - ((minDistance - 5) / 5) * 50; // 50% at 5km, 0% at 10km
+          }
         }
 
         // Budget score with conversion from lakhs to rupees
