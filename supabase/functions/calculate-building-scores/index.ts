@@ -92,28 +92,22 @@ Deno.serve(async (req: Request) => {
       .from('user_preferences')
       .select('*')
       .eq('user_id', user_id)
-      .single()
+      .maybeSingle()
 
     if (preferencesError) {
       console.error('Error fetching preferences:', preferencesError)
       throw preferencesError
     }
 
-    console.log('User preferences:', preferences);
-
-    // Get shortlisted buildings
-    const { data: shortlistedData, error: shortlistedError } = await supabase
-      .from('user_shortlisted_buildings')
-      .select('shortlisted_building_ids')
-      .eq('user_id', user_id)
-      .single()
-
-    if (shortlistedError && shortlistedError.code !== 'PGRST116') {
-      console.error('Error fetching shortlisted buildings:', shortlistedError)
-      throw shortlistedError
+    if (!preferences) {
+      console.log('No preferences found for user:', user_id);
+      return new Response(
+        JSON.stringify({ message: 'No preferences found for user' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
     }
 
-    const shortlistedBuildingIds = shortlistedData?.shortlisted_building_ids || []
+    console.log('User preferences:', preferences);
 
     // Get all buildings
     const { data: buildings, error: buildingsError } = await supabase
@@ -129,12 +123,8 @@ Deno.serve(async (req: Request) => {
 
     const scores = buildings
       .filter(building => {
-        if (preferences.bhk_preferences?.length) {
-          return preferences.bhk_preferences.some(bhk => 
-            building.bhk_types?.includes(bhk)
-          )
-        }
-        return true
+        // Only process buildings with valid data
+        return building.min_price && building.lifestyle_cohort;
       })
       .map(building => {
         console.log('Processing building:', building.id, building.name);
@@ -172,28 +162,11 @@ Deno.serve(async (req: Request) => {
           lifestyleScore: lifestyleScore / 100
         });
 
-        // Apply shortlist boost
-        let shortlistBoost = 0
-        if (shortlistedBuildingIds.includes(building.id)) {
-          shortlistBoost = 0.1 // 10% boost
-        } else {
-          const similarShortlisted = buildings.filter(b =>
-            shortlistedBuildingIds.includes(b.id) &&
-            b.latitude && b.longitude && building.latitude && building.longitude &&
-            haversineDistance(b.latitude, b.longitude, building.latitude, building.longitude) < 2 &&
-            Math.abs((b.min_price || 0) - (building.min_price || 0)) / (b.min_price || 1) < 0.2
-          )
-          if (similarShortlisted.length > 0) {
-            shortlistBoost = 0.05 // 5% boost
-          }
-        }
-
         // Final weighted score
         const overallScore = Math.min(1, Math.max(0,
           (locationScore / 100) * 0.3 +
           (budgetScore / 100) * 0.3 +
-          (lifestyleScore / 100) * 0.3 +
-          shortlistBoost
+          (lifestyleScore / 100) * 0.4
         ))
 
         return {
@@ -221,10 +194,12 @@ Deno.serve(async (req: Request) => {
       throw upsertError
     }
 
+    console.log('Successfully updated scores for user:', user_id);
+
     return new Response(
       JSON.stringify({ 
         message: 'Building scores updated successfully',
-        scores 
+        scoresCount: scores.length 
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
