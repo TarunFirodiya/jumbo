@@ -26,37 +26,42 @@ function calculateBudgetScore(userBudget: number, minPrice: number, maxPrice: nu
   
   // Convert user budget from lakhs to rupees (1L = 100,000)
   const userBudgetInRupees = userBudget * 100000;
+  const maxPriceToUse = maxPrice || minPrice;
   
-  maxPrice = maxPrice || minPrice;
-  
-  if (maxPrice < userBudgetInRupees * 0.8 || minPrice > userBudgetInRupees * 1.2) {
-    return 0 // Out of range
+  console.log('Budget comparison:', {
+    userBudget: userBudgetInRupees,
+    minPrice,
+    maxPrice: maxPriceToUse
+  });
+
+  // Perfect match if building price is within 20% of user's budget
+  const lowerBound = userBudgetInRupees * 0.8;
+  const upperBound = userBudgetInRupees * 1.2;
+
+  // If building price range overlaps with user's acceptable range
+  if (minPrice <= upperBound && maxPriceToUse >= lowerBound) {
+    const overlap = Math.min(maxPriceToUse, upperBound) - Math.max(minPrice, lowerBound);
+    const totalRange = upperBound - lowerBound;
+    return Math.max(0, Math.min(1, overlap / totalRange));
   }
 
-  const overlap = Math.max(0, Math.min(maxPrice, userBudgetInRupees) - Math.max(minPrice, userBudgetInRupees * 0.8))
-  return normalize(overlap, 0, userBudgetInRupees * 0.4)
+  return 0; // No overlap in price ranges
 }
 
-function calculateGoogleRatingScore(rating: number | null): number {
-  if (!rating) return 0;
+function calculateLifestyleScore(buildingCohort: number | null, userCohort: number | null): number {
+  if (!buildingCohort || !userCohort) return 0;
   
-  if (rating >= 4.5) return 90 + (rating - 4.5) * 10
-  if (rating >= 3.5) return normalize(rating, 3.5, 4.5) * 60
-  if (rating >= 2.5) return normalize(rating, 2.5, 3.5) * 50
-  return 0
-}
+  console.log('Lifestyle comparison:', {
+    buildingCohort,
+    userCohort
+  });
 
-function calculateLifestyleScore(buildingCohort: number | null, age: number | null): number {
-  if (!buildingCohort || !age) return 0;
+  // Direct match gets highest score
+  if (buildingCohort === userCohort) return 1;
   
-  // Normalize age to a 0-100 scale where newer buildings get higher scores
-  const ageScore = Math.max(0, 100 - (age * 5)); // 20 year old building would get 0
-  
-  // Compare building cohort with normalized age score
-  const cohortScore = normalize(buildingCohort * 20, 0, 100); // Convert cohort (1-5) to 0-100
-  
-  // Combined score weighted towards the cohort
-  return (cohortScore * 0.7 + ageScore * 0.3);
+  // Calculate score based on how far apart the cohorts are
+  const cohortDifference = Math.abs(buildingCohort - userCohort);
+  return Math.max(0, 1 - (cohortDifference * 0.25)); // Reduce score by 25% for each level difference
 }
 
 function jaccardSimilarity(set1: string[], set2: string[]): number {
@@ -129,8 +134,8 @@ Deno.serve(async (req: Request) => {
       .map(building => {
         console.log('Processing building:', building.id, building.name);
         
-        // Location score
-        let locationScore = 0
+        // Location score calculation remains the same
+        let locationScore = 0;
         if (preferences.preferred_localities?.length && building.latitude && building.longitude) {
           const locationDistances = preferences.preferred_localities.map(loc => 
             haversineDistance(
@@ -139,8 +144,8 @@ Deno.serve(async (req: Request) => {
               building.latitude, 
               building.longitude
             )
-          )
-          locationScore = normalize(Math.min(...locationDistances), 0, 10)
+          );
+          locationScore = normalize(Math.min(...locationDistances), 0, 10);
         }
 
         // Budget score with conversion from lakhs to rupees
@@ -148,13 +153,13 @@ Deno.serve(async (req: Request) => {
           preferences.max_budget || 0,
           building.min_price || 0,
           building.max_price || building.min_price || 0
-        )
+        ) * 100;
 
-        // Lifestyle score using building age and cohort
+        // Lifestyle score using building cohort and user preferences
         const lifestyleScore = calculateLifestyleScore(
           building.lifestyle_cohort || 0,
-          building.age || 0
-        )
+          preferences.lifestyle_cohort || 0
+        ) * 100;
 
         console.log('Scores for building:', building.id, {
           locationScore: locationScore / 100,
@@ -167,7 +172,7 @@ Deno.serve(async (req: Request) => {
           (locationScore / 100) * 0.3 +
           (budgetScore / 100) * 0.3 +
           (lifestyleScore / 100) * 0.4
-        ))
+        ));
 
         return {
           building_id: building.id,
@@ -176,10 +181,8 @@ Deno.serve(async (req: Request) => {
           budget_match_score: budgetScore / 100,
           lifestyle_match_score: lifestyleScore / 100,
           overall_match_score: overallScore,
-          calculated_at: new Date().toISOString(),
-          top_callout_1: `${Math.round(locationScore)}% location match`,
-          top_callout_2: `${Math.round(budgetScore)}% budget match`
-        }
+          calculated_at: new Date().toISOString()
+        };
       })
 
     // Update scores in database
