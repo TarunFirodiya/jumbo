@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -60,7 +61,7 @@ export default function Preferences() {
             preferred_localities: preferences.preferred_localities || [],
             max_budget: preferences.max_budget || 50,
             bhk_preferences: preferences.bhk_preferences || [],
-            lifestyle_cohort: preferences.lifestyle_cohort || "",
+            lifestyle_cohort: preferences.lifestyle_cohort ? preferences.lifestyle_cohort.toString() : "",
             home_features: preferences.home_features || [],
             deal_breakers: preferences.deal_breakers || [],
             custom_home_features: [],
@@ -99,7 +100,7 @@ export default function Preferences() {
         user_id: user.id,
         preferred_localities: formData.preferred_localities,
         max_budget: formData.max_budget,
-        lifestyle_cohort: formData.lifestyle_cohort,
+        lifestyle_cohort: formData.lifestyle_cohort ? parseInt(formData.lifestyle_cohort) : null,
         home_features: [...formData.home_features, ...formData.custom_home_features],
         deal_breakers: [...formData.deal_breakers, ...formData.custom_deal_breakers],
         bhk_preferences: formData.bhk_preferences,
