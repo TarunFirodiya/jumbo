@@ -1,3 +1,4 @@
+
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
@@ -9,22 +10,22 @@ interface LifestyleStepProps {
 const lifestyleOptions = [
   { 
     title: "Luxury Amenities", 
-    value: "luxury",
+    value: "1",
     image: "/lovable-uploads/78099c8f-77ed-425b-a422-4b59f9d9647a.png"
   },
   { 
-    title: "Gated Society, Amenities don't matter", 
-    value: "gated_no_amenities",
-    image: "/lovable-uploads/7f78928d-0b35-4267-8b36-ead15a4ed061.png"
-  },
-  { 
     title: "Gated Society, Basic Amenities", 
-    value: "gated_basic",
+    value: "2",
     image: "/lovable-uploads/93986bd2-d46e-4473-a596-16cec932d7cd.png"
   },
   { 
+    title: "Gated Society, Amenities don't matter", 
+    value: "3",
+    image: "/lovable-uploads/7f78928d-0b35-4267-8b36-ead15a4ed061.png"
+  },
+  { 
     title: "Standalone Building", 
-    value: "standalone",
+    value: "4",
     image: "/lovable-uploads/624fb8be-298e-45c4-b30c-2bd59fba032e.png"
   },
 ];

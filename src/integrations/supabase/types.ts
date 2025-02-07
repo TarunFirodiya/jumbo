@@ -241,7 +241,7 @@ export type Database = {
           deal_breakers: string[] | null
           home_features: string[] | null
           id: string
-          lifestyle_cohort: string | null
+          lifestyle_cohort: number | null
           max_budget: number | null
           notes: string | null
           preferred_localities: Json[] | null
@@ -255,7 +255,7 @@ export type Database = {
           deal_breakers?: string[] | null
           home_features?: string[] | null
           id?: string
-          lifestyle_cohort?: string | null
+          lifestyle_cohort?: number | null
           max_budget?: number | null
           notes?: string | null
           preferred_localities?: Json[] | null
@@ -269,7 +269,7 @@ export type Database = {
           deal_breakers?: string[] | null
           home_features?: string[] | null
           id?: string
-          lifestyle_cohort?: string | null
+          lifestyle_cohort?: number | null
           max_budget?: number | null
           notes?: string | null
           preferred_localities?: Json[] | null
