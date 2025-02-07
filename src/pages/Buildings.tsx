@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Heart, MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search } from "lucide-react";
+import { Heart, MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -245,8 +245,20 @@ export default function Buildings() {
         </div>
         <div className="flex items-center justify-between text-sm">
           <p className="text-muted-foreground">
-            {filteredBuildings.length} {filteredBuildings.length === 1 ? 'home' : 'homes'} found
+            {showAllHomes 
+              ? `${filteredBuildings.length} ${filteredBuildings.length === 1 ? 'home' : 'homes'} found`
+              : `${filteredBuildings.length} ${filteredBuildings.length === 1 ? 'home matches' : 'homes match'} your preferences`
+            }
           </p>
+          {!showAllHomes && (
+            <button 
+              onClick={() => navigate('/preferences')}
+              className="flex items-center gap-1 text-primary hover:underline"
+            >
+              Change Preferences
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 
