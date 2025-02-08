@@ -18,9 +18,12 @@ export function useShortlist(id: string, buildingName: string) {
         .select('shortlisted')
         .eq('building_id', id)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle(); // Changed from .single() to .maybeSingle()
 
-      if (error) return false;
+      if (error) {
+        console.error('Error fetching shortlist status:', error);
+        return false;
+      }
       return data?.shortlisted || false;
     },
   });
@@ -55,6 +58,7 @@ export function useShortlist(id: string, buildingName: string) {
         description: `${buildingName} has been ${isShortlisted ? 'removed from' : 'added to'} your shortlist`,
       });
     } catch (error) {
+      console.error('Error toggling shortlist:', error);
       toast({
         title: "Error",
         description: "Could not update shortlist",
