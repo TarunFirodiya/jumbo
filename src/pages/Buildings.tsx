@@ -113,24 +113,43 @@ export default function Buildings() {
   });
 
   const filteredBuildings = useMemo(() => {
-    if (!buildings || !buildingScores) return [];
+    if (!buildings || !buildingScores) {
+      console.log('No buildings or scores available:', { buildings, buildingScores });
+      return [];
+    }
+    
+    console.log('Filtering buildings with scores:', { 
+      totalBuildings: buildings.length,
+      buildingsWithScores: Object.keys(buildingScores).length,
+      showAllHomes
+    });
     
     // Filter buildings based on match scores only if showAllHomes is false
     const matchScoreFiltered = showAllHomes ? buildings : buildings.filter(building => {
       const scores = buildingScores[building.id];
-      if (!scores) return false;
+      console.log(`Building ${building.name} scores:`, scores);
       
+      if (!scores) {
+        console.log(`No scores for building ${building.name}`);
+        return false;
+      }
+      
+      // Relaxing the score thresholds to show more results
       return (
-        scores.location_match_score > 0.5 &&
-        scores.budget_match_score > 0.5 &&
-        scores.lifestyle_match_score > 0.5
+        scores.location_match_score >= 0 &&
+        scores.budget_match_score >= 0 &&
+        scores.lifestyle_match_score >= 0
       );
     });
     
+    console.log('After match score filtering:', matchScoreFiltered.length);
+
     // Apply search filter
     const filtered = matchScoreFiltered.filter(building => 
       building.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    console.log('After search filtering:', filtered.length);
 
     // Sort by overall match score
     return filtered.sort((a, b) => {
