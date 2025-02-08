@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +19,20 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const { toast } = useToast();
   const isAuthPage = location.pathname === "/auth";
   const isPreferencesPage = location.pathname === "/preferences";
+  const [showLogo, setShowLogo] = useState(true);
+
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      setShowLogo(currentScrollY <= lastScrollY || currentScrollY < 50);
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -36,9 +51,24 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <main className="container mx-auto px-4 py-8">
+      <div 
+        className={`fixed top-0 left-0 w-full z-50 transition-transform duration-300 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${
+          showLogo ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        <div className="container mx-auto px-4 py-4">
+          <img 
+            src="/lovable-uploads/aa29ee67-7c22-40ce-b82d-f704e9c92c3a.png" 
+            alt="Serai Homes" 
+            className="h-8 md:h-10 w-auto"
+          />
+        </div>
+      </div>
+      
+      <main className="container mx-auto px-4 py-8 mt-16">
         {children}
       </main>
+
       {!isAuthPage && !isPreferencesPage && (
         <div className="fixed bottom-0 left-0 right-0 z-50 p-4">
           <div className="container mx-auto">
