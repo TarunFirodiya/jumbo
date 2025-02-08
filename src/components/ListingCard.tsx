@@ -1,7 +1,7 @@
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BadgeIndianRupee, Bed, Square, Compass, Layers } from "lucide-react";
+import { BadgeIndianRupee, Bed, Square, Compass, Layers, ArrowRight } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -53,7 +53,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
 
         <Button onClick={handleRequestVisit} className="w-full">
           Request a Visit
-          <BadgeIndianRupee className="h-4 w-4 ml-2" />
+          <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
       </div>
     </Card>

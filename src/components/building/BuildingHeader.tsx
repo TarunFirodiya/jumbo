@@ -1,5 +1,5 @@
 
-import { MapPin, Heart, Star } from "lucide-react";
+import { MapPin, Heart, Star, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
@@ -39,28 +39,7 @@ export function BuildingHeader({
 
   return (
     <div className="flex justify-between items-start">
-      <div>
-        <h1 className="text-2xl font-semibold">{name}</h1>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <MapPin className="h-4 w-4" />
-          <span>{locality}</span>
-        </div>
-        {startingPrice && (
-          <div className="mt-1 text-sm font-medium">
-            Starting at ₹{(startingPrice/10000000).toFixed(1)} Cr
-          </div>
-        )}
-      </div>
-      <div className="flex items-center gap-4">
-        {googleRating && (
-          <div className="flex flex-col items-end">
-            <div className="flex items-center gap-1">
-              {renderStars(googleRating)}
-              <span className="font-semibold ml-1">{googleRating}</span>
-            </div>
-            <span className="text-sm text-muted-foreground">Google Ratings</span>
-          </div>
-        )}
+      <div className="flex items-start gap-4">
         {typeof matchScore === 'number' && (
           <div 
             className="flex flex-col items-center cursor-pointer" 
@@ -77,6 +56,29 @@ export function BuildingHeader({
               </div>
             </div>
             <span className="text-sm text-muted-foreground mt-1">Match</span>
+          </div>
+        )}
+        <div>
+          <h1 className="text-2xl font-semibold">{name}</h1>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <MapPin className="h-4 w-4" />
+            <span>{locality}</span>
+          </div>
+          {startingPrice && (
+            <div className="mt-1 text-sm font-medium">
+              Starting at ₹{(startingPrice/10000000).toFixed(1)} Cr
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-4">
+        {googleRating && (
+          <div className="flex flex-col items-end">
+            <div className="flex items-center gap-1">
+              {renderStars(googleRating)}
+              <span className="font-semibold ml-1">{googleRating}</span>
+            </div>
+            <span className="text-sm text-muted-foreground">Google Ratings</span>
           </div>
         )}
         <Button
