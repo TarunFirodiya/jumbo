@@ -184,6 +184,7 @@ export type Database = {
       }
       user_building_scores: {
         Row: {
+          bhk_match_score: number | null
           budget_match_score: number | null
           building_id: string | null
           calculated_at: string | null
@@ -197,6 +198,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          bhk_match_score?: number | null
           budget_match_score?: number | null
           building_id?: string | null
           calculated_at?: string | null
@@ -210,6 +212,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          bhk_match_score?: number | null
           budget_match_score?: number | null
           building_id?: string | null
           calculated_at?: string | null
