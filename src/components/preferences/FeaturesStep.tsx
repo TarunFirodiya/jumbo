@@ -1,5 +1,4 @@
 
-import { Label } from "@/components/ui/label";
 import { TagsSelector } from "@/components/ui/tags-selector";
 
 interface FeaturesStepProps {
@@ -22,12 +21,11 @@ export function FeaturesStep({ value, onChange }: FeaturesStepProps) {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      <Label className="text-sm">Which of these does your ideal home have? (select any 3)</Label>
       <TagsSelector 
         tags={HOME_TAGS}
         selectedTags={selectedTags}
         onTagSelect={(tags) => onChange(tags.map(t => t.id))}
-        title="Home Features"
+        title="What does your ideal home have? (select any 3)"
       />
     </div>
   );
