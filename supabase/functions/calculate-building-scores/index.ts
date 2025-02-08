@@ -34,20 +34,30 @@ function calculateBudgetScore(userBudget: number, minPrice: number, maxPrice: nu
     maxPrice: maxPriceToUse
   });
 
-  // If the property's max price is within user's budget, it's a perfect match
+  // If property's price is within budget, it's a perfect match
   if (maxPriceToUse <= userBudgetInRupees) {
     return 1;
   }
 
-  // If the minimum price is already above user's budget, it's a no match
-  if (minPrice > userBudgetInRupees) {
-    return 0;
+  // Calculate how much the price exceeds the budget
+  const excessAmount = maxPriceToUse - userBudgetInRupees;
+  
+  // Allow a grace period of 50% above budget
+  const gracePeriod = userBudgetInRupees * 0.5;
+  
+  if (excessAmount <= gracePeriod) {
+    // Calculate score on a sliding scale from 100% to 20%
+    // Properties at the user's budget get 100%
+    // Properties at the grace period limit get 20%
+    const score = 1 - (0.8 * excessAmount / gracePeriod);
+    return Math.max(0.2, score);
   }
-
-  // If the price range overlaps with user's budget, calculate partial match
-  // This happens when minPrice is below budget but maxPrice is above
-  const overlapScore = (userBudgetInRupees - minPrice) / (maxPriceToUse - minPrice);
-  return Math.max(0, Math.min(1, overlapScore));
+  
+  // If price exceeds budget + grace period, calculate a minimal score
+  // that continues to decrease but never quite reaches 0
+  const extraExcess = excessAmount - gracePeriod;
+  const baseScore = 0.2; // Minimum score at grace period
+  return Math.max(0.05, baseScore * Math.exp(-extraExcess / userBudgetInRupees));
 }
 
 function calculateLifestyleScore(buildingCohort: number | null, userCohort: number | null): number {
