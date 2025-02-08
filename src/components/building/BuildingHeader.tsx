@@ -69,7 +69,7 @@ export function BuildingHeader({
             <div className="relative w-12 h-12">
               <Progress 
                 value={matchScore * 100} 
-                className="h-12 w-12 [&>div]:stroke-primary [&>div]:stroke-[8px]"
+                className="h-12 w-12 [&>div]:stroke-[8px]"
                 indicatorClassName="stroke-primary"
               />
               <div className="absolute inset-0 flex items-center justify-center font-semibold">
