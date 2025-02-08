@@ -7,6 +7,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -28,6 +29,8 @@ serve(async (req) => {
       },
     )
   } catch (error) {
+    console.error('Error in get-google-maps-key function:', error)
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
