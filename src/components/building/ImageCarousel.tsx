@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/carousel";
 import { cn } from "@/lib/utils";
 import { type UseEmblaCarouselType } from 'embla-carousel-react';
-import { supabase } from "@/integrations/supabase/client";
 
 interface ImageCarouselProps {
   images: string[];
@@ -19,22 +18,6 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [emblaRef, setEmblaRef] = useState<UseEmblaCarouselType[1] | null>(null);
   const [failedImages, setFailedImages] = useState<Record<number, boolean>>({});
-  const [googleMapsKey, setGoogleMapsKey] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchGoogleMapsKey() {
-      try {
-        const { data, error } = await supabase.functions.invoke('get-google-maps-key', {
-          method: 'GET'
-        });
-        if (error) throw error;
-        setGoogleMapsKey(data.apiKey);
-      } catch (error) {
-        console.error('Error fetching Google Maps key:', error);
-      }
-    }
-    fetchGoogleMapsKey();
-  }, []);
 
   if (!images?.length) return null;
 
@@ -43,8 +26,8 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
   };
 
   const processImageUrl = (url: string) => {
-    if (url.includes('maps.googleapis.com') && googleMapsKey) {
-      return `${url}&key=${googleMapsKey}`;
+    if (url.includes('maps.googleapis.com')) {
+      return 'https://images.unsplash.com/photo-1487958449943-2429e8be8625';
     }
     return url;
   };
