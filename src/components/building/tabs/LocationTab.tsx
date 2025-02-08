@@ -10,8 +10,7 @@ interface LocationTabProps {
 
 export function LocationTab({ latitude, longitude, buildingName }: LocationTabProps) {
   return (
-    <Card className="p-6">
-      <h3 className="text-lg font-semibold mb-4">Location</h3>
+    <div>
       {latitude && longitude ? (
         <LocationMap
           latitude={latitude}
@@ -21,6 +20,6 @@ export function LocationTab({ latitude, longitude, buildingName }: LocationTabPr
       ) : (
         <p className="text-muted-foreground">Location information not available</p>
       )}
-    </Card>
+    </div>
   );
 }

@@ -48,6 +48,8 @@ export default function BuildingDetails() {
             isShortlisted={isShortlisted || false}
             onToggleShortlist={toggleShortlist}
             startingPrice={startingPrice}
+            matchScore={buildingScore?.overall_match_score}
+            onScoreClick={() => setShowScoreModal(true)}
           />
         </div>
       </div>
@@ -61,13 +63,15 @@ export default function BuildingDetails() {
           pricePsqft={building.price_psqft}
           minPrice={building.min_price}
           maxPrice={building.max_price}
+          water={building.water}
+          bank={building.bank}
         />
 
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs defaultValue="avl-units" className="w-full">
           {isMobile ? (
             <ScrollArea className="w-full whitespace-nowrap">
               <TabsList className="inline-flex w-max border-b rounded-none p-0">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="avl-units">Avl Units</TabsTrigger>
                 <TabsTrigger value="location">Location</TabsTrigger>
                 <TabsTrigger value="amenities">Amenities</TabsTrigger>
                 <TabsTrigger value="reviews" disabled={!building.google_rating}>Reviews</TabsTrigger>
@@ -76,14 +80,14 @@ export default function BuildingDetails() {
             </ScrollArea>
           ) : (
             <TabsList className="w-full justify-start">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="avl-units">Avl Units</TabsTrigger>
               <TabsTrigger value="location">Location</TabsTrigger>
               <TabsTrigger value="amenities">Amenities</TabsTrigger>
               <TabsTrigger value="reviews" disabled={!building.google_rating}>Reviews</TabsTrigger>
             </TabsList>
           )}
 
-          <TabsContent value="overview">
+          <TabsContent value="avl-units">
             <AvailableHomes listings={listings} />
           </TabsContent>
 

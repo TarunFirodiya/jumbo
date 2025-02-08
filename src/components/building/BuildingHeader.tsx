@@ -2,6 +2,7 @@
 import { MapPin, Heart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 
 interface BuildingHeaderProps {
   name: string;
@@ -10,6 +11,8 @@ interface BuildingHeaderProps {
   isShortlisted: boolean;
   onToggleShortlist: () => void;
   startingPrice?: number;
+  matchScore?: number;
+  onScoreClick?: () => void;
 }
 
 export function BuildingHeader({
@@ -19,6 +22,8 @@ export function BuildingHeader({
   isShortlisted,
   onToggleShortlist,
   startingPrice,
+  matchScore,
+  onScoreClick,
 }: BuildingHeaderProps) {
   const renderStars = (rating: number) => {
     return Array(5).fill(0).map((_, i) => (
@@ -53,7 +58,25 @@ export function BuildingHeader({
               {renderStars(googleRating)}
               <span className="font-semibold ml-1">{googleRating}</span>
             </div>
-            <span className="text-sm text-muted-foreground">The people's voice!</span>
+            <span className="text-sm text-muted-foreground">Google Ratings</span>
+          </div>
+        )}
+        {typeof matchScore === 'number' && (
+          <div 
+            className="flex flex-col items-center cursor-pointer" 
+            onClick={onScoreClick}
+          >
+            <div className="relative w-12 h-12">
+              <Progress 
+                value={matchScore * 100} 
+                className="h-12 w-12 [&>div]:stroke-primary [&>div]:stroke-[8px]"
+                indicatorClassName="stroke-primary"
+              />
+              <div className="absolute inset-0 flex items-center justify-center font-semibold">
+                {Math.round(matchScore * 100)}%
+              </div>
+            </div>
+            <span className="text-sm text-muted-foreground mt-1">Match</span>
           </div>
         )}
         <Button

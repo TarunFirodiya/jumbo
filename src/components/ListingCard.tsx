@@ -1,7 +1,7 @@
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BadgeIndianRupee, Bath, ArrowRight, Square, Compass, Layers } from "lucide-react";
+import { BadgeIndianRupee, Bed, Square, Compass, Layers } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -34,8 +34,8 @@ export default function ListingCard({ listing }: ListingCardProps) {
           </div>
           
           <div className="flex items-center gap-1">
-            <Bath className="h-4 w-4 text-muted-foreground" />
-            <span>{listing.bathrooms} Bath</span>
+            <Bed className="h-4 w-4 text-muted-foreground" />
+            <span>{listing.bedrooms} Bed</span>
           </div>
           
           <div className="flex items-center gap-1">
@@ -51,15 +51,9 @@ export default function ListingCard({ listing }: ListingCardProps) {
           )}
         </div>
 
-        {listing.maintenance && (
-          <div className="text-sm text-muted-foreground">
-            Maintenance: ₹{listing.maintenance}/month
-          </div>
-        )}
-
         <Button onClick={handleRequestVisit} className="w-full">
           Request a Visit
-          <ArrowRight className="h-4 w-4 ml-2" />
+          <BadgeIndianRupee className="h-4 w-4 ml-2" />
         </Button>
       </div>
     </Card>
