@@ -19,7 +19,17 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
   const [emblaRef, setEmblaRef] = useState<UseEmblaCarouselType[1] | null>(null);
   const [failedImages, setFailedImages] = useState<Record<number, boolean>>({});
 
-  if (!images?.length) return null;
+  if (!images?.length) {
+    return (
+      <div className="w-full aspect-video bg-muted flex items-center justify-center">
+        <img 
+          src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
+          alt="Building placeholder"
+          className="w-full h-full object-cover"
+        />
+      </div>
+    );
+  }
 
   const handleImageError = (index: number) => {
     setFailedImages(prev => ({ ...prev, [index]: true }));
@@ -27,7 +37,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
 
   const processImageUrl = (url: string) => {
     if (url.includes('maps.googleapis.com')) {
-      return 'https://images.unsplash.com/photo-1487958449943-2429e8be8625';
+      return '/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png';
     }
     return url;
   };
@@ -50,7 +60,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
                 {failedImages[index] ? (
                   <div className="w-full h-full bg-muted flex items-center justify-center">
                     <img 
-                      src="https://images.unsplash.com/photo-1487958449943-2429e8be8625"
+                      src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
                       alt={`Building placeholder ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
