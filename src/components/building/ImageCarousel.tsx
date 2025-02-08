@@ -24,7 +24,9 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
   useEffect(() => {
     async function fetchGoogleMapsKey() {
       try {
-        const { data, error } = await supabase.functions.invoke('get-google-maps-key');
+        const { data, error } = await supabase.functions.invoke('get-google-maps-key', {
+          method: 'GET'
+        });
         if (error) throw error;
         setGoogleMapsKey(data.apiKey);
       } catch (error) {
