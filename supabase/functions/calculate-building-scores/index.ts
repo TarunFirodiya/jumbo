@@ -76,8 +76,28 @@ function calculateLifestyleScore(buildingCohort: number | null, userCohort: numb
   return Math.max(0, 1 - (cohortDifference * 0.25)); // Reduce score by 25% for each level difference
 }
 
+function calculateBHKMatchScore(buildingBHKTypes: number[], userBHKPreferences: number[]): number {
+  if (!buildingBHKTypes?.length || !userBHKPreferences?.length) return 0;
+  
+  console.log('BHK comparison:', {
+    buildingBHKTypes,
+    userBHKPreferences
+  });
+
+  // Check if there's any overlap between user preferences and building BHK types
+  const matchingBHKTypes = buildingBHKTypes.filter(bhk => userBHKPreferences.includes(bhk));
+  
+  if (matchingBHKTypes.length === 0) {
+    return 0; // No matching BHK types
+  }
+
+  // Calculate match score based on proportion of matching BHK types
+  // This ensures buildings with more matching BHK types get a higher score
+  const matchScore = matchingBHKTypes.length / Math.min(buildingBHKTypes.length, userBHKPreferences.length);
+  return matchScore;
+}
+
 Deno.serve(async (req: Request) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -154,6 +174,27 @@ Deno.serve(async (req: Request) => {
       })
       .map(building => {
         console.log('Processing building:', building.id, building.name);
+
+        // Calculate BHK match score
+        const bhkMatchScore = calculateBHKMatchScore(
+          building.bhk_types || [],
+          preferences.bhk_preferences || []
+        );
+
+        // If there's no BHK match, skip this building completely
+        if (bhkMatchScore === 0) {
+          console.log('No BHK match for building:', building.name);
+          return {
+            building_id: building.id,
+            user_id,
+            location_match_score: 0,
+            budget_match_score: 0,
+            lifestyle_match_score: 0,
+            bhk_match_score: 0,
+            overall_match_score: 0,
+            calculated_at: new Date().toISOString()
+          };
+        }
         
         // Calculate location score with improved distance weighting
         let locationScore = 0;
@@ -202,7 +243,8 @@ Deno.serve(async (req: Request) => {
         console.log('Scores for building:', building.id, {
           locationScore: locationScore / 100,
           budgetScore: budgetScore / 100,
-          lifestyleScore: lifestyleScore / 100
+          lifestyleScore: lifestyleScore / 100,
+          bhkMatchScore
         });
 
         // Add bonus for Google rating (up to 10% boost)
@@ -212,10 +254,12 @@ Deno.serve(async (req: Request) => {
         const shortlistedBonus = shortlistedMap[building.id] ? 0.05 : 0;
 
         // Final weighted score with bonuses
+        // Include BHK match score in the weighted calculation
         const baseScore = Math.min(1, Math.max(0,
-          (locationScore / 100) * 0.3 +
-          (budgetScore / 100) * 0.3 +
-          (lifestyleScore / 100) * 0.4
+          (locationScore / 100) * 0.25 +
+          (budgetScore / 100) * 0.25 +
+          (lifestyleScore / 100) * 0.25 +
+          bhkMatchScore * 0.25
         ));
 
         // Apply bonuses
@@ -227,17 +271,18 @@ Deno.serve(async (req: Request) => {
           location_match_score: locationScore / 100,
           budget_match_score: budgetScore / 100,
           lifestyle_match_score: lifestyleScore / 100,
+          bhk_match_score: bhkMatchScore,
           overall_match_score: overallScore,
           calculated_at: new Date().toISOString()
         };
-      })
+      });
 
     // Update scores in database
     const { error: upsertError } = await supabase
       .from('user_building_scores')
       .upsert(scores, {
         onConflict: 'user_id,building_id'
-      })
+      });
 
     if (upsertError) {
       console.error('Error upserting scores:', upsertError)
