@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const corsHeaders = {
@@ -35,18 +34,20 @@ function calculateBudgetScore(userBudget: number, minPrice: number, maxPrice: nu
     maxPrice: maxPriceToUse
   });
 
-  // Perfect match if building price is within 20% of user's budget
-  const lowerBound = userBudgetInRupees * 0.8;
-  const upperBound = userBudgetInRupees * 1.2;
-
-  // If building price range overlaps with user's acceptable range
-  if (minPrice <= upperBound && maxPriceToUse >= lowerBound) {
-    const overlap = Math.min(maxPriceToUse, upperBound) - Math.max(minPrice, lowerBound);
-    const totalRange = upperBound - lowerBound;
-    return Math.max(0, Math.min(1, overlap / totalRange));
+  // If the property's max price is within user's budget, it's a perfect match
+  if (maxPriceToUse <= userBudgetInRupees) {
+    return 1;
   }
 
-  return 0; // No overlap in price ranges
+  // If the minimum price is already above user's budget, it's a no match
+  if (minPrice > userBudgetInRupees) {
+    return 0;
+  }
+
+  // If the price range overlaps with user's budget, calculate partial match
+  // This happens when minPrice is below budget but maxPrice is above
+  const overlapScore = (userBudgetInRupees - minPrice) / (maxPriceToUse - minPrice);
+  return Math.max(0, Math.min(1, overlapScore));
 }
 
 function calculateLifestyleScore(buildingCohort: number | null, userCohort: number | null): number {
