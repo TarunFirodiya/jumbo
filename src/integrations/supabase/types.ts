@@ -12,6 +12,7 @@ export type Database = {
       buildings: {
         Row: {
           age: number | null
+          bank: string[] | null
           bhk_types: number[] | null
           created_at: string | null
           data_source: string | null
@@ -34,9 +35,11 @@ export type Database = {
           type: string | null
           updated_at: string | null
           video_thumbnail: string | null
+          water: string[] | null
         }
         Insert: {
           age?: number | null
+          bank?: string[] | null
           bhk_types?: number[] | null
           created_at?: string | null
           data_source?: string | null
@@ -59,9 +62,11 @@ export type Database = {
           type?: string | null
           updated_at?: string | null
           video_thumbnail?: string | null
+          water?: string[] | null
         }
         Update: {
           age?: number | null
+          bank?: string[] | null
           bhk_types?: number[] | null
           created_at?: string | null
           data_source?: string | null
@@ -84,6 +89,7 @@ export type Database = {
           type?: string | null
           updated_at?: string | null
           video_thumbnail?: string | null
+          water?: string[] | null
         }
         Relationships: []
       }
@@ -158,6 +164,30 @@ export type Database = {
           id?: string
           phone_number?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      temp_buildings: {
+        Row: {
+          bank: string[] | null
+          created_at: string
+          id: string
+          images: string[] | null
+          water: string[] | null
+        }
+        Insert: {
+          bank?: string[] | null
+          created_at?: string
+          id?: string
+          images?: string[] | null
+          water?: string[] | null
+        }
+        Update: {
+          bank?: string[] | null
+          created_at?: string
+          id?: string
+          images?: string[] | null
+          water?: string[] | null
         }
         Relationships: []
       }
