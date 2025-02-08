@@ -27,6 +27,8 @@ export default function Preferences() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const totalSteps = 6;
   const [formData, setFormData] = useState<FormData>({
     preferred_localities: [],
@@ -39,9 +41,47 @@ export default function Preferences() {
     custom_deal_breakers: [],
   });
 
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          navigate("/auth");
+          toast({
+            title: "Authentication required",
+            description: "You must be logged in to save preferences",
+            variant: "destructive",
+          });
+          return;
+        }
+        setIsAuthenticated(true);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Auth check error:", error);
+        navigate("/auth");
+      }
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed in Preferences:", event, session);
+      if (!session) {
+        navigate("/auth");
+        return;
+      }
+      setIsAuthenticated(true);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, toast]);
+
   // Fetch existing preferences
   useEffect(() => {
     const fetchPreferences = async () => {
+      if (!isAuthenticated) return;
+
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -77,10 +117,22 @@ export default function Preferences() {
       }
     };
 
-    fetchPreferences();
-  }, [toast]);
+    if (isAuthenticated) {
+      fetchPreferences();
+    }
+  }, [isAuthenticated, toast]);
 
   const handleSubmit = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to save preferences",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
     try {
       const {
         data: { user },
@@ -92,6 +144,7 @@ export default function Preferences() {
           description: "You must be logged in to save preferences",
           variant: "destructive",
         });
+        navigate("/auth");
         return;
       }
 
@@ -203,6 +256,12 @@ export default function Preferences() {
         return null;
     }
   };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>;
+  }
 
   return (
     <div className="container max-w-2xl mx-auto py-8">
