@@ -1,10 +1,10 @@
+
 import React, { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 
 interface BuildingsMapProps {
   buildings: Tables<'buildings'>[];
@@ -23,14 +23,8 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
       if (!mapContainer.current || map.current) return;
 
       try {
-        // Get the Mapbox token from Supabase Edge Function
-        const { data: { token }, error } = await supabase.functions.invoke('get-mapbox-token');
-        
-        if (error || !token) {
-          throw new Error('Failed to get Mapbox token');
-        }
-
-        mapboxgl.accessToken = token;
+        // Use a public Mapbox style URL
+        mapboxgl.accessToken = 'pk.eyJ1IjoibmV0YWdlbnQiLCJhIjoiY2xwdnJhOWxjMDFwaDJrbzhtOHZwbzl0eiJ9.YjcsXGz9cG5STojYkFlGvg';
         
         const initializedMap = new mapboxgl.Map({
           container: mapContainer.current,
@@ -138,7 +132,7 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
             <p class="text-sm text-gray-600 mb-2">${building.locality || ''}</p>
             ${building.min_price ? 
               `<p class="text-sm font-medium">₹${(building.min_price/10000000).toFixed(1)} Cr${building.max_price ? 
-                ` - ₹${(building.max_price/10000000).toFixed(1)} Cr` : ''}</p>` 
+                ` - ₹${(building.max_price/10000000).toFixed(1)} Cr` : ''}` 
               : ''}
             <div class="mt-2 flex justify-between items-center">
               <button 
@@ -192,3 +186,4 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
 };
 
 export default BuildingsMap;
+
