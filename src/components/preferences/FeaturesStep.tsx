@@ -1,6 +1,6 @@
+
 import { Label } from "@/components/ui/label";
-import { Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { TagsSelector } from "@/components/ui/tags-selector";
 
 interface FeaturesStepProps {
   value: string[];
@@ -8,47 +8,27 @@ interface FeaturesStepProps {
   onAddCustom: (value: string) => void;
 }
 
-const homeFeatures = ["Balconies", "Spacious Rooms", "Great Ventilation"];
+const HOME_TAGS = [
+  { id: "high_rise", label: "High Rise" },
+  { id: "balconies", label: "Balconies" },
+  { id: "ventilation", label: "Ventilation" },
+  { id: "new_construction", label: "New Construction" },
+  { id: "child_friendly", label: "Child Friendly" },
+  { id: "pet_friendly", label: "Pet Friendly" },
+];
 
-export function FeaturesStep({ value, onChange, onAddCustom }: FeaturesStepProps) {
+export function FeaturesStep({ value, onChange }: FeaturesStepProps) {
+  const selectedTags = HOME_TAGS.filter(tag => value.includes(tag.id));
+
   return (
     <div className="space-y-4 animate-fade-in">
-      <Label className="text-sm">Which of these does your ideal home have?</Label>
-      <div className="grid grid-cols-2 gap-4">
-        {homeFeatures.map((feature) => (
-          <button
-            type="button"
-            key={feature}
-            onClick={() => {
-              const features = value.includes(feature)
-                ? value.filter((f) => f !== feature)
-                : [...value, feature];
-              onChange(features);
-            }}
-            className={cn(
-              "p-3 rounded-lg border-2 text-left transition-all",
-              value.includes(feature)
-                ? "border-primary bg-primary/10"
-                : "border-border hover:border-primary/50"
-            )}
-          >
-            {feature}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => {
-            const customFeature = window.prompt("Enter custom feature");
-            if (customFeature) {
-              onAddCustom(customFeature);
-            }
-          }}
-          className="p-3 rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex items-center justify-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Other</span>
-        </button>
-      </div>
+      <Label className="text-sm">Which of these does your ideal home have? (select any 3)</Label>
+      <TagsSelector 
+        tags={HOME_TAGS}
+        selectedTags={selectedTags}
+        onTagSelect={(tags) => onChange(tags.map(t => t.id))}
+        title="Home Features"
+      />
     </div>
   );
 }
