@@ -4,6 +4,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LocationMapProps {
   latitude: number;
@@ -19,14 +20,36 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
   const [selectedTypes, setSelectedTypes] = useState<PlaceType[]>([]);
   const { toast } = useToast();
   const markers = useRef<mapboxgl.Marker[]>([]);
+  const [mapboxToken, setMapboxToken] = useState<string>('');
 
   useEffect(() => {
+    const fetchMapboxToken = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        if (error) throw error;
+        if (data?.token) {
+          setMapboxToken(data.token);
+        }
+      } catch (error) {
+        console.error('Error fetching Mapbox token:', error);
+        toast({
+          title: "Error",
+          description: "Failed to initialize map settings",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchMapboxToken();
+  }, [toast]);
+
+  useEffect(() => {
+    if (!mapboxToken || !mapContainer.current) return;
+
     const initializeMap = async () => {
       try {
-        if (!mapContainer.current) return;
-
-        // Initialize Mapbox with public token
-        mapboxgl.accessToken = 'pk.eyJ1IjoibmV0YWdlbnQiLCJhIjoiY2xwdnJhOWxjMDFwaDJrbzhtOHZwbzl0eiJ9.YjcsXGz9cG5STojYkFlGvg';
+        // Initialize Mapbox with token from Edge Function
+        mapboxgl.accessToken = mapboxToken;
         
         const mapInstance = new mapboxgl.Map({
           container: mapContainer.current,
@@ -84,10 +107,10 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
         map.current.remove();
       }
     };
-  }, [latitude, longitude, buildingName, toast]);
+  }, [latitude, longitude, buildingName, toast, mapboxToken]);
 
   const searchNearbyPlaces = async (type: PlaceType) => {
-    if (!map.current) return;
+    if (!map.current || !mapboxToken) return;
 
     // Clear existing markers
     markers.current.forEach(marker => marker.remove());
@@ -102,8 +125,12 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${type}.json?` +
         `proximity=${longitude},${latitude}&` +
         `radius=${radius}&` +
-        `access_token=${mapboxgl.accessToken}`
+        `access_token=${mapboxToken}`
       );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const data = await response.json();
 
@@ -140,6 +167,10 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
       searchNearbyPlaces(type);
     }
   };
+
+  if (!mapboxToken) {
+    return <div className="h-[400px] w-full rounded-lg bg-muted flex items-center justify-center">Loading map...</div>;
+  }
 
   return (
     <div className="space-y-4">

@@ -1,10 +1,11 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BuildingsMapProps {
   buildings: Tables<'buildings'>[];
@@ -16,50 +17,67 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
   const markers = useRef<mapboxgl.Marker[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [mapboxToken, setMapboxToken] = useState<string>('');
 
-  // Initialize map
   useEffect(() => {
-    const initializeMap = async () => {
-      if (!mapContainer.current || map.current) return;
-
+    const fetchMapboxToken = async () => {
       try {
-        // Use a public Mapbox style URL
-        mapboxgl.accessToken = 'pk.eyJ1IjoibmV0YWdlbnQiLCJhIjoiY2xwdnJhOWxjMDFwaDJrbzhtOHZwbzl0eiJ9.YjcsXGz9cG5STojYkFlGvg';
-        
-        const initializedMap = new mapboxgl.Map({
-          container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/light-v11',
-          zoom: 12,
-          center: [77.5946, 12.9716], // Bangalore coordinates
-        });
-
-        map.current = initializedMap;
-
-        // Add navigation controls after map is initialized
-        initializedMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-        // Add markers once map is loaded
-        initializedMap.on('load', () => {
-          console.log('Map loaded, adding markers');
-          addMarkers();
-        });
-
-        return () => {
-          initializedMap.remove();
-          map.current = null;
-        };
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        if (error) throw error;
+        if (data?.token) {
+          setMapboxToken(data.token);
+        }
       } catch (error) {
-        console.error('Error initializing map:', error);
+        console.error('Error fetching Mapbox token:', error);
         toast({
-          title: "Map Error",
-          description: "There was an error loading the map",
+          title: "Error",
+          description: "Failed to initialize map settings",
           variant: "destructive",
         });
       }
     };
 
-    initializeMap();
+    fetchMapboxToken();
   }, [toast]);
+
+  // Initialize map
+  useEffect(() => {
+    if (!mapboxToken || !mapContainer.current || map.current) return;
+
+    try {
+      mapboxgl.accessToken = mapboxToken;
+      
+      const initializedMap = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/light-v11',
+        zoom: 12,
+        center: [77.5946, 12.9716], // Bangalore coordinates
+      });
+
+      map.current = initializedMap;
+
+      // Add navigation controls after map is initialized
+      initializedMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+      // Add markers once map is loaded
+      initializedMap.on('load', () => {
+        console.log('Map loaded, adding markers');
+        addMarkers();
+      });
+
+      return () => {
+        initializedMap.remove();
+        map.current = null;
+      };
+    } catch (error) {
+      console.error('Error initializing map:', error);
+      toast({
+        title: "Map Error",
+        description: "There was an error loading the map",
+        variant: "destructive",
+      });
+    }
+  }, [mapboxToken, toast]);
 
   // Function to add markers
   const addMarkers = () => {
@@ -178,6 +196,16 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
     }
   }, [buildings]);
 
+  if (!mapboxToken) {
+    return (
+      <div className="w-full h-[calc(100vh-12rem)]">
+        <div className="w-full h-full rounded-lg shadow-lg bg-muted flex items-center justify-center">
+          Loading map...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-[calc(100vh-12rem)]">
       <div ref={mapContainer} className="w-full h-full rounded-lg shadow-lg" />
@@ -186,4 +214,3 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
 };
 
 export default BuildingsMap;
-
