@@ -1,9 +1,9 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 interface LocationMapProps {
   latitude: number;
@@ -23,17 +23,10 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
   useEffect(() => {
     const initializeMap = async () => {
       try {
-        // Get Mapbox token from Supabase Edge Function
-        const { data: { token }, error } = await supabase.functions.invoke('get-mapbox-token');
-        
-        if (error || !token) {
-          throw new Error('Failed to get Mapbox token');
-        }
-
         if (!mapContainer.current) return;
 
-        // Initialize Mapbox
-        mapboxgl.accessToken = token;
+        // Initialize Mapbox with public token
+        mapboxgl.accessToken = 'pk.eyJ1IjoibmV0YWdlbnQiLCJhIjoiY2xwdnJhOWxjMDFwaDJrbzhtOHZwbzl0eiJ9.YjcsXGz9cG5STojYkFlGvg';
         
         const mapInstance = new mapboxgl.Map({
           container: mapContainer.current,

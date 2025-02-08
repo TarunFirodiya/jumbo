@@ -169,25 +169,16 @@ export type Database = {
       }
       temp_buildings: {
         Row: {
-          bank: string[] | null
-          created_at: string
           id: string
           images: string[] | null
-          water: string[] | null
         }
         Insert: {
-          bank?: string[] | null
-          created_at?: string
-          id?: string
+          id: string
           images?: string[] | null
-          water?: string[] | null
         }
         Update: {
-          bank?: string[] | null
-          created_at?: string
           id?: string
           images?: string[] | null
-          water?: string[] | null
         }
         Relationships: []
       }
