@@ -76,6 +76,19 @@ export default function Auth() {
       
       if (error) throw error;
       
+      // Check if user exists and has preferences
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: preferences } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        // Navigate based on whether user has preferences
+        navigate(preferences ? "/buildings" : "/preferences");
+      }
+      
     } catch (error) {
       console.error("Google auth error:", error);
       toast({
