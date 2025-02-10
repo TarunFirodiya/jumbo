@@ -1,3 +1,4 @@
+
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 
@@ -16,7 +17,10 @@ export function BudgetStep({ value, onChange }: BudgetStepProps) {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      <Label className="text-sm">What's your maximum budget for a home?</Label>
+      <div className="flex justify-between items-center">
+        <Label className="text-sm">What's your maximum budget for a home?</Label>
+        <span className="text-sm font-medium">{formatBudgetValue(value)}</span>
+      </div>
       <div className="px-2">
         <Slider
           min={50}
