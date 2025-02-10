@@ -167,21 +167,6 @@ export type Database = {
         }
         Relationships: []
       }
-      temp_buildings: {
-        Row: {
-          id: string
-          images: string[] | null
-        }
-        Insert: {
-          id: string
-          images?: string[] | null
-        }
-        Update: {
-          id?: string
-          images?: string[] | null
-        }
-        Relationships: []
-      }
       user_building_scores: {
         Row: {
           bhk_match_score: number | null
