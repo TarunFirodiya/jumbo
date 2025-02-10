@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ImageCarousel } from "@/components/building/ImageCarousel";
 import AnimatedLoadingSkeleton from "@/components/ui/animated-loading-skeleton";
+import { MatchScore } from "@/components/MatchScore";
 
 export default function Buildings() {
   const { toast } = useToast();
@@ -312,37 +313,16 @@ export default function Buildings() {
                 <div className="aspect-video relative bg-muted">
                   {buildingScore && (
                     <div 
-                      className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow-sm cursor-pointer z-10"
+                      className="absolute top-3 left-3 z-10"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleScoreClick(buildingScore);
                       }}
                     >
-                      <div className="relative w-8 h-8">
-                        <svg className="w-full h-full -rotate-90">
-                          <circle
-                            cx="16"
-                            cy="16"
-                            r="14"
-                            className="stroke-muted/25 fill-none"
-                            strokeWidth="4"
-                          />
-                          <circle
-                            cx="16"
-                            cy="16"
-                            r="14"
-                            className="stroke-primary fill-none"
-                            strokeWidth="4"
-                            strokeDasharray={`${matchScore * 87.96} 87.96`}
-                            style={{
-                              transition: "stroke-dasharray 0.6s ease",
-                            }}
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-medium">
-                          {Math.round(matchScore * 100)}%
-                        </div>
-                      </div>
+                      <MatchScore 
+                        score={buildingScore.overall_match_score || 0}
+                        className="cursor-pointer"
+                      />
                     </div>
                   )}
                   {building.images && building.images.length > 0 ? (

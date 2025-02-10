@@ -3,6 +3,7 @@ import { MapPin, Heart, Star, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { MatchScore } from "@/components/MatchScore";
 
 interface BuildingHeaderProps {
   name: string;
@@ -42,20 +43,10 @@ export function BuildingHeader({
       <div className="flex items-start gap-4">
         {typeof matchScore === 'number' && (
           <div 
-            className="flex flex-col items-center cursor-pointer" 
+            className="cursor-pointer" 
             onClick={onScoreClick}
           >
-            <div className="relative w-12 h-12">
-              <Progress 
-                value={matchScore * 100} 
-                className="h-12 w-12 [&>div]:stroke-[8px]"
-                indicatorClassName="stroke-primary"
-              />
-              <div className="absolute inset-0 flex items-center justify-center font-semibold">
-                {Math.round(matchScore * 100)}%
-              </div>
-            </div>
-            <span className="text-sm text-muted-foreground mt-1">Match</span>
+            <MatchScore score={matchScore} />
           </div>
         )}
         <div>
