@@ -14,10 +14,13 @@ import { RefreshCw, XOctagon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { VisitRequestModal } from "@/components/VisitRequestModal";
 
 interface Visit {
   id: string;
+  building_id: string;
   building_name: string;
+  listing_id: string;
   visit_day: string;
   visit_time: string;
   status: string;
@@ -27,6 +30,7 @@ interface Visit {
 const Visits = () => {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
   const { toast } = useToast();
 
   const fetchVisits = async () => {
@@ -35,6 +39,8 @@ const Visits = () => {
         .from('visits')
         .select(`
           id,
+          building_id,
+          listing_id,
           visit_day,
           visit_time,
           status,
@@ -47,7 +53,9 @@ const Visits = () => {
 
       setVisits(data.map(visit => ({
         id: visit.id,
+        building_id: visit.building_id,
         building_name: visit.buildings.name,
+        listing_id: visit.listing_id,
         visit_day: visit.visit_day,
         visit_time: visit.visit_time,
         status: visit.status,
@@ -68,14 +76,6 @@ const Visits = () => {
   useEffect(() => {
     fetchVisits();
   }, []);
-
-  const handleReschedule = (visitId: string) => {
-    // To be implemented
-    toast({
-      title: "Coming Soon",
-      description: "Rescheduling will be available soon",
-    });
-  };
 
   const handleCancel = async (visitId: string) => {
     try {
@@ -140,7 +140,7 @@ const Visits = () => {
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => handleReschedule(visit.id)}
+                          onClick={() => setSelectedVisit(visit)}
                           disabled={visit.status === 'cancelled'}
                         >
                           <RefreshCw className="h-4 w-4 mr-1" />
@@ -165,6 +165,19 @@ const Visits = () => {
           )}
         </CardContent>
       </Card>
+
+      {selectedVisit && (
+        <VisitRequestModal
+          open={!!selectedVisit}
+          onOpenChange={(open) => !open && setSelectedVisit(null)}
+          buildingId={selectedVisit.building_id}
+          buildingName={selectedVisit.building_name}
+          listingId={selectedVisit.listing_id}
+          visitId={selectedVisit.id}
+          initialDay={selectedVisit.visit_day}
+          initialTime={selectedVisit.visit_time}
+        />
+      )}
     </div>
   );
 };

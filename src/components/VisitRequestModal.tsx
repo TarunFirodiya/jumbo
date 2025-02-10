@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -14,6 +14,9 @@ interface VisitRequestModalProps {
   buildingId: string;
   buildingName: string;
   listingId: string;
+  visitId?: string; // Optional - present only for rescheduling
+  initialDay?: string;
+  initialTime?: string;
 }
 
 export function VisitRequestModal({
@@ -22,12 +25,42 @@ export function VisitRequestModal({
   buildingId,
   buildingName,
   listingId,
+  visitId,
+  initialDay,
+  initialTime,
 }: VisitRequestModalProps) {
   const { toast } = useToast();
   const [phone, setPhone] = useState("");
   const [day, setDay] = useState<string>();
   const [timeSlot, setTimeSlot] = useState<string>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Set initial values when rescheduling
+  useEffect(() => {
+    if (visitId) {
+      setDay(initialDay);
+      setTimeSlot(initialTime);
+    }
+  }, [visitId, initialDay, initialTime]);
+
+  // Fetch user's phone number on mount
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('phone_number')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile?.phone_number) {
+          setPhone(profile.phone_number);
+        }
+      }
+    };
+    fetchUserProfile();
+  }, []);
 
   const handleSubmit = async () => {
     if (!phone || !day || !timeSlot) {
@@ -50,23 +83,43 @@ export function VisitRequestModal({
         .update({ phone_number: phone })
         .eq('id', user.id);
 
-      // Create visit request
-      const { error: visitError } = await supabase
-        .from('visits')
-        .insert({
-          user_id: user.id,
-          building_id: buildingId,
-          listing_id: listingId,
-          visit_day: day,
-          visit_time: timeSlot,
+      if (visitId) {
+        // Update existing visit (reschedule)
+        const { error: visitError } = await supabase
+          .from('visits')
+          .update({
+            visit_day: day,
+            visit_time: timeSlot,
+            status: 'to be confirmed'
+          })
+          .eq('id', visitId);
+
+        if (visitError) throw visitError;
+
+        toast({
+          title: "Visit Rescheduled",
+          description: "Your visit has been rescheduled and will be confirmed shortly.",
         });
+      } else {
+        // Create new visit request
+        const { error: visitError } = await supabase
+          .from('visits')
+          .insert({
+            user_id: user.id,
+            building_id: buildingId,
+            listing_id: listingId,
+            visit_day: day,
+            visit_time: timeSlot,
+          });
 
-      if (visitError) throw visitError;
+        if (visitError) throw visitError;
 
-      toast({
-        title: "Visit Requested",
-        description: "We'll confirm your visit request shortly.",
-      });
+        toast({
+          title: "Visit Requested",
+          description: "We'll confirm your visit request shortly.",
+        });
+      }
+      
       onOpenChange(false);
     } catch (error) {
       console.error('Error scheduling visit:', error);
@@ -84,7 +137,7 @@ export function VisitRequestModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Schedule a Visit</DialogTitle>
+          <DialogTitle>{visitId ? "Reschedule Visit" : "Schedule a Visit"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div className="space-y-2">
@@ -131,7 +184,7 @@ export function VisitRequestModal({
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Requesting..." : "Request Visit"}
+            {isSubmitting ? "Requesting..." : visitId ? "Reschedule Visit" : "Request Visit"}
           </Button>
         </div>
       </DialogContent>
