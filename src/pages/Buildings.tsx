@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ImageCarousel } from "@/components/building/ImageCarousel";
+import AnimatedLoadingSkeleton from "@/components/ui/animated-loading-skeleton";
 
 export default function Buildings() {
   const { toast } = useToast();
@@ -283,11 +284,7 @@ export default function Buildings() {
       </div>
 
       {buildingsLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-[300px] w-full" />
-          ))}
-        </div>
+        <AnimatedLoadingSkeleton />
       ) : !filteredBuildings?.length ? (
         <Card>
           <CardContent className="pt-6">
