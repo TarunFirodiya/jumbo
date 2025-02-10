@@ -1,23 +1,17 @@
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BadgeIndianRupee, Bed, Square, Compass, Layers, ArrowRight } from "lucide-react";
+import { BadgeIndianRupee, Bed, Square, Compass, Layers } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
-import { useToast } from "@/components/ui/use-toast";
+import { useState } from "react";
+import { VisitRequestModal } from "./VisitRequestModal";
 
 type ListingCardProps = {
   listing: Tables<"listings">;
 };
 
 export default function ListingCard({ listing }: ListingCardProps) {
-  const { toast } = useToast();
-
-  const handleRequestVisit = () => {
-    toast({
-      title: "Visit Requested",
-      description: "We'll contact you shortly to schedule a visit.",
-    });
-  };
+  const [showVisitModal, setShowVisitModal] = useState(false);
 
   return (
     <Card className="overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow">
@@ -51,10 +45,20 @@ export default function ListingCard({ listing }: ListingCardProps) {
           )}
         </div>
 
-        <Button onClick={handleRequestVisit} className="w-full">
+        <Button 
+          onClick={() => setShowVisitModal(true)} 
+          className="w-full"
+        >
           Request a Visit
-          <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
+
+        <VisitRequestModal
+          open={showVisitModal}
+          onOpenChange={setShowVisitModal}
+          buildingId={listing.building_id || ""}
+          buildingName={listing.building_name || ""}
+          listingId={listing.id}
+        />
       </div>
     </Card>
   );

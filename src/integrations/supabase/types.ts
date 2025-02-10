@@ -280,6 +280,64 @@ export type Database = {
           },
         ]
       }
+      visits: {
+        Row: {
+          building_id: string
+          created_at: string
+          id: string
+          listing_id: string
+          status: Database["public"]["Enums"]["visit_status"]
+          updated_at: string
+          user_id: string
+          visit_day: string
+          visit_time: string
+        }
+        Insert: {
+          building_id: string
+          created_at?: string
+          id?: string
+          listing_id: string
+          status?: Database["public"]["Enums"]["visit_status"]
+          updated_at?: string
+          user_id: string
+          visit_day: string
+          visit_time: string
+        }
+        Update: {
+          building_id?: string
+          created_at?: string
+          id?: string
+          listing_id?: string
+          status?: Database["public"]["Enums"]["visit_status"]
+          updated_at?: string
+          user_id?: string
+          visit_day?: string
+          visit_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visits_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visits_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       user_shortlisted_buildings: {
@@ -473,7 +531,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      visit_status: "to be confirmed" | "confirmed" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
