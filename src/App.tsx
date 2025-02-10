@@ -15,28 +15,31 @@ import Visits from "./pages/Visits";
 
 const queryClient = new QueryClient();
 
+const AppRoutes = () => (
+  <MainLayout>
+    <Routes>
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/preferences" element={<Preferences />} />
+      <Route path="/buildings" element={<Buildings />} />
+      <Route path="/buildings/:id" element={<BuildingDetails />} />
+      <Route path="/shortlist" element={<Shortlist />} />
+      <Route path="/visits" element={<Visits />} />
+      <Route path="/settings" element={<Settings />} />
+      <Route path="/" element={<Navigate to="/auth" replace />} />
+    </Routes>
+  </MainLayout>
+);
+
 const App = () => (
-  <BrowserRouter>
-    <QueryClientProvider client={queryClient}>
+  <QueryClientProvider client={queryClient}>
+    <BrowserRouter>
       <TooltipProvider>
-        <MainLayout>
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/preferences" element={<Preferences />} />
-            <Route path="/buildings" element={<Buildings />} />
-            <Route path="/buildings/:id" element={<BuildingDetails />} />
-            <Route path="/shortlist" element={<Shortlist />} />
-            <Route path="/visits" element={<Visits />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/" element={<Navigate to="/auth" replace />} />
-          </Routes>
-        </MainLayout>
+        <AppRoutes />
         <Toaster />
         <Sonner />
       </TooltipProvider>
-    </QueryClientProvider>
-  </BrowserRouter>
+    </BrowserRouter>
+  </QueryClientProvider>
 );
 
 export default App;
-
