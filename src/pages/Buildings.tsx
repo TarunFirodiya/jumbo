@@ -1,30 +1,26 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Heart, MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, ArrowRight, Clock } from "lucide-react";
+
+import { useQuery } from "@tanstack/react-query";
+import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BuildingsMap from "@/components/BuildingsMap";
-import { Progress } from "@/components/ui/progress";
-import { MatchScoreModal } from "@/components/building/MatchScoreModal";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { ImageCarousel } from "@/components/building/ImageCarousel";
-import AnimatedLoadingSkeleton from "@/components/ui/animated-loading-skeleton";
-import { MatchScore } from "@/components/MatchScore";
+import { CollectionsBar } from "@/components/buildings/CollectionsBar";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 export default function Buildings() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [isMapView, setIsMapView] = useState(false);
-  const [selectedBuildingScore, setSelectedBuildingScore] = useState<any>(null);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [showAllHomes, setShowAllHomes] = useState(false);
+  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authAction, setAuthAction] = useState<"shortlist" | "visit" | "notify">("shortlist");
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -34,47 +30,8 @@ export default function Buildings() {
     },
   });
 
-  const { data: calculatedScores } = useQuery({
-    queryKey: ['calculateScores', user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-      
-      const { data, error } = await supabase.functions.invoke('calculate-building-scores', {
-        body: { user_id: user.id }
-      });
-      
-      if (error) {
-        console.error('Error calculating scores:', error);
-        throw error;
-      }
-      
-      return data;
-    },
-    enabled: !!user,
-  });
-
-  const { data: userPreferences } = useQuery({
-    queryKey: ['userPreferences', user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching user preferences:', error);
-        return null;
-      }
-      console.log('User preferences:', data);
-      return data;
-    },
-    enabled: !!user,
-  });
-
   const { data: buildingScores } = useQuery({
-    queryKey: ['buildingScores', user?.id, calculatedScores],
+    queryKey: ['buildingScores', user?.id],
     queryFn: async () => {
       if (!user) return null;
       const { data, error } = await supabase
@@ -86,14 +43,9 @@ export default function Buildings() {
         console.error('Error fetching building scores:', error);
         throw error;
       }
-      console.log('Building scores:', data);
       return data.reduce((acc, score) => {
         acc[score.building_id] = {
-          shortlisted: score.shortlisted,
-          overall_match_score: score.overall_match_score,
-          location_match_score: score.location_match_score,
-          budget_match_score: score.budget_match_score,
-          lifestyle_match_score: score.lifestyle_match_score,
+          shortlisted: score.shortlisted
         };
         return acc;
       }, {} as Record<string, any>);
@@ -102,95 +54,29 @@ export default function Buildings() {
   });
 
   const { data: buildings, isLoading: buildingsLoading } = useQuery({
-    queryKey: ['buildings'],
+    queryKey: ['buildings', selectedCollections],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('buildings')
-        .select('*');
+      let query = supabase.from('buildings').select('*');
+      
+      if (selectedCollections.length > 0) {
+        query = query.contains('collections', selectedCollections);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
-      console.log('Buildings data:', data);
       return data;
     },
   });
 
-  const filteredBuildings = useMemo(() => {
-    if (!buildings || !buildingScores) {
-      console.log('No buildings or scores available:', { buildings, buildingScores });
-      return [];
-    }
-    
-    console.log('Filtering buildings with scores:', { 
-      totalBuildings: buildings.length,
-      buildingsWithScores: Object.keys(buildingScores).length,
-      showAllHomes
-    });
-    
-    // Filter buildings based on match scores only if showAllHomes is false
-    const matchScoreFiltered = showAllHomes ? buildings : buildings.filter(building => {
-      const scores = buildingScores[building.id];
-      console.log(`Building ${building.name} scores:`, scores);
-      
-      if (!scores) {
-        console.log(`No scores for building ${building.name}`);
-        return false;
-      }
-      
-      // Relaxing the score thresholds to show more results
-      return (
-        scores.location_match_score >= 0 &&
-        scores.budget_match_score >= 0 &&
-        scores.lifestyle_match_score >= 0
-      );
-    });
-    
-    console.log('After match score filtering:', matchScoreFiltered.length);
-
-    // Apply search filter
-    const filtered = matchScoreFiltered.filter(building => 
-      building.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    console.log('After search filtering:', filtered.length);
-
-    // Sort by overall match score
-    return filtered.sort((a, b) => {
-      const scoreA = buildingScores[a.id]?.overall_match_score || 0;
-      const scoreB = buildingScores[b.id]?.overall_match_score || 0;
-      return scoreB - scoreA;
-    });
-  }, [buildings, searchTerm, buildingScores, showAllHomes]);
-
-  const localities = useMemo(() => {
-    if (!buildings) return [];
-    const uniqueLocalities = new Set(buildings.map(b => b.locality).filter(Boolean));
-    return Array.from(uniqueLocalities);
-  }, [buildings]);
-
-  const bhkTypes = ["2bhk", "3bhk", "4bhk", "4bhk_plus"];
-
-  useEffect(() => {
-    if (user && userPreferences === null) {
-      toast({
-        title: "Set Your Preferences",
-        description: "Please set your preferences to see personalized matches",
-        variant: "default",
-      });
-      navigate('/preferences');
-    }
-  }, [user, userPreferences, navigate, toast]);
-
-  const handleScoreClick = (buildingScore: any) => {
-    setSelectedBuildingScore(buildingScore);
-  };
+  const filteredBuildings = buildings?.filter(building => 
+    building.name.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
 
   const handleShortlistToggle = async (buildingId: string) => {
     if (!user) {
-      toast({
-        title: "Please login",
-        description: "You need to be logged in to shortlist buildings",
-        variant: "destructive",
-      });
+      setAuthAction("shortlist");
+      setShowAuthModal(true);
       return;
     }
 
@@ -207,8 +93,6 @@ export default function Buildings() {
         });
 
       if (error) throw error;
-
-      queryClient.invalidateQueries({ queryKey: ['buildingScores'] });
       
       toast({
         title: currentShortlistStatus ? "Removed from shortlist" : "Added to shortlist",
@@ -226,6 +110,14 @@ export default function Buildings() {
     }
   };
 
+  const handleCollectionToggle = (collectionId: string) => {
+    setSelectedCollections(prev => 
+      prev.includes(collectionId)
+        ? prev.filter(id => id !== collectionId)
+        : [...prev, collectionId]
+    );
+  };
+
   return (
     <div className="container mx-auto px-4">
       <div className="sticky top-0 z-10 bg-background py-4 space-y-4">
@@ -237,14 +129,6 @@ export default function Buildings() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Label htmlFor="show-all" className="text-sm">Show all homes</Label>
-            <Switch
-              id="show-all"
-              isSelected={showAllHomes}
-              onChange={setShowAllHomes}
             />
           </div>
           <Button
@@ -265,27 +149,33 @@ export default function Buildings() {
             )}
           </Button>
         </div>
+        
+        <CollectionsBar
+          selectedCollections={selectedCollections}
+          onCollectionToggle={handleCollectionToggle}
+        />
+
         <div className="flex items-center justify-between text-sm">
           <p className="text-muted-foreground">
-            {showAllHomes 
-              ? `${filteredBuildings.length} ${filteredBuildings.length === 1 ? 'home' : 'homes'} found`
-              : `${filteredBuildings.length} ${filteredBuildings.length === 1 ? 'home matches' : 'homes match'} your preferences`
-            }
+            {filteredBuildings.length} {filteredBuildings.length === 1 ? 'home' : 'homes'} found
           </p>
-          {!showAllHomes && (
-            <button 
-              onClick={() => navigate('/preferences')}
-              className="flex items-center gap-1 text-primary hover:underline"
-            >
-              Change Preferences
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          )}
         </div>
       </div>
 
       {buildingsLoading ? (
-        <AnimatedLoadingSkeleton />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="overflow-hidden">
+              <div className="aspect-video bg-muted animate-pulse" />
+              <CardContent className="p-6">
+                <div className="space-y-2">
+                  <div className="h-4 bg-muted rounded animate-pulse w-2/3" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-1/2" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : !filteredBuildings?.length ? (
         <Card>
           <CardContent className="pt-6">
@@ -299,10 +189,7 @@ export default function Buildings() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredBuildings?.map((building) => {
-            console.log('Building images:', building.images);
-            const buildingScore = buildingScores?.[building.id];
-            const matchScore = buildingScore?.overall_match_score || 0;
-            const isShortlisted = buildingScore?.shortlisted || false;
+            const isShortlisted = buildingScores?.[building.id]?.shortlisted || false;
 
             return (
               <Card 
@@ -311,20 +198,6 @@ export default function Buildings() {
                 onClick={() => navigate(`/buildings/${building.id}`)}
               >
                 <div className="aspect-video relative bg-muted">
-                  {buildingScore && (
-                    <div 
-                      className="absolute top-3 left-3 z-10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleScoreClick(buildingScore);
-                      }}
-                    >
-                      <MatchScore 
-                        score={buildingScore.overall_match_score || 0}
-                        className="cursor-pointer"
-                      />
-                    </div>
-                  )}
                   {building.images && building.images.length > 0 ? (
                     <ImageCarousel images={building.images} />
                   ) : (
@@ -366,7 +239,7 @@ export default function Buildings() {
                     <div className="grid grid-cols-3 gap-2 text-sm">
                       {building.age && (
                         <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <CalendarDays className="h-4 w-4 text-muted-foreground" />
                           <span className="font-medium">{building.age} years</span>
                         </div>
                       )}
@@ -397,15 +270,10 @@ export default function Buildings() {
         </div>
       )}
 
-      <MatchScoreModal
-        open={!!selectedBuildingScore}
-        onOpenChange={(open) => !open && setSelectedBuildingScore(null)}
-        scores={selectedBuildingScore || {
-          overall_match_score: 0,
-          location_match_score: 0,
-          budget_match_score: 0,
-          lifestyle_match_score: 0,
-        }}
+      <AuthModal
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+        actionType={authAction}
       />
     </div>
   );
