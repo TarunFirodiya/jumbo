@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,15 +55,22 @@ export default function Buildings() {
   const { data: buildings, isLoading: buildingsLoading } = useQuery({
     queryKey: ['buildings', selectedCollections],
     queryFn: async () => {
-      let query = supabase.from('buildings').select('*');
+      let query = supabase
+        .from('buildings')
+        .select('*');
       
       if (selectedCollections.length > 0) {
         query = query.contains('collections', selectedCollections);
       }
 
       const { data, error } = await query;
-
-      if (error) throw error;
+      
+      if (error) {
+        console.error('Error fetching buildings:', error);
+        throw error;
+      }
+      
+      console.log('Fetched buildings:', data);
       return data;
     },
   });
