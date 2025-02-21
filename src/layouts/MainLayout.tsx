@@ -12,7 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Home, Heart, Route, Settings, User2, LogOut } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Search, Home, Heart, Route, Settings, User2, LogOut, Menu } from "lucide-react";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const isAuthPage = location.pathname === "/auth";
   const isPreferencesPage = location.pathname === "/preferences";
   const [showLogo, setShowLogo] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -45,7 +47,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed:", event, session);
       if (event === "SIGNED_OUT") {
         navigate("/auth");
         toast({
@@ -81,6 +82,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     { name: "Settings", icon: Settings, path: "/settings" },
   ];
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Implement search functionality here
+    console.log("Search term:", searchTerm);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div 
@@ -89,7 +96,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         }`}
       >
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <img 
               src="/lovable-uploads/aa29ee67-7c22-40ce-b82d-f704e9c92c3a.png" 
               alt="Serai Homes" 
@@ -98,48 +105,69 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             />
             
             {!isAuthPage && !isPreferencesPage && (
-              <div className="flex items-center gap-4">
-                {user ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <User2 className="h-5 w-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <div className="px-2 py-1.5 text-sm font-medium">
-                        {user.email}
-                      </div>
-                      <DropdownMenuSeparator />
-                      {menuItems.map((item) => (
+              <>
+                <form 
+                  onSubmit={handleSearch}
+                  className="hidden md:flex items-center flex-1 max-w-xl mx-auto"
+                >
+                  <div className="relative w-full">
+                    <Input
+                      type="text"
+                      placeholder="Search buildings..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 rounded-full border border-input bg-background"
+                    />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  </div>
+                </form>
+
+                <div className="flex items-center gap-2">
+                  {user ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full">
+                          <Menu className="h-5 w-5 md:hidden" />
+                          <User2 className="h-5 w-5 hidden md:block" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <div className="px-2 py-1.5 text-sm font-medium">
+                          {user.email}
+                        </div>
+                        <DropdownMenuSeparator />
+                        {menuItems.map((item) => (
+                          <DropdownMenuItem
+                            key={item.path}
+                            onClick={() => navigate(item.path)}
+                            className="cursor-pointer"
+                          >
+                            <item.icon className="mr-2 h-4 w-4" />
+                            <span>{item.name}</span>
+                          </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          key={item.path}
-                          onClick={() => navigate(item.path)}
-                          className="cursor-pointer"
+                          onClick={handleLogout}
+                          className="cursor-pointer text-destructive"
                         >
-                          <item.icon className="mr-2 h-4 w-4" />
-                          <span>{item.name}</span>
+                          <LogOut className="mr-2 h-4 w-4" />
+                          <span>Log out</span>
                         </DropdownMenuItem>
-                      ))}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={handleLogout}
-                        className="cursor-pointer text-destructive"
-                      >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Log out</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <Button
-                    variant="default"
-                    onClick={() => navigate('/auth')}
-                  >
-                    Sign In
-                  </Button>
-                )}
-              </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => navigate('/auth')}
+                      className="rounded-full"
+                    >
+                      <User2 className="h-5 w-5" />
+                    </Button>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>
