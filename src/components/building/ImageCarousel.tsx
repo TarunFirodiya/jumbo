@@ -12,9 +12,10 @@ import { type UseEmblaCarouselType } from 'embla-carousel-react';
 
 interface ImageCarouselProps {
   images: string[];
+  onImageClick?: (e: React.MouseEvent) => void;
 }
 
-export function ImageCarousel({ images }: ImageCarouselProps) {
+export function ImageCarousel({ images, onImageClick }: ImageCarouselProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [emblaRef, setEmblaRef] = useState<UseEmblaCarouselType[1] | null>(null);
   const [failedImages, setFailedImages] = useState<Record<number, boolean>>({});
@@ -42,8 +43,12 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
     return url;
   };
 
+  const handleNavigation = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent navigation when clicking carousel controls
+  };
+
   return (
-    <div className="w-full aspect-video relative">
+    <div className="w-full aspect-video relative" onClick={onImageClick}>
       <Carousel
         className="w-full h-full"
         setApi={setEmblaRef}
@@ -77,9 +82,9 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="left-4" />
-        <CarouselNext className="right-4" />
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+        <CarouselPrevious className="left-4" onClick={handleNavigation} />
+        <CarouselNext className="right-4" onClick={handleNavigation} />
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2" onClick={handleNavigation}>
           {images.map((_, index) => (
             <button
               key={index}
@@ -87,7 +92,10 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
                 "w-2 h-2 rounded-full transition-all",
                 currentSlide === index ? "bg-white scale-125" : "bg-white/50"
               )}
-              onClick={() => emblaRef?.scrollTo(index)}
+              onClick={(e) => {
+                e.stopPropagation();
+                emblaRef?.scrollTo(index);
+              }}
             />
           ))}
         </div>

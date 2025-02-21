@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +21,7 @@ export default function Buildings() {
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authAction, setAuthAction] = useState<"shortlist" | "visit" | "notify">("shortlist");
+  const [activeCarouselIndex, setActiveCarouselIndex] = useState<Record<string, number>>({});
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -60,7 +62,8 @@ export default function Buildings() {
         .select('*');
       
       if (selectedCollections.length > 0) {
-        query = query.contains('collections', selectedCollections);
+        // Use overlaps instead of contains for array comparison
+        query = query.overlaps('collections', selectedCollections);
       }
 
       const { data, error } = await query;
@@ -125,7 +128,7 @@ export default function Buildings() {
   };
 
   return (
-    <div className="container mx-auto px-4">
+    <div className="min-h-screen pb-20">
       <div className="sticky top-0 z-10 bg-background py-4 space-y-4">
         <div className="flex items-center gap-4">
           <div className="relative flex-1">
@@ -137,23 +140,6 @@ export default function Buildings() {
               className="pl-9"
             />
           </div>
-          <Button
-            variant="outline"
-            onClick={() => setIsMapView(!isMapView)}
-            className="flex items-center gap-2"
-          >
-            {isMapView ? (
-              <>
-                <List className="h-4 w-4" />
-                Show list
-              </>
-            ) : (
-              <>
-                <MapIcon className="h-4 w-4" />
-                Show map
-              </>
-            )}
-          </Button>
         </div>
         
         <CollectionsBar
@@ -205,11 +191,17 @@ export default function Buildings() {
               >
                 <div className="aspect-video relative bg-muted">
                   {building.images && building.images.length > 0 ? (
-                    <ImageCarousel images={building.images} />
+                    <ImageCarousel 
+                      images={building.images} 
+                      onImageClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/buildings/${building.id}`);
+                      }}
+                    />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <img 
-                        src="https://images.unsplash.com/photo-1487958449943-2429e8be8625"
+                        src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
                         alt="Building placeholder"
                         className="object-cover w-full h-full"
                       />
@@ -220,10 +212,10 @@ export default function Buildings() {
                       e.stopPropagation();
                       handleShortlistToggle(building.id);
                     }}
-                    className="absolute top-2 right-2 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
+                    className="absolute top-2 right-2 p-2 z-10 hover:scale-110 transition-transform"
                   >
                     <Heart
-                      className={isShortlisted ? "fill-red-500 stroke-red-500" : ""}
+                      className={`h-6 w-6 ${isShortlisted ? "fill-red-500 stroke-red-500" : "stroke-white fill-black/20"}`}
                     />
                   </button>
                 </div>
@@ -275,6 +267,27 @@ export default function Buildings() {
           })}
         </div>
       )}
+
+      {/* Sticky map toggle button */}
+      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20">
+        <Button
+          variant="default"
+          onClick={() => setIsMapView(!isMapView)}
+          className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2"
+        >
+          {isMapView ? (
+            <>
+              <List className="h-4 w-4" />
+              Show list
+            </>
+          ) : (
+            <>
+              <MapIcon className="h-4 w-4" />
+              Show map
+            </>
+          )}
+        </Button>
+      </div>
 
       <AuthModal
         open={showAuthModal}
