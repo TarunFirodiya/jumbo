@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -5,13 +6,12 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { ImageCarousel } from "@/components/building/ImageCarousel";
 import { BuildingHeader } from "@/components/building/BuildingHeader";
 import { BasicDetails } from "@/components/building/BasicDetails";
-import { MatchScoreModal } from "@/components/building/MatchScoreModal";
 import { AvailableHomes } from "@/components/building/tabs/AvailableHomes";
 import { LocationTab } from "@/components/building/tabs/LocationTab";
 import { AmenitiesTab } from "@/components/building/tabs/AmenitiesTab";
 import { ReviewsTab } from "@/components/building/tabs/ReviewsTab";
+import { ListingVariants } from "@/components/building/ListingVariants";
 import { useBuildingData } from "@/components/building/hooks/useBuildingData";
-import { useBuildingScore } from "@/components/building/hooks/useBuildingScore";
 import { useShortlist } from "@/components/building/hooks/useShortlist";
 import { useState } from "react";
 
@@ -19,10 +19,9 @@ export default function BuildingDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [showScoreModal, setShowScoreModal] = useState(false);
+  const [showAllPhotos, setShowAllPhotos] = useState(false);
 
   const { building, listings, isLoading } = useBuildingData(id!);
-  const buildingScore = useBuildingScore(id!);
   const { isShortlisted, toggleShortlist } = useShortlist(id!, building?.name || '');
 
   if (isLoading) {
@@ -48,15 +47,22 @@ export default function BuildingDetails() {
             isShortlisted={isShortlisted || false}
             onToggleShortlist={toggleShortlist}
             startingPrice={startingPrice}
-            matchScore={buildingScore?.overall_match_score}
-            onScoreClick={() => setShowScoreModal(true)}
           />
         </div>
       </div>
 
-      <ImageCarousel images={building.images || []} />
+      <ImageCarousel 
+        images={building.images || []} 
+        onImageClick={() => setShowAllPhotos(true)}
+      />
 
       <div className="container mx-auto px-4 py-8 space-y-8">
+        <ListingVariants 
+          listings={listings} 
+          buildingId={building.id}
+          buildingName={building.name}
+        />
+
         <BasicDetails
           totalFloors={building.total_floors}
           age={building.age?.toString()}
@@ -108,14 +114,6 @@ export default function BuildingDetails() {
           </TabsContent>
         </Tabs>
       </div>
-
-      {buildingScore && (
-        <MatchScoreModal
-          open={showScoreModal}
-          onOpenChange={setShowScoreModal}
-          scores={buildingScore}
-        />
-      )}
     </div>
   );
 }
