@@ -36,7 +36,12 @@ export default function MainLayout({
         .single();
 
       if (error) throw error;
-      return data;
+      
+      // Cast the role to ensure it matches our Profile type
+      return {
+        ...data,
+        role: data.role as 'admin' | 'agent' | 'user'
+      } as Profile;
     }
   });
 

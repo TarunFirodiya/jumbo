@@ -17,14 +17,19 @@ export default function Dashboard() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data: profile, error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
 
       if (error) throw error;
-      return profile;
+      
+      // Cast the role to ensure it matches our Profile type
+      return {
+        ...data,
+        role: data.role as 'admin' | 'agent' | 'user'
+      } as Profile;
     }
   });
 
