@@ -58,8 +58,11 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
           status,
           visit_day,
           visit_time,
-          buildings (name),
-          profiles (full_name, phone_number)
+          buildings!inner (name),
+          user:user_id (
+            full_name,
+            phone_number
+          )
         `);
 
       if (currentUser.role === 'agent') {
@@ -79,8 +82,8 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
         visit_day: item.visit_day,
         visit_time: item.visit_time,
         building_name: item.buildings?.name || '',
-        client_name: item.profiles?.full_name,
-        client_phone: item.profiles?.phone_number
+        client_name: item.user?.full_name || null,
+        client_phone: item.user?.phone_number || null
       }));
     }
   });
