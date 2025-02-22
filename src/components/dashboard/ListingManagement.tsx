@@ -42,13 +42,12 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const { data: buildings } = useQuery({
     queryKey: ['buildings'],
     queryFn: async () => {
-      const { data: buildingsData, error } = await supabase
+      const { data, error } = await supabase
         .from('buildings')
-        .select('id, name')
-        .returns<Building[]>();
+        .select<'id | name', Building>('id, name');
       
       if (error) throw error;
-      return buildingsData;
+      return data || [];
     }
   });
 
@@ -56,19 +55,15 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const { data: listings } = useQuery({
     queryKey: ['listings'],
     queryFn: async () => {
-      let query = supabase
-        .from('listings')
-        .select('*');
-
+      let query = supabase.from('listings');
+      
       if (currentUser.role === 'agent') {
-        const { data: listingsData, error } = await query.eq('agent_id', currentUser.id);
-        if (error) throw error;
-        return listingsData as Listing[];
-      } else {
-        const { data: listingsData, error } = await query;
-        if (error) throw error;
-        return listingsData as Listing[];
+        query = query.eq('agent_id', currentUser.id);
       }
+
+      const { data, error } = await query.select<'*', Listing>('*');
+      if (error) throw error;
+      return data || [];
     }
   });
 
