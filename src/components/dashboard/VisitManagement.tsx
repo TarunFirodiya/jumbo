@@ -21,37 +21,30 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle } from "lucide-react";
-import { Database } from "@/integrations/supabase/types";
+
+// Define a simple enum for visit status to avoid deep type instantiation
+type VisitStatus = 'to be confirmed' | 'confirmed' | 'completed' | 'cancelled';
+
+// Simplified Visit type without using complex Database types
+interface Visit {
+  id: string;
+  building_id: string;
+  status: VisitStatus;
+  visit_day: string;
+  visit_time: string;
+  building_name: string;
+  client_name: string | null;
+  client_phone: string | null;
+}
 
 interface VisitManagementProps {
   currentUser: Profile;
 }
 
-// Define specific types for nested objects to avoid deep instantiation
-type BuildingInfo = {
-  name: string;
-};
-
-type ProfileInfo = {
-  full_name: string | null;
-  phone_number: string | null;
-};
-
-type Visit = {
-  id: string;
-  building_id: string;
-  status: Database['public']['Enums']['visit_status'];
-  visit_day: string;
-  visit_time: string;
-  buildings: BuildingInfo;
-  profiles: ProfileInfo;
-};
-
 export function VisitManagement({ currentUser }: VisitManagementProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch visits with explicit type annotation
   const { data: visits } = useQuery<Visit[]>({
     queryKey: ['visits'],
     queryFn: async () => {
@@ -63,23 +56,34 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
           status,
           visit_day,
           visit_time,
-          buildings:buildings(name),
-          profiles:profiles(full_name, phone_number)
+          buildings (name),
+          profiles (full_name, phone_number)
         `);
 
       if (currentUser.role === 'agent') {
         query = query.eq('agent_id', currentUser.id);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data: rawData, error } = await query.order('created_at', { ascending: false });
+      
       if (error) throw error;
-      return data as Visit[];
+      
+      // Transform the raw data to match our simplified Visit type
+      return (rawData || []).map(item => ({
+        id: item.id,
+        building_id: item.building_id,
+        status: item.status as VisitStatus,
+        visit_day: item.visit_day,
+        visit_time: item.visit_time,
+        building_name: item.buildings?.name || '',
+        client_name: item.profiles?.full_name,
+        client_phone: item.profiles?.phone_number
+      }));
     }
   });
 
-  // Update visit status mutation
   const updateVisitStatus = useMutation({
-    mutationFn: async ({ visitId, status }: { visitId: string; status: Database['public']['Enums']['visit_status'] }) => {
+    mutationFn: async ({ visitId, status }: { visitId: string; status: VisitStatus }) => {
       const { error } = await supabase
         .from('visits')
         .update({ status })
@@ -104,8 +108,8 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
     }
   });
 
-  const getStatusBadge = (status: Database['public']['Enums']['visit_status']) => {
-    const variants: Record<Database['public']['Enums']['visit_status'], {
+  const getStatusBadge = (status: VisitStatus) => {
+    const variants: Record<VisitStatus, {
       variant: "default" | "secondary" | "destructive" | "outline";
       label: string;
     }> = {
@@ -149,9 +153,9 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
               <TableBody>
                 {visits?.map((visit) => (
                   <TableRow key={visit.id}>
-                    <TableCell>{visit.buildings.name}</TableCell>
-                    <TableCell>{visit.profiles.full_name}</TableCell>
-                    <TableCell>{visit.profiles.phone_number}</TableCell>
+                    <TableCell>{visit.building_name}</TableCell>
+                    <TableCell>{visit.client_name}</TableCell>
+                    <TableCell>{visit.client_phone}</TableCell>
                     <TableCell>{visit.visit_day}</TableCell>
                     <TableCell>{visit.visit_time}</TableCell>
                     <TableCell>{getStatusBadge(visit.status)}</TableCell>
