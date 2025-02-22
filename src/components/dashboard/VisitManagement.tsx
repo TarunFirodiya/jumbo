@@ -59,7 +59,7 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
           visit_day,
           visit_time,
           buildings!inner (name),
-          user:user_id (
+          client:profiles!visits_user_id_fkey (
             full_name,
             phone_number
           )
@@ -82,8 +82,8 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
         visit_day: item.visit_day,
         visit_time: item.visit_time,
         building_name: item.buildings?.name || '',
-        client_name: item.user?.full_name || null,
-        client_phone: item.user?.phone_number || null
+        client_name: item.client?.full_name || null,
+        client_phone: item.client?.phone_number || null
       }));
     }
   });
