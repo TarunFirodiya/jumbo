@@ -12,6 +12,7 @@ import BuildingDetails from "./pages/BuildingDetails";
 import Shortlist from "./pages/Shortlist";
 import Settings from "./pages/Settings";
 import Visits from "./pages/Visits";
+import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/shortlist" element={<Shortlist />} />
             <Route path="/visits" element={<Visits />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/" element={<Navigate to="/auth" replace />} />
           </Routes>
         </MainLayout>
@@ -46,4 +48,3 @@ const App = () => (
 );
 
 export default App;
-
