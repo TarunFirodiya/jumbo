@@ -5,6 +5,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Profile } from "@/types/profile";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AgentManagement } from "@/components/dashboard/AgentManagement";
+import { ListingManagement } from "@/components/dashboard/ListingManagement";
+import { VisitManagement } from "@/components/dashboard/VisitManagement";
+import { UserPlus, ListChecks, Calendar } from "lucide-react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -64,36 +69,51 @@ export default function Dashboard() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
       {profile?.role === 'admin' && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div className="p-6 bg-card rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">Agent Management</h2>
-            <p className="text-muted-foreground">Manage agent accounts and assignments</p>
-          </div>
-          <div className="p-6 bg-card rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">Listing Overview</h2>
-            <p className="text-muted-foreground">Monitor all property listings</p>
-          </div>
-          <div className="p-6 bg-card rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">Analytics</h2>
-            <p className="text-muted-foreground">View performance metrics</p>
-          </div>
-        </div>
+        <Tabs defaultValue="agents" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="agents" className="gap-2">
+              <UserPlus className="h-4 w-4" />
+              Agent Management
+            </TabsTrigger>
+            <TabsTrigger value="listings" className="gap-2">
+              <ListChecks className="h-4 w-4" />
+              Listings
+            </TabsTrigger>
+            <TabsTrigger value="visits" className="gap-2">
+              <Calendar className="h-4 w-4" />
+              Visits
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="agents">
+            <AgentManagement />
+          </TabsContent>
+          <TabsContent value="listings">
+            <ListingManagement currentUser={profile} />
+          </TabsContent>
+          <TabsContent value="visits">
+            <VisitManagement currentUser={profile} />
+          </TabsContent>
+        </Tabs>
       )}
       {profile?.role === 'agent' && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div className="p-6 bg-card rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">My Listings</h2>
-            <p className="text-muted-foreground">Manage your property listings</p>
-          </div>
-          <div className="p-6 bg-card rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">Visits</h2>
-            <p className="text-muted-foreground">Schedule and manage property visits</p>
-          </div>
-          <div className="p-6 bg-card rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">My Performance</h2>
-            <p className="text-muted-foreground">View your activity metrics</p>
-          </div>
-        </div>
+        <Tabs defaultValue="listings" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="listings" className="gap-2">
+              <ListChecks className="h-4 w-4" />
+              My Listings
+            </TabsTrigger>
+            <TabsTrigger value="visits" className="gap-2">
+              <Calendar className="h-4 w-4" />
+              Visits
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="listings">
+            <ListingManagement currentUser={profile} />
+          </TabsContent>
+          <TabsContent value="visits">
+            <VisitManagement currentUser={profile} />
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   );
