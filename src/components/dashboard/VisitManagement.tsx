@@ -27,27 +27,32 @@ interface VisitManagementProps {
   currentUser: Profile;
 }
 
+// Define specific types for nested objects to avoid deep instantiation
+type BuildingInfo = {
+  name: string;
+};
+
+type ProfileInfo = {
+  full_name: string | null;
+  phone_number: string | null;
+};
+
 type Visit = {
   id: string;
   building_id: string;
   status: Database['public']['Enums']['visit_status'];
   visit_day: string;
   visit_time: string;
-  buildings: {
-    name: string;
-  };
-  profiles: {
-    full_name: string | null;
-    phone_number: string | null;
-  };
+  buildings: BuildingInfo;
+  profiles: ProfileInfo;
 };
 
 export function VisitManagement({ currentUser }: VisitManagementProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch visits
-  const { data: visits } = useQuery({
+  // Fetch visits with explicit type annotation
+  const { data: visits } = useQuery<Visit[]>({
     queryKey: ['visits'],
     queryFn: async () => {
       let query = supabase
@@ -58,8 +63,8 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
           status,
           visit_day,
           visit_time,
-          buildings:buildings(name),
-          profiles:profiles(full_name, phone_number)
+          buildings(name),
+          profiles(full_name, phone_number)
         `);
 
       if (currentUser.role === 'agent') {
