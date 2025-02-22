@@ -9,30 +9,15 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { PencilIcon, Home, Building } from "lucide-react";
+import { PencilIcon, Home } from "lucide-react";
+import { Database } from "@/integrations/supabase/types";
 
 interface ListingManagementProps {
   currentUser: Profile;
 }
 
-type Building = {
-  id: string;
-  name: string;
-}
-
-type Listing = {
-  id: string;
-  building_id: string | null;
-  building_name: string | null;
-  bedrooms: number | null;
-  bathrooms: number | null;
-  built_up_area: number | null;
-  floor: number | null;
-  price: number | null;
-  maintenance: number | null;
-  facing: string | null;
-  agent_id: string | null;
-};
+type Building = Database['public']['Tables']['buildings']['Row'];
+type Listing = Database['public']['Tables']['listings']['Row'];
 
 export function ListingManagement({ currentUser }: ListingManagementProps) {
   const { toast } = useToast();
@@ -46,10 +31,10 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('buildings')
-        .select<'id | name', Building>('id, name');
+        .select('id, name');
       
       if (error) throw error;
-      return data || [];
+      return (data as Pick<Building, 'id' | 'name'>[]) || [];
     }
   });
 
@@ -57,15 +42,19 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const { data: listings } = useQuery({
     queryKey: ['listings'],
     queryFn: async () => {
-      let query = supabase.from('listings');
+      const query = supabase
+        .from('listings')
+        .select('*');
       
       if (currentUser.role === 'agent') {
-        query = query.eq('agent_id', currentUser.id);
+        const { data, error } = await query.eq('agent_id', currentUser.id);
+        if (error) throw error;
+        return data;
       }
 
-      const { data, error } = await query.select<'*', Listing>('*');
+      const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      return data;
     }
   });
 
