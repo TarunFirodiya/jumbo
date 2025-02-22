@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +31,7 @@ type Listing = {
   price: number | null;
   maintenance: number | null;
   facing: string | null;
+  agent_id: string | null;
 };
 
 export function ListingManagement({ currentUser }: ListingManagementProps) {

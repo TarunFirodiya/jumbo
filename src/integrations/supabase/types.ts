@@ -98,6 +98,7 @@ export type Database = {
       }
       listings: {
         Row: {
+          agent_id: string | null
           bathrooms: number | null
           bedrooms: number | null
           building_id: string | null
@@ -111,6 +112,7 @@ export type Database = {
           price: number | null
         }
         Insert: {
+          agent_id?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
           building_id?: string | null
@@ -124,6 +126,7 @@ export type Database = {
           price?: number | null
         }
         Update: {
+          agent_id?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
           building_id?: string | null
