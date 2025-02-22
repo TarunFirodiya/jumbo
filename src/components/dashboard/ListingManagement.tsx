@@ -15,6 +15,11 @@ interface ListingManagementProps {
   currentUser: Profile;
 }
 
+type Building = {
+  id: string;
+  name: string;
+}
+
 type Listing = {
   id: string;
   building_id: string | null;
@@ -33,10 +38,9 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
-  const [selectedBuilding, setSelectedBuilding] = useState<string | null>(null);
 
   // Fetch buildings
-  const { data: buildings } = useQuery({
+  const { data: buildings } = useQuery<Building[]>({
     queryKey: ['buildings'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -56,7 +60,6 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         .select('*');
 
       if (currentUser.role === 'agent') {
-        // If agent, only show their listings
         query.eq('agent_id', currentUser.id);
       }
 
@@ -69,22 +72,25 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   // Create listing mutation
   const createListing = useMutation({
     mutationFn: async (formData: FormData) => {
+      const building_id = formData.get('building_id')?.toString() || null;
+      const building = buildings?.find(b => b.id === building_id);
+
       const listingData = {
-        building_id: formData.get('building_id'),
+        building_id,
         bedrooms: Number(formData.get('bedrooms')),
         bathrooms: Number(formData.get('bathrooms')),
         built_up_area: Number(formData.get('built_up_area')),
         floor: Number(formData.get('floor')),
         price: Number(formData.get('price')),
         maintenance: Number(formData.get('maintenance')),
-        facing: formData.get('facing'),
+        facing: formData.get('facing')?.toString() || null,
         agent_id: currentUser.id,
-        building_name: buildings?.find(b => b.id === formData.get('building_id'))?.name
+        building_name: building?.name || null
       };
 
       const { error } = await supabase
         .from('listings')
-        .insert([listingData]);
+        .insert(listingData);
 
       if (error) throw error;
     },
@@ -109,18 +115,23 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   // Update listing mutation
   const updateListing = useMutation({
     mutationFn: async (formData: FormData) => {
-      const listingId = formData.get('listingId');
+      const listingId = formData.get('listingId')?.toString();
+      const building_id = formData.get('building_id')?.toString() || null;
+      const building = buildings?.find(b => b.id === building_id);
+
       const listingData = {
-        building_id: formData.get('building_id'),
+        building_id,
         bedrooms: Number(formData.get('bedrooms')),
         bathrooms: Number(formData.get('bathrooms')),
         built_up_area: Number(formData.get('built_up_area')),
         floor: Number(formData.get('floor')),
         price: Number(formData.get('price')),
         maintenance: Number(formData.get('maintenance')),
-        facing: formData.get('facing'),
-        building_name: buildings?.find(b => b.id === formData.get('building_id'))?.name
+        facing: formData.get('facing')?.toString() || null,
+        building_name: building?.name || null
       };
+
+      if (!listingId) throw new Error('Listing ID is required');
 
       const { error } = await supabase
         .from('listings')
