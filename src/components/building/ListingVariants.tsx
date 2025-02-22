@@ -22,16 +22,16 @@ export function ListingVariants({ listings, buildingId, buildingName, isMobile }
   if (!listings?.length) return null;
 
   const ActionButtons = () => (
-    <div className="flex flex-col sm:flex-row gap-3">
+    <div className="grid grid-cols-2 gap-3">
       <Button 
-        className="flex-1" 
+        className="w-full" 
         onClick={() => setShowVisitModal(true)}
       >
         Request a Visit
       </Button>
       <Button 
         variant="outline" 
-        className="flex-1"
+        className="w-full"
       >
         Book Now
       </Button>

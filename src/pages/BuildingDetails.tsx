@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -6,7 +5,6 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { ImageCarousel } from "@/components/building/ImageCarousel";
 import { BuildingHeader } from "@/components/building/BuildingHeader";
 import { BasicDetails } from "@/components/building/BasicDetails";
-import { AvailableHomes } from "@/components/building/tabs/AvailableHomes";
 import { LocationTab } from "@/components/building/tabs/LocationTab";
 import { AmenitiesTab } from "@/components/building/tabs/AmenitiesTab";
 import { ReviewsTab } from "@/components/building/tabs/ReviewsTab";
@@ -96,11 +94,10 @@ export default function BuildingDetails() {
           />
         </div>
 
-        <Tabs defaultValue="avl-units" className="w-full">
+        <Tabs defaultValue="location" className="w-full">
           {isMobile ? (
             <ScrollArea className="w-full whitespace-nowrap">
               <TabsList className="inline-flex w-max border-b rounded-none p-0">
-                <TabsTrigger value="avl-units">Avl Units</TabsTrigger>
                 <TabsTrigger value="location">Location</TabsTrigger>
                 <TabsTrigger value="amenities">Amenities</TabsTrigger>
                 <TabsTrigger value="reviews" disabled={!building.google_rating}>Reviews</TabsTrigger>
@@ -109,16 +106,11 @@ export default function BuildingDetails() {
             </ScrollArea>
           ) : (
             <TabsList className="w-full justify-start">
-              <TabsTrigger value="avl-units">Avl Units</TabsTrigger>
               <TabsTrigger value="location">Location</TabsTrigger>
               <TabsTrigger value="amenities">Amenities</TabsTrigger>
               <TabsTrigger value="reviews" disabled={!building.google_rating}>Reviews</TabsTrigger>
             </TabsList>
           )}
-
-          <TabsContent value="avl-units">
-            <AvailableHomes listings={listings} />
-          </TabsContent>
 
           <TabsContent value="location">
             <LocationTab
