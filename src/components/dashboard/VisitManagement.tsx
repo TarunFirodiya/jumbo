@@ -63,8 +63,8 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
           status,
           visit_day,
           visit_time,
-          buildings(name),
-          profiles(full_name, phone_number)
+          buildings:buildings(name),
+          profiles:profiles(full_name, phone_number)
         `);
 
       if (currentUser.role === 'agent') {
