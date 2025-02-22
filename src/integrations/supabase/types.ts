@@ -294,6 +294,7 @@ export type Database = {
       }
       visits: {
         Row: {
+          agent_id: string | null
           building_id: string
           created_at: string
           id: string
@@ -305,6 +306,7 @@ export type Database = {
           visit_time: string
         }
         Insert: {
+          agent_id?: string | null
           building_id: string
           created_at?: string
           id?: string
@@ -316,6 +318,7 @@ export type Database = {
           visit_time: string
         }
         Update: {
+          agent_id?: string | null
           building_id?: string
           created_at?: string
           id?: string
@@ -327,6 +330,13 @@ export type Database = {
           visit_time?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "visits_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "visits_building_id_fkey"
             columns: ["building_id"]

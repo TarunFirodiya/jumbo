@@ -29,6 +29,7 @@ type VisitStatus = 'to be confirmed' | 'confirmed' | 'completed' | 'cancelled';
 interface Visit {
   id: string;
   building_id: string;
+  agent_id: string | null;
   status: VisitStatus;
   visit_day: string;
   visit_time: string;
@@ -53,6 +54,7 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
         .select(`
           id,
           building_id,
+          agent_id,
           status,
           visit_day,
           visit_time,
@@ -72,6 +74,7 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
       return (rawData || []).map(item => ({
         id: item.id,
         building_id: item.building_id,
+        agent_id: item.agent_id,
         status: item.status as VisitStatus,
         visit_day: item.visit_day,
         visit_time: item.visit_time,
