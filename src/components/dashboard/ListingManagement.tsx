@@ -40,32 +40,35 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
 
   // Fetch buildings
-  const { data: buildings } = useQuery<Building[]>({
+  const { data: buildings } = useQuery({
     queryKey: ['buildings'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: buildingsData, error } = await supabase
         .from('buildings')
-        .select('id, name');
+        .select('id, name')
+        .returns<Building[]>();
+      
       if (error) throw error;
-      return data;
+      return buildingsData;
     }
   });
 
   // Fetch listings
-  const { data: listings } = useQuery<Listing[]>({
+  const { data: listings } = useQuery({
     queryKey: ['listings'],
     queryFn: async () => {
       const query = supabase
         .from('listings')
-        .select('*');
+        .select('*')
+        .returns<Listing[]>();
 
       if (currentUser.role === 'agent') {
         query.eq('agent_id', currentUser.id);
       }
 
-      const { data, error } = await query;
+      const { data: listingsData, error } = await query;
       if (error) throw error;
-      return data;
+      return listingsData;
     }
   });
 
