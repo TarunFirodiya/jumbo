@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,16 +56,12 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const { data: listings } = useQuery({
     queryKey: ['listings'],
     queryFn: async () => {
-      const query = supabase
+      const { data: listingsData, error } = await supabase
         .from('listings')
         .select('*')
-        .returns<Listing[]>();
+        .returns<Listing[]>()
+        .eq(currentUser.role === 'agent' ? 'agent_id' : undefined, currentUser.id);
 
-      if (currentUser.role === 'agent') {
-        query.eq('agent_id', currentUser.id);
-      }
-
-      const { data: listingsData, error } = await query;
       if (error) throw error;
       return listingsData;
     }
