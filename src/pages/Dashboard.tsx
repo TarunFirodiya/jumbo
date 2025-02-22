@@ -4,13 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Profile } from "@/types/profile";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
   // Get user profile with role
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isLoading } = useQuery<Profile>({
     queryKey: ['profile'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();

@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { Profile } from "@/types/profile";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,7 @@ export default function MainLayout({
   const [showLogo, setShowLogo] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: profile } = useQuery({
+  const { data: profile } = useQuery<Profile>({
     queryKey: ['profile'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
