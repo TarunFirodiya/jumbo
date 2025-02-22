@@ -19,7 +19,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
@@ -28,9 +27,19 @@ interface VisitManagementProps {
   currentUser: Profile;
 }
 
-type Visit = Database['public']['Tables']['visits']['Row'] & {
-  buildings: Pick<Database['public']['Tables']['buildings']['Row'], 'name'>;
-  profiles: Pick<Database['public']['Tables']['profiles']['Row'], 'full_name' | 'phone_number'>;
+type Visit = {
+  id: string;
+  building_id: string;
+  status: Database['public']['Enums']['visit_status'];
+  visit_day: string;
+  visit_time: string;
+  buildings: {
+    name: string;
+  };
+  profiles: {
+    full_name: string | null;
+    phone_number: string | null;
+  };
 };
 
 export function VisitManagement({ currentUser }: VisitManagementProps) {
@@ -44,7 +53,11 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
       let query = supabase
         .from('visits')
         .select(`
-          *,
+          id,
+          building_id,
+          status,
+          visit_day,
+          visit_time,
           buildings:buildings(name),
           profiles:profiles(full_name, phone_number)
         `);
