@@ -56,22 +56,45 @@ export default function BuildingDetails() {
         onImageClick={() => setShowAllPhotos(true)}
       />
 
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        <ListingVariants 
-          listings={listings} 
-          buildingId={building.id}
-          buildingName={building.name}
-        />
+      <div className="container mx-auto px-4 py-8">
+        {/* Desktop: Two-column layout */}
+        <div className="hidden md:grid md:grid-cols-2 gap-8 mb-8">
+          <BasicDetails
+            totalFloors={building.total_floors}
+            age={building.age?.toString()}
+            pricePsqft={building.price_psqft}
+            minPrice={building.min_price}
+            maxPrice={building.max_price}
+            water={building.water}
+            bank={building.bank}
+          />
+          <div className="sticky top-28">
+            <ListingVariants 
+              listings={listings} 
+              buildingId={building.id}
+              buildingName={building.name}
+            />
+          </div>
+        </div>
 
-        <BasicDetails
-          totalFloors={building.total_floors}
-          age={building.age?.toString()}
-          pricePsqft={building.price_psqft}
-          minPrice={building.min_price}
-          maxPrice={building.max_price}
-          water={building.water}
-          bank={building.bank}
-        />
+        {/* Mobile: Stacked layout */}
+        <div className="md:hidden space-y-8">
+          <ListingVariants 
+            listings={listings} 
+            buildingId={building.id}
+            buildingName={building.name}
+            isMobile={true}
+          />
+          <BasicDetails
+            totalFloors={building.total_floors}
+            age={building.age?.toString()}
+            pricePsqft={building.price_psqft}
+            minPrice={building.min_price}
+            maxPrice={building.max_price}
+            water={building.water}
+            bank={building.bank}
+          />
+        </div>
 
         <Tabs defaultValue="avl-units" className="w-full">
           {isMobile ? (
