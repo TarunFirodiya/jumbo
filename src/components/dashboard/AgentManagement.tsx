@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +26,12 @@ export function AgentManagement() {
         .eq('role', 'agent');
 
       if (error) throw error;
-      return data;
+      
+      // Cast the data to ensure role matches our Profile type
+      return data.map(agent => ({
+        ...agent,
+        role: agent.role as 'admin' | 'agent' | 'user'
+      }));
     }
   });
 
