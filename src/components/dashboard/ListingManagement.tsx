@@ -56,14 +56,19 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const { data: listings } = useQuery({
     queryKey: ['listings'],
     queryFn: async () => {
-      const { data: listingsData, error } = await supabase
+      let query = supabase
         .from('listings')
-        .select('*')
-        .returns<Listing[]>()
-        .eq(currentUser.role === 'agent' ? 'agent_id' : undefined, currentUser.id);
+        .select('*');
 
-      if (error) throw error;
-      return listingsData;
+      if (currentUser.role === 'agent') {
+        const { data: listingsData, error } = await query.eq('agent_id', currentUser.id);
+        if (error) throw error;
+        return listingsData as Listing[];
+      } else {
+        const { data: listingsData, error } = await query;
+        if (error) throw error;
+        return listingsData as Listing[];
+      }
     }
   });
 
