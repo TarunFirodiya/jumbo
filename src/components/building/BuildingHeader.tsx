@@ -1,5 +1,5 @@
 
-import { MapPin, Heart, Star, ArrowRight } from "lucide-react";
+import { MapPin, Heart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
@@ -77,11 +77,11 @@ export function BuildingHeader({
           size="icon"
           onClick={onToggleShortlist}
           className={cn(
-            "transition-colors",
-            isShortlisted && "text-red-500 hover:text-red-600"
+            "transition-colors hover:bg-transparent",
+            isShortlisted ? "text-red-500 hover:text-red-600" : "text-gray-400 hover:text-gray-500"
           )}
         >
-          <Heart className={cn("h-5 w-5", isShortlisted && "fill-current")} />
+          <Heart className={cn("h-6 w-6", isShortlisted && "fill-current")} />
         </Button>
       </div>
     </div>
