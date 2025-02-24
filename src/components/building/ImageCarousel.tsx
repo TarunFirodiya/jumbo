@@ -18,13 +18,11 @@ interface ImageCarouselProps {
   onImageClick?: (e: React.MouseEvent) => void;
 }
 
-const isYoutubeUrl = (url: string | undefined): boolean => {
-  if (!url) return false;
+const isYoutubeUrl = (url: string) => {
   return url.includes('youtube.com') || url.includes('youtu.be');
 };
 
-const getYoutubeEmbedUrl = (url: string): string => {
-  if (!url) return '';
+const getYoutubeEmbedUrl = (url: string) => {
   const videoId = url.includes('youtu.be') 
     ? url.split('/').pop() 
     : url.split('v=')[1]?.split('&')[0];
@@ -41,8 +39,8 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
     setFailedImages(prev => ({ ...prev, [index]: true }));
   };
 
-  const processImageUrl = (url: string): string => {
-    if (!url || url.includes('maps.googleapis.com')) {
+  const processImageUrl = (url: string) => {
+    if (url.includes('maps.googleapis.com')) {
       return '/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png';
     }
     return url;
@@ -61,16 +59,6 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
   }
 
   const MediaElement = ({ url, index }: { url: string; index: number }) => {
-    if (!url) {
-      return (
-        <img 
-          src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
-          alt={`Placeholder ${index + 1}`}
-          className="w-full h-full object-cover"
-        />
-      );
-    }
-
     if (isYoutubeUrl(url)) {
       return (
         <iframe

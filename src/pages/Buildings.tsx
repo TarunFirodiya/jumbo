@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { ImageCarousel } from "@/components/building/ImageCarousel";
 import { CollectionsBar } from "@/components/buildings/CollectionsBar";
 import { AuthModal } from "@/components/auth/AuthModal";
-import { SEO } from "@/components/seo/SEO";
 
 export default function Buildings() {
   const { toast } = useToast();
@@ -23,15 +22,6 @@ export default function Buildings() {
   const [authAction, setAuthAction] = useState<"shortlist" | "visit" | "notify">("shortlist");
   const [activeCarouselIndex, setActiveCarouselIndex] = useState<Record<string, number>>({});
 
-  const handleCollectionToggle = (collectionId: string) => {
-    setSelectedCollections(prev => {
-      if (prev.includes(collectionId)) {
-        return prev.filter(id => id !== collectionId);
-      }
-      return [...prev, collectionId];
-    });
-  };
-
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: async () => {
@@ -40,15 +30,51 @@ export default function Buildings() {
     },
   });
 
-  const { data: buildings } = useQuery({
+  const { data: buildingScores } = useQuery({
+    queryKey: ['buildingScores', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('user_building_scores')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error fetching building scores:', error);
+        throw error;
+      }
+      return data.reduce((acc, score) => {
+        acc[score.building_id] = {
+          shortlisted: score.shortlisted
+        };
+        return acc;
+      }, {} as Record<string, any>);
+    },
+    enabled: !!user,
+  });
+
+  const { data: buildings, isLoading: buildingsLoading } = useQuery({
     queryKey: ['buildings', selectedCollections],
     queryFn: async () => {
-      let query = supabase.from('buildings').select('*');
+      console.log('Fetching buildings with collections:', selectedCollections); // Debug log
+
+      let query = supabase
+        .from('buildings')
+        .select('*');
+      
       if (selectedCollections.length > 0) {
+        // Use overlaps for array comparison
         query = query.contains('collections', selectedCollections);
       }
+
       const { data, error } = await query;
-      if (error) throw error;
+      
+      if (error) {
+        console.error('Error fetching buildings:', error);
+        throw error;
+      }
+      
+      console.log('Fetched buildings:', data); // Debug log
       return data;
     },
   });
@@ -57,147 +83,220 @@ export default function Buildings() {
     building.name.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const getSEODescription = () => {
-    const locationText = selectedCollections.length ? 
-      `in ${selectedCollections.join(', ')}` : 
-      'across prime locations';
-    const countText = filteredBuildings.length ? 
-      `${filteredBuildings.length} properties` : 
-      'Exclusive properties';
-    return `${countText} available ${locationText}. Find your dream home with detailed information about prices, amenities, and location.`;
+  console.log('Filtered buildings:', filteredBuildings); // Debug log
+
+  const handleShortlistToggle = async (buildingId: string) => {
+    if (!user) {
+      setAuthAction("shortlist");
+      setShowAuthModal(true);
+      return;
+    }
+
+    try {
+      const currentShortlistStatus = buildingScores?.[buildingId]?.shortlisted || false;
+      const { error } = await supabase
+        .from('user_building_scores')
+        .upsert({
+          user_id: user.id,
+          building_id: buildingId,
+          shortlisted: !currentShortlistStatus,
+        }, {
+          onConflict: 'user_id,building_id',
+        });
+
+      if (error) throw error;
+      
+      toast({
+        title: currentShortlistStatus ? "Removed from shortlist" : "Added to shortlist",
+        description: currentShortlistStatus 
+          ? "Building has been removed from your shortlist"
+          : "Building has been added to your shortlist",
+      });
+    } catch (error) {
+      console.error('Error toggling shortlist:', error);
+      toast({
+        title: "Error",
+        description: "Could not update shortlist",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCollectionToggle = (collectionId: string) => {
+    setSelectedCollections(prev => 
+      prev.includes(collectionId)
+        ? prev.filter(id => id !== collectionId)
+        : [...prev, collectionId]
+    );
+    console.log('Toggled collection:', collectionId); // Debug log
   };
 
   return (
     <div className="min-h-screen pb-20">
-      <SEO
-        title={selectedCollections.length ? 
-          `Properties in ${selectedCollections.join(', ')} | Your Domain` : 
-          'Find Your Dream Home | Your Domain'
-        }
-        description={getSEODescription()}
-        canonical="/buildings"
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "RealEstateAgent",
-          "name": "Your Domain",
-          "description": getSEODescription(),
-          "url": "https://yourdomain.com/buildings",
-          "areaServed": selectedCollections.length ? selectedCollections : ["All Areas"],
-          "numberOfItems": filteredBuildings.length
-        }}
-      />
-      
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col gap-6">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              onClick={() => setIsMapView(!isMapView)}
-              className="relative"
-            >
-              {isMapView ? (
-                <>
-                  <List className="h-4 w-4 mr-2" />
-                  List View
-                </>
-              ) : (
-                <>
-                  <MapIcon className="h-4 w-4 mr-2" />
-                  Map View
-                </>
-              )}
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search by building name..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <CollectionsBar
-              selectedCollections={selectedCollections}
-              onCollectionToggle={handleCollectionToggle}
+      <div className="sticky top-0 z-10 bg-background py-4 space-y-4">
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search buildings..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
             />
           </div>
+        </div>
+        
+        <CollectionsBar
+          selectedCollections={selectedCollections}
+          onCollectionToggle={handleCollectionToggle}
+        />
 
-          {isMapView ? (
-            <BuildingsMap buildings={filteredBuildings} />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredBuildings.map((building) => (
-                <Card 
-                  key={building.id}
-                  className="cursor-pointer transition-transform hover:scale-[1.02]"
-                  onClick={() => navigate(`/buildings/${building.id}`)}
-                >
-                  <CardHeader className="p-0">
+        <div className="flex items-center justify-between text-sm">
+          <p className="text-muted-foreground">
+            {filteredBuildings.length} {filteredBuildings.length === 1 ? 'home' : 'homes'} found
+          </p>
+        </div>
+      </div>
+
+      {buildingsLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="overflow-hidden">
+              <div className="aspect-video bg-muted animate-pulse" />
+              <CardContent className="p-6">
+                <div className="space-y-2">
+                  <div className="h-4 bg-muted rounded animate-pulse w-2/3" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-1/2" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : !filteredBuildings?.length ? (
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">
+              No properties found matching your criteria.
+            </p>
+          </CardContent>
+        </Card>
+      ) : isMapView ? (
+        <BuildingsMap buildings={filteredBuildings} />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredBuildings?.map((building) => {
+            const isShortlisted = buildingScores?.[building.id]?.shortlisted || false;
+
+            return (
+              <Card 
+                key={building.id} 
+                className="overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow"
+                onClick={() => navigate(`/buildings/${building.id}`)}
+              >
+                <div className="aspect-video relative bg-muted">
+                  {building.images && building.images.length > 0 ? (
                     <ImageCarousel 
-                      images={building.images || []}
+                      images={building.images} 
                       onImageClick={(e) => {
                         e.stopPropagation();
+                        navigate(`/buildings/${building.id}`);
                       }}
                     />
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <div className="space-y-2">
-                      <CardTitle className="text-lg">{building.name}</CardTitle>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {building.locality}
-                      </div>
-                      <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center">
-                          <Building2 className="h-4 w-4 mr-1" />
-                          {building.total_floors} Floors
-                        </div>
-                        <div className="flex items-center">
-                          <Home className="h-4 w-4 mr-1" />
-                          {building.bhk_types?.join(', ')} BHK
-                        </div>
-                        {building.google_rating && (
-                          <div className="flex items-center">
-                            <Star className="h-4 w-4 mr-1 text-yellow-400" />
-                            {building.google_rating}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex justify-between items-center mt-4">
-                        <div className="text-lg font-semibold">
-                          ₹{(building.min_price/10000000).toFixed(1)} Cr
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!user) {
-                              setAuthAction("shortlist");
-                              setShowAuthModal(true);
-                              return;
-                            }
-                            // Handle shortlist action
-                          }}
-                        >
-                          <Heart className="h-5 w-5" />
-                        </Button>
-                      </div>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <img 
+                        src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
+                        alt="Building placeholder"
+                        className="object-cover w-full h-full"
+                      />
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleShortlistToggle(building.id);
+                    }}
+                    className="absolute top-2 right-2 p-2 z-10 hover:scale-110 transition-transform"
+                  >
+                    <Heart
+                      className={`h-6 w-6 ${isShortlisted ? "fill-red-500 stroke-red-500" : "stroke-white fill-black/20"}`}
+                    />
+                  </button>
+                </div>
+                <CardHeader>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{building.name}</CardTitle>
+                      {building.google_rating && (
+                        <div className="flex items-center gap-1 text-sm">
+                          <Star className="h-4 w-4 fill-yellow-400 stroke-yellow-400" />
+                          <span className="font-medium">{building.google_rating}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      <span>{building.locality}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-sm">
+                      {building.age && (
+                        <div className="flex items-center gap-1">
+                          <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{building.age} years</span>
+                        </div>
+                      )}
+                      {building.total_floors && (
+                        <div className="flex items-center gap-1">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{building.total_floors} floors</span>
+                        </div>
+                      )}
+                      {building.bhk_types && (
+                        <div className="flex items-center gap-1">
+                          <Home className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{building.bhk_types.join(", ")} BHK</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-baseline">
+                      <span className="text-xs text-muted-foreground mr-1">Starting at</span>
+                      <span className="text-lg font-semibold">
+                        ₹{(building.min_price/10000000).toFixed(1)} Cr
+                      </span>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            );
+          })}
         </div>
+      )}
+
+      {/* Sticky map toggle button */}
+      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20">
+        <Button
+          variant="default"
+          onClick={() => setIsMapView(!isMapView)}
+          className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2"
+        >
+          {isMapView ? (
+            <>
+              <List className="h-4 w-4" />
+              Show list
+            </>
+          ) : (
+            <>
+              <MapIcon className="h-4 w-4" />
+              Show map
+            </>
+          )}
+        </Button>
       </div>
 
       <AuthModal
         open={showAuthModal}
         onOpenChange={setShowAuthModal}
+        actionType={authAction}
       />
     </div>
   );
