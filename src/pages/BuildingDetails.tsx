@@ -1,25 +1,36 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ImageCarousel } from "@/components/building/ImageCarousel";
-import { BuildingHeader } from "@/components/building/BuildingHeader";
-import { BasicDetails } from "@/components/building/BasicDetails";
-import { LocationTab } from "@/components/building/tabs/LocationTab";
-import { AmenitiesTab } from "@/components/building/tabs/AmenitiesTab";
-import { ReviewsTab } from "@/components/building/tabs/ReviewsTab";
-import { ListingVariants } from "@/components/building/ListingVariants";
-import { useBuildingData } from "@/components/building/hooks/useBuildingData";
-import { useShortlist } from "@/components/building/hooks/useShortlist";
-import { useState } from "react";
 import { SEO } from "@/components/seo/SEO";
+import { ImageCarousel } from "@/components/building/ImageCarousel";
+import { BuildingFeatures } from "@/components/building/BuildingFeatures";
+import { BuildingPricing } from "@/components/building/BuildingPricing";
+import { BuildingLocation } from "@/components/building/BuildingLocation";
+import { BuildingOverview } from "@/components/building/BuildingOverview";
+import { BuildingAmenities } from "@/components/building/BuildingAmenities";
+import { BuildingGallery } from "@/components/building/BuildingGallery";
+import { BuildingContact } from "@/components/building/BuildingContact";
+import { ChevronLeft } from "lucide-react";
 
 export default function BuildingDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [selectedListing, setSelectedListing] = useState<string | null>(null);
-
-  const { building, listings, isLoading } = useBuildingData(id!);
-  const { isShortlisted, toggleShortlist } = useShortlist(id!, building?.name || '');
+  
+  const { data: building, isLoading } = useQuery({
+    queryKey: ['building', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('buildings')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
 
   if (isLoading) {
     return <div className="container mx-auto px-4 py-8">Loading...</div>;
@@ -29,11 +40,9 @@ export default function BuildingDetails() {
     return <div className="container mx-auto px-4 py-8">Building not found</div>;
   }
 
-  const startingPrice = listings?.length 
-    ? Math.min(...listings.map(l => Number(l.price || 0))) 
-    : Number(building.min_price || 0);
+  const startingPrice = building.min_price || 0;
+  const features = Array.isArray(building.features) ? building.features : [];
 
-  // Generate structured data for the building
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Apartment",
@@ -50,7 +59,7 @@ export default function BuildingDetails() {
       "longitude": building.longitude
     },
     "image": building.images?.[0],
-    "amenities": building.features,
+    "amenities": features,
     "numberOfRooms": building.bhk_types?.[0],
     "priceRange": `₹${(building.min_price/10000000).toFixed(1)} Cr - ₹${(building.max_price/10000000).toFixed(1)} Cr`
   };
@@ -59,104 +68,40 @@ export default function BuildingDetails() {
     <div className="min-h-screen flex flex-col">
       <SEO
         title={`${building.name} | ${building.bhk_types?.join(', ')} BHK in ${building.locality} | Your Domain`}
-        description={`${building.bhk_types?.join(', ')} BHK apartments available in ${building.locality}. Starting at ₹${(startingPrice/10000000).toFixed(1)} Cr. ${building.features?.slice(0, 3).join(', ')} and more amenities.`}
+        description={`${building.bhk_types?.join(', ')} BHK apartments available in ${building.locality}. Starting at ₹${(startingPrice/10000000).toFixed(1)} Cr. ${features.slice(0, 3).join(', ')} and more amenities.`}
         canonical={`/buildings/${building.id}`}
         ogImage={building.images?.[0]}
         type="article"
         structuredData={structuredData}
       />
 
-      <ImageCarousel images={displayImages} />
-
       <div className="container mx-auto px-4 py-8">
-        {/* Mobile: Stacked layout */}
-        <div className="md:hidden space-y-8">
-          <ListingVariants 
-            listings={listings} 
-            buildingId={building.id}
-            buildingName={building.name}
-            isMobile={true}
-            onListingSelect={setSelectedListing}
-            selectedListingId={selectedListing}
-          />
-          <BasicDetails
-            totalFloors={building.total_floors}
-            age={building.age?.toString()}
-            pricePsqft={building.price_psqft}
-            minPrice={building.min_price}
-            maxPrice={building.max_price}
-            water={building.water}
-            bank={building.bank}
-          />
-          
-          <div className="space-y-12">
-            <section>
-              <h2 className="text-2xl font-semibold mb-6">Where is the home</h2>
-              <LocationTab
-                latitude={building.latitude}
-                longitude={building.longitude}
-                buildingName={building.name}
-              />
-            </section>
+        <Button
+          variant="ghost"
+          className="mb-6"
+          onClick={() => navigate(-1)}
+        >
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
 
-            <section>
-              <h2 className="text-2xl font-semibold mb-6">What this place offers</h2>
-              <AmenitiesTab features={building.features} />
-            </section>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div>
+            <ImageCarousel images={building.images || []} />
+          </div>
 
-            {building.google_rating && (
-              <section>
-                <h2 className="text-2xl font-semibold mb-6">What people say</h2>
-                <ReviewsTab />
-              </section>
-            )}
+          <div className="space-y-8">
+            <BuildingOverview building={building} />
+            <BuildingPricing building={building} />
+            <BuildingFeatures building={building} />
           </div>
         </div>
 
-        {/* Desktop: Two-column layout */}
-        <div className="hidden md:grid md:grid-cols-[1fr_400px] gap-8">
-          <div className="space-y-12">
-            <BasicDetails
-              totalFloors={building.total_floors}
-              age={building.age?.toString()}
-              pricePsqft={building.price_psqft}
-              minPrice={building.min_price}
-              maxPrice={building.max_price}
-              water={building.water}
-              bank={building.bank}
-            />
-
-            <section>
-              <h2 className="text-2xl font-semibold mb-6">Where is the home</h2>
-              <LocationTab
-                latitude={building.latitude}
-                longitude={building.longitude}
-                buildingName={building.name}
-              />
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-semibold mb-6">What this place offers</h2>
-              <AmenitiesTab features={building.features} />
-            </section>
-
-            {building.google_rating && (
-              <section>
-                <h2 className="text-2xl font-semibold mb-6">What people say</h2>
-                <ReviewsTab />
-              </section>
-            )}
-          </div>
-
-          <div>
-            <ListingVariants 
-              listings={listings} 
-              buildingId={building.id}
-              buildingName={building.name}
-              onListingSelect={setSelectedListing}
-              selectedListingId={selectedListing}
-            />
-          </div>
+        <div className="mt-12 space-y-12">
+          <BuildingAmenities building={building} />
+          <BuildingLocation building={building} />
+          <BuildingGallery building={building} />
+          <BuildingContact building={building} />
         </div>
       </div>
     </div>

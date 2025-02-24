@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +22,15 @@ export default function Buildings() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authAction, setAuthAction] = useState<"shortlist" | "visit" | "notify">("shortlist");
   const [activeCarouselIndex, setActiveCarouselIndex] = useState<Record<string, number>>({});
+
+  const handleCollectionToggle = (collectionId: string) => {
+    setSelectedCollections(prev => {
+      if (prev.includes(collectionId)) {
+        return prev.filter(id => id !== collectionId);
+      }
+      return [...prev, collectionId];
+    });
+  };
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -49,7 +57,6 @@ export default function Buildings() {
     building.name.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  // Generate SEO description based on current filters
   const getSEODescription = () => {
     const locationText = selectedCollections.length ? 
       `in ${selectedCollections.join(', ')}` : 
@@ -80,7 +87,6 @@ export default function Buildings() {
         }}
       />
       
-      {/* List/Map View Toggle */}
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col gap-6">
           <div className="flex items-center justify-between">
@@ -103,7 +109,6 @@ export default function Buildings() {
             </Button>
           </div>
 
-          {/* Search and Collections */}
           <div className="space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -116,11 +121,10 @@ export default function Buildings() {
             </div>
             <CollectionsBar
               selectedCollections={selectedCollections}
-              onCollectionSelect={setSelectedCollections}
+              onCollectionToggle={handleCollectionToggle}
             />
           </div>
 
-          {/* Buildings Grid/Map View */}
           {isMapView ? (
             <BuildingsMap buildings={filteredBuildings} />
           ) : (
@@ -194,7 +198,6 @@ export default function Buildings() {
       <AuthModal
         open={showAuthModal}
         onOpenChange={setShowAuthModal}
-        action={authAction}
       />
     </div>
   );
