@@ -20,18 +20,6 @@ export function ImageCarousel({ images, onImageClick }: ImageCarouselProps) {
   const [emblaRef, setEmblaRef] = useState<UseEmblaCarouselType[1] | null>(null);
   const [failedImages, setFailedImages] = useState<Record<number, boolean>>({});
 
-  if (!images?.length) {
-    return (
-      <div className="w-full aspect-video bg-muted flex items-center justify-center">
-        <img 
-          src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
-          alt="Building placeholder"
-          className="w-full h-full object-cover"
-        />
-      </div>
-    );
-  }
-
   const handleImageError = (index: number) => {
     setFailedImages(prev => ({ ...prev, [index]: true }));
   };
@@ -46,6 +34,18 @@ export function ImageCarousel({ images, onImageClick }: ImageCarouselProps) {
   const handleNavigation = (e: React.MouseEvent) => {
     e.stopPropagation();
   };
+
+  if (!images?.length) {
+    return (
+      <div className="w-full aspect-video bg-muted flex items-center justify-center">
+        <img 
+          src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
+          alt="Building placeholder"
+          className="w-full h-full object-cover"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full aspect-video relative group" onClick={onImageClick}>
