@@ -1,6 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { ImageCarousel } from "@/components/building/ImageCarousel";
 import { BuildingHeader } from "@/components/building/BuildingHeader";
 import { BasicDetails } from "@/components/building/BasicDetails";
@@ -11,6 +10,7 @@ import { ListingVariants } from "@/components/building/ListingVariants";
 import { useBuildingData } from "@/components/building/hooks/useBuildingData";
 import { useShortlist } from "@/components/building/hooks/useShortlist";
 import { useState } from "react";
+import { SEO } from "@/components/seo/SEO";
 
 export default function BuildingDetails() {
   const { id } = useParams();
@@ -33,25 +33,38 @@ export default function BuildingDetails() {
     ? Math.min(...listings.map(l => Number(l.price || 0))) 
     : Number(building.min_price || 0);
 
-  // Get images based on selected listing or fallback to building images
-  const displayImages = selectedListing
-    ? listings?.find(l => l.id === selectedListing)?.images || building.images || []
-    : building.images || [];
+  // Generate structured data for the building
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Apartment",
+    "name": building.name,
+    "description": `${building.bhk_types?.join(', ')} BHK apartments available in ${building.locality}. Starting at ₹${(startingPrice/10000000).toFixed(1)} Cr.`,
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": building.locality,
+      "addressRegion": building.sub_locality
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": building.latitude,
+      "longitude": building.longitude
+    },
+    "image": building.images?.[0],
+    "amenities": building.features,
+    "numberOfRooms": building.bhk_types?.[0],
+    "priceRange": `₹${(building.min_price/10000000).toFixed(1)} Cr - ₹${(building.max_price/10000000).toFixed(1)} Cr`
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container mx-auto px-4 py-4">
-          <BuildingHeader
-            name={building.name}
-            locality={building.locality || ''}
-            googleRating={building.google_rating}
-            isShortlisted={isShortlisted || false}
-            onToggleShortlist={toggleShortlist}
-            startingPrice={startingPrice}
-          />
-        </div>
-      </div>
+      <SEO
+        title={`${building.name} | ${building.bhk_types?.join(', ')} BHK in ${building.locality} | Your Domain`}
+        description={`${building.bhk_types?.join(', ')} BHK apartments available in ${building.locality}. Starting at ₹${(startingPrice/10000000).toFixed(1)} Cr. ${building.features?.slice(0, 3).join(', ')} and more amenities.`}
+        canonical={`/buildings/${building.id}`}
+        ogImage={building.images?.[0]}
+        type="article"
+        structuredData={structuredData}
+      />
 
       <ImageCarousel images={displayImages} />
 
