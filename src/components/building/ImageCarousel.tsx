@@ -7,10 +7,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { type UseEmblaCarouselType } from 'embla-carousel-react';
-import { Grid } from "lucide-react";
 
 interface ImageCarouselProps {
   images: string[];
@@ -86,19 +83,6 @@ export function ImageCarousel({ images, onImageClick }: ImageCarouselProps) {
         </CarouselContent>
         <CarouselPrevious className="left-4 opacity-0 group-hover:opacity-100 transition-opacity" onClick={handleNavigation} />
         <CarouselNext className="right-4 opacity-0 group-hover:opacity-100 transition-opacity" onClick={handleNavigation} />
-        
-        <Button
-          variant="outline"
-          size="sm"
-          className="absolute right-4 bottom-4 gap-2 bg-white hover:bg-white"
-          onClick={(e) => {
-            e.stopPropagation();
-            onImageClick?.(e);
-          }}
-        >
-          <Grid className="h-4 w-4" />
-          Show all photos
-        </Button>
 
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2" onClick={handleNavigation}>
           {images.map((_, index) => (
