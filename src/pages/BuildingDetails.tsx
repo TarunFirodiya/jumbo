@@ -1,5 +1,5 @@
+
 import { useParams, useNavigate } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { ImageCarousel } from "@/components/building/ImageCarousel";
@@ -55,26 +55,6 @@ export default function BuildingDetails() {
       />
 
       <div className="container mx-auto px-4 py-8">
-        {/* Desktop: Two-column layout */}
-        <div className="hidden md:grid md:grid-cols-2 gap-8 mb-8">
-          <BasicDetails
-            totalFloors={building.total_floors}
-            age={building.age?.toString()}
-            pricePsqft={building.price_psqft}
-            minPrice={building.min_price}
-            maxPrice={building.max_price}
-            water={building.water}
-            bank={building.bank}
-          />
-          <div className="sticky top-28">
-            <ListingVariants 
-              listings={listings} 
-              buildingId={building.id}
-              buildingName={building.name}
-            />
-          </div>
-        </div>
-
         {/* Mobile: Stacked layout */}
         <div className="md:hidden space-y-8">
           <ListingVariants 
@@ -92,42 +72,74 @@ export default function BuildingDetails() {
             water={building.water}
             bank={building.bank}
           />
+          
+          <div className="space-y-12">
+            <section>
+              <h2 className="text-2xl font-semibold mb-6">Where is the home</h2>
+              <LocationTab
+                latitude={building.latitude}
+                longitude={building.longitude}
+                buildingName={building.name}
+              />
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold mb-6">What this place offers</h2>
+              <AmenitiesTab features={building.features} />
+            </section>
+
+            {building.google_rating && (
+              <section>
+                <h2 className="text-2xl font-semibold mb-6">What people say</h2>
+                <ReviewsTab />
+              </section>
+            )}
+          </div>
         </div>
 
-        <Tabs defaultValue="location" className="w-full">
-          {isMobile ? (
-            <ScrollArea className="w-full whitespace-nowrap">
-              <TabsList className="inline-flex w-max border-b rounded-none p-0">
-                <TabsTrigger value="location">Location</TabsTrigger>
-                <TabsTrigger value="amenities">Amenities</TabsTrigger>
-                <TabsTrigger value="reviews" disabled={!building.google_rating}>Reviews</TabsTrigger>
-              </TabsList>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
-          ) : (
-            <TabsList className="w-full justify-start">
-              <TabsTrigger value="location">Location</TabsTrigger>
-              <TabsTrigger value="amenities">Amenities</TabsTrigger>
-              <TabsTrigger value="reviews" disabled={!building.google_rating}>Reviews</TabsTrigger>
-            </TabsList>
-          )}
+        {/* Desktop: Two-column layout */}
+        <div className="hidden md:grid md:grid-cols-[1fr_400px] gap-8">
+          <div className="space-y-12">
+            <BasicDetails
+              totalFloors={building.total_floors}
+              age={building.age?.toString()}
+              pricePsqft={building.price_psqft}
+              minPrice={building.min_price}
+              maxPrice={building.max_price}
+              water={building.water}
+              bank={building.bank}
+            />
 
-          <TabsContent value="location">
-            <LocationTab
-              latitude={building.latitude}
-              longitude={building.longitude}
+            <section>
+              <h2 className="text-2xl font-semibold mb-6">Where is the home</h2>
+              <LocationTab
+                latitude={building.latitude}
+                longitude={building.longitude}
+                buildingName={building.name}
+              />
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold mb-6">What this place offers</h2>
+              <AmenitiesTab features={building.features} />
+            </section>
+
+            {building.google_rating && (
+              <section>
+                <h2 className="text-2xl font-semibold mb-6">What people say</h2>
+                <ReviewsTab />
+              </section>
+            )}
+          </div>
+
+          <div>
+            <ListingVariants 
+              listings={listings} 
+              buildingId={building.id}
               buildingName={building.name}
             />
-          </TabsContent>
-
-          <TabsContent value="amenities">
-            <AmenitiesTab features={building.features} />
-          </TabsContent>
-
-          <TabsContent value="reviews">
-            <ReviewsTab />
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   );
