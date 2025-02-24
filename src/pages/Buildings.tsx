@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,13 +56,15 @@ export default function Buildings() {
   const { data: buildings, isLoading: buildingsLoading } = useQuery({
     queryKey: ['buildings', selectedCollections],
     queryFn: async () => {
+      console.log('Fetching buildings with collections:', selectedCollections); // Debug log
+
       let query = supabase
         .from('buildings')
         .select('*');
       
       if (selectedCollections.length > 0) {
-        // Use overlaps instead of contains for array comparison
-        query = query.overlaps('collections', selectedCollections);
+        // Use overlaps for array comparison
+        query = query.contains('collections', selectedCollections);
       }
 
       const { data, error } = await query;
@@ -73,7 +74,7 @@ export default function Buildings() {
         throw error;
       }
       
-      console.log('Fetched buildings:', data);
+      console.log('Fetched buildings:', data); // Debug log
       return data;
     },
   });
@@ -81,6 +82,8 @@ export default function Buildings() {
   const filteredBuildings = buildings?.filter(building => 
     building.name.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
+
+  console.log('Filtered buildings:', filteredBuildings); // Debug log
 
   const handleShortlistToggle = async (buildingId: string) => {
     if (!user) {
@@ -125,6 +128,7 @@ export default function Buildings() {
         ? prev.filter(id => id !== collectionId)
         : [...prev, collectionId]
     );
+    console.log('Toggled collection:', collectionId); // Debug log
   };
 
   return (

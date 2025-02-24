@@ -553,6 +553,14 @@ export type Database = {
       }
     }
     Enums: {
+      collections:
+        | "Affordable"
+        | "Gated Apartment"
+        | "New Construction"
+        | "Child Friendly"
+        | "Luxury Community"
+        | "Spacious Layout"
+        | "Vastu Compliant"
       visit_status: "to be confirmed" | "confirmed" | "completed" | "cancelled"
     }
     CompositeTypes: {
