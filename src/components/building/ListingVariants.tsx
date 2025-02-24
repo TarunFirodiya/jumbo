@@ -3,8 +3,9 @@ import { useState } from "react";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { BadgeIndianRupee, Building2, Compass } from "lucide-react";
+import { IndianRupee, Building2, Compass } from "lucide-react";
 import { VisitRequestModal } from "@/components/VisitRequestModal";
+import { RainbowButton } from "@/components/ui/rainbow-button";
 
 interface ListingVariantsProps {
   listings: Tables<'listings'>[] | null;
@@ -21,26 +22,41 @@ export function ListingVariants({ listings, buildingId, buildingName, isMobile }
 
   if (!listings?.length) return null;
 
+  const calculateEMI = (price: number) => {
+    const loanAmount = price * 0.8; // 80% loan
+    const interestRate = 0.085; // 8.5% per annum
+    const tenure = 20 * 12; // 20 years in months
+    const monthlyRate = interestRate / 12;
+    const emi = (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, tenure)) / (Math.pow(1 + monthlyRate, tenure) - 1);
+    return Math.round(emi);
+  };
+
   const ActionButtons = () => (
-    <div className="grid grid-cols-2 gap-3">
-      <Button 
-        className="w-full" 
-        onClick={() => setShowVisitModal(true)}
-      >
-        Request a Visit
-      </Button>
-      <Button 
-        variant="outline" 
-        className="w-full"
-      >
-        Book Now
-      </Button>
+    <div className="flex flex-col gap-3">
+      <div>
+        <RainbowButton 
+          className="w-full" 
+          onClick={() => setShowVisitModal(true)}
+        >
+          Request a Visit
+        </RainbowButton>
+        <p className="text-xs text-center text-muted-foreground mt-1">It's Free. Zero Spam</p>
+      </div>
+      <div>
+        <Button 
+          variant="outline" 
+          className="w-full"
+        >
+          Book Now
+        </Button>
+        <p className="text-xs text-center text-muted-foreground mt-1">100% refundable</p>
+      </div>
     </div>
   );
 
   return (
     <>
-      <Card className="p-6 space-y-6">
+      <Card className="p-6 space-y-6 shadow-lg md:max-w-sm md:sticky md:top-28">
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {listings.map((listing) => (
@@ -48,6 +64,7 @@ export function ListingVariants({ listings, buildingId, buildingName, isMobile }
                 key={listing.id}
                 variant={selectedListing?.id === listing.id ? "default" : "outline"}
                 onClick={() => setSelectedListing(listing)}
+                className="text-sm"
               >
                 {listing.bedrooms}BHK - Floor {listing.floor}
               </Button>
@@ -56,15 +73,17 @@ export function ListingVariants({ listings, buildingId, buildingName, isMobile }
 
           {selectedListing && (
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-2xl font-semibold">
-                <BadgeIndianRupee className="h-6 w-6" />
-                <span>{selectedListing.price?.toLocaleString()}</span>
-                <span className="text-base font-normal text-muted-foreground">
-                  (₹{Math.round(selectedListing.price / selectedListing.built_up_area).toLocaleString()} per sq.ft)
-                </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <IndianRupee className="h-6 w-6 text-muted-foreground" />
+                  <span className="text-2xl font-semibold">{(selectedListing.price/10000000).toFixed(1)} Cr</span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  EMI starts at ₹{(calculateEMI(selectedListing.price)/1000).toFixed(1)}k/month*
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-muted-foreground" />
                   <span>{selectedListing.built_up_area} sq.ft</span>
@@ -85,7 +104,7 @@ export function ListingVariants({ listings, buildingId, buildingName, isMobile }
       </Card>
 
       {isMobile && selectedListing && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg">
           <ActionButtons />
         </div>
       )}
