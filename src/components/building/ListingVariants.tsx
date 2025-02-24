@@ -12,23 +12,37 @@ interface ListingVariantsProps {
   buildingId: string;
   buildingName: string;
   isMobile?: boolean;
+  onListingSelect?: (listingId: string) => void;
+  selectedListingId?: string | null;
 }
 
-export function ListingVariants({ listings, buildingId, buildingName, isMobile }: ListingVariantsProps) {
+export function ListingVariants({ 
+  listings, 
+  buildingId, 
+  buildingName, 
+  isMobile,
+  onListingSelect,
+  selectedListingId
+}: ListingVariantsProps) {
   const [selectedListing, setSelectedListing] = useState<Tables<'listings'> | null>(
-    listings?.[0] || null
+    listings?.find(l => l.id === selectedListingId) || listings?.[0] || null
   );
   const [showVisitModal, setShowVisitModal] = useState(false);
 
   if (!listings?.length) return null;
 
   const calculateEMI = (price: number) => {
-    const loanAmount = price * 0.8; // 80% loan
-    const interestRate = 0.085; // 8.5% per annum
-    const tenure = 20 * 12; // 20 years in months
+    const loanAmount = price * 0.8;
+    const interestRate = 0.085;
+    const tenure = 20 * 12;
     const monthlyRate = interestRate / 12;
     const emi = (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, tenure)) / (Math.pow(1 + monthlyRate, tenure) - 1);
     return Math.round(emi);
+  };
+
+  const handleListingSelect = (listing: Tables<'listings'>) => {
+    setSelectedListing(listing);
+    onListingSelect?.(listing.id);
   };
 
   const ActionButtons = () => (
@@ -63,7 +77,7 @@ export function ListingVariants({ listings, buildingId, buildingName, isMobile }
               <Button
                 key={listing.id}
                 variant={selectedListing?.id === listing.id ? "default" : "outline"}
-                onClick={() => setSelectedListing(listing)}
+                onClick={() => handleListingSelect(listing)}
                 className="text-sm"
               >
                 {listing.bedrooms}BHK - Floor {listing.floor}

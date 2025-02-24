@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -17,7 +16,7 @@ export default function BuildingDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [showAllPhotos, setShowAllPhotos] = useState(false);
+  const [selectedListing, setSelectedListing] = useState<string | null>(null);
 
   const { building, listings, isLoading } = useBuildingData(id!);
   const { isShortlisted, toggleShortlist } = useShortlist(id!, building?.name || '');
@@ -34,6 +33,11 @@ export default function BuildingDetails() {
     ? Math.min(...listings.map(l => Number(l.price || 0))) 
     : Number(building.min_price || 0);
 
+  // Get images based on selected listing or fallback to building images
+  const displayImages = selectedListing
+    ? listings?.find(l => l.id === selectedListing)?.images || building.images || []
+    : building.images || [];
+
   return (
     <div className="min-h-screen flex flex-col">
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -49,10 +53,7 @@ export default function BuildingDetails() {
         </div>
       </div>
 
-      <ImageCarousel 
-        images={building.images || []} 
-        onImageClick={() => setShowAllPhotos(true)}
-      />
+      <ImageCarousel images={displayImages} />
 
       <div className="container mx-auto px-4 py-8">
         {/* Mobile: Stacked layout */}
@@ -62,6 +63,8 @@ export default function BuildingDetails() {
             buildingId={building.id}
             buildingName={building.name}
             isMobile={true}
+            onListingSelect={setSelectedListing}
+            selectedListingId={selectedListing}
           />
           <BasicDetails
             totalFloors={building.total_floors}
@@ -137,6 +140,8 @@ export default function BuildingDetails() {
               listings={listings} 
               buildingId={building.id}
               buildingName={building.name}
+              onListingSelect={setSelectedListing}
+              selectedListingId={selectedListing}
             />
           </div>
         </div>

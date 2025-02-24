@@ -108,6 +108,7 @@ export type Database = {
           facing: string | null
           floor: number | null
           id: string
+          images: string[] | null
           maintenance: number | null
           price: number | null
         }
@@ -122,6 +123,7 @@ export type Database = {
           facing?: string | null
           floor?: number | null
           id?: string
+          images?: string[] | null
           maintenance?: number | null
           price?: number | null
         }
@@ -136,6 +138,7 @@ export type Database = {
           facing?: string | null
           floor?: number | null
           id?: string
+          images?: string[] | null
           maintenance?: number | null
           price?: number | null
         }
