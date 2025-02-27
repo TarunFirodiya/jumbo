@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { ImageCarousel } from "@/components/building/ImageCarousel";
 import { CollectionsBar } from "@/components/buildings/CollectionsBar";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { SEO } from "@/components/SEO";
 
 // Lazy load the map component since it's heavy
 const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
@@ -148,7 +148,6 @@ export default function Buildings() {
         .select('*');
       
       if (selectedCollections.length > 0) {
-        // Use overlaps for array comparison
         query = query.contains('collections', selectedCollections);
       }
 
@@ -163,7 +162,6 @@ export default function Buildings() {
     },
   });
 
-  // Memoize filtered buildings to avoid re-filtering on every render
   const filteredBuildings = useMemo(() => 
     buildings?.filter(building => 
       building.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -171,7 +169,6 @@ export default function Buildings() {
     [buildings, searchTerm]
   );
 
-  // Use callbacks for event handlers
   const handleShortlistToggle = useCallback(async (buildingId: string) => {
     if (!user) {
       setAuthAction("shortlist");
@@ -221,17 +218,46 @@ export default function Buildings() {
     navigate(path);
   }, [navigate]);
 
-  // Loading state UI
+  const getSEODescription = () => {
+    let description = "Browse apartments, villas, and houses in popular locations. ";
+    if (selectedCollections.length) {
+      description += `Explore properties in ${selectedCollections.join(', ')}. `;
+    }
+    description += "Find your perfect home with detailed listings, amenities, and pricing information.";
+    return description;
+  };
+
   if (buildingsLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
-      </div>
+      <>
+        <SEO title="Loading Properties | Cozy Dwell Search" />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
+        </div>
+      </>
     );
   }
 
   return (
     <div className="min-h-screen pb-20">
+      <SEO
+        title={selectedCollections.length ? 
+          `Properties in ${selectedCollections.join(', ')} | Cozy Dwell Search` : 
+          'Find Your Perfect Home | Cozy Dwell Search'
+        }
+        description={getSEODescription()}
+        canonical="/buildings"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "RealEstateAgent",
+          "name": "Cozy Dwell Search",
+          "description": getSEODescription(),
+          "url": "https://www.cozydwellsearch.com/buildings",
+          "areaServed": selectedCollections.length ? selectedCollections : ["All Areas"],
+          "numberOfItems": filteredBuildings.length
+        }}
+      />
+      
       <div className="sticky top-0 z-10 bg-background py-4 space-y-4">
         <div className="flex items-center gap-4">
           <div className="relative flex-1">
@@ -289,7 +315,6 @@ export default function Buildings() {
         </div>
       )}
 
-      {/* Sticky map toggle button */}
       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20">
         <Button
           variant="default"

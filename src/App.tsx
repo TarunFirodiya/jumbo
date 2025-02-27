@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import MainLayout from "./layouts/MainLayout";
+import { HelmetProvider } from 'react-helmet-async';
 
 // Lazy load components
 const Auth = lazy(() => import("./pages/Auth"));
@@ -38,25 +39,27 @@ const queryClient = new QueryClient({
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
-      <TooltipProvider>
-        <MainLayout>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/preferences" element={<Preferences />} />
-              <Route path="/buildings" element={<Buildings />} />
-              <Route path="/buildings/:id" element={<BuildingDetails />} />
-              <Route path="/shortlist" element={<Shortlist />} />
-              <Route path="/visits" element={<Visits />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/" element={<Navigate to="/auth" replace />} />
-            </Routes>
-          </Suspense>
-        </MainLayout>
-        <Toaster />
-        <Sonner />
-      </TooltipProvider>
+      <HelmetProvider>
+        <TooltipProvider>
+          <MainLayout>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/preferences" element={<Preferences />} />
+                <Route path="/buildings" element={<Buildings />} />
+                <Route path="/buildings/:id" element={<BuildingDetails />} />
+                <Route path="/shortlist" element={<Shortlist />} />
+                <Route path="/visits" element={<Visits />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/" element={<Navigate to="/auth" replace />} />
+              </Routes>
+            </Suspense>
+          </MainLayout>
+          <Toaster />
+          <Sonner />
+        </TooltipProvider>
+      </HelmetProvider>
     </BrowserRouter>
   </QueryClientProvider>
 );

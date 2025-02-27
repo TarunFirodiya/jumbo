@@ -12,6 +12,7 @@ import { ListingVariants } from "@/components/building/ListingVariants";
 import { useBuildingData } from "@/components/building/hooks/useBuildingData";
 import { useShortlist } from "@/components/building/hooks/useShortlist";
 import { useState, useCallback, useMemo } from "react";
+import { SEO } from "@/components/SEO";
 
 export default function BuildingDetails() {
   const { id } = useParams();
@@ -44,18 +45,71 @@ export default function BuildingDetails() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[60vh]">
-        <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
-      </div>
+      <>
+        <SEO title="Loading Property Details | Cozy Dwell Search" />
+        <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[60vh]">
+          <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
+        </div>
+      </>
     );
   }
 
   if (!building) {
-    return <div className="container mx-auto px-4 py-8">Building not found</div>;
+    return (
+      <>
+        <SEO title="Property Not Found | Cozy Dwell Search" />
+        <div className="container mx-auto px-4 py-8">Building not found</div>
+      </>
+    );
   }
+
+  const features = Array.isArray(building.features) ? building.features.map(f => String(f)) : [];
+  const amenitiesText = features.slice(0, 3).join(', ');
+  
+  // Generate structured data for this building
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Apartment",
+    "name": building.name,
+    "description": `${building.bhk_types?.join(', ')} BHK apartments in ${building.locality}. Starting at ₹${(startingPrice/10000000).toFixed(1)} Cr. Features: ${amenitiesText}.`,
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": building.locality,
+      "addressRegion": building.city || "Delhi NCR",
+      "addressCountry": "IN"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": building.latitude,
+      "longitude": building.longitude
+    },
+    "image": building.images?.[0],
+    "numberOfRooms": building.bhk_types?.[0] || "",
+    "petsAllowed": features.some(f => f.toLowerCase().includes("pet")),
+    "yearBuilt": building.age ? new Date().getFullYear() - building.age : undefined,
+    "floorSize": {
+      "@type": "QuantitativeValue",
+      "unitText": "SQFT"
+    },
+    "offers": {
+      "@type": "Offer",
+      "priceCurrency": "INR",
+      "price": startingPrice,
+      "validFrom": new Date().toISOString()
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO
+        title={`${building.name} | ${building.bhk_types?.join(', ')} BHK in ${building.locality}`}
+        description={`${building.bhk_types?.join(', ')} BHK apartments available in ${building.locality}. Starting at ₹${(startingPrice/10000000).toFixed(1)} Cr. Features: ${amenitiesText}.`}
+        canonical={`/buildings/${id}`}
+        ogImage={building.images?.[0] || ''}
+        type="article"
+        structuredData={structuredData}
+      />
+
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 py-4">
           <BuildingHeader
