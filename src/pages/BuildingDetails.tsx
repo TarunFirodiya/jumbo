@@ -75,7 +75,7 @@ export default function BuildingDetails() {
     "address": {
       "@type": "PostalAddress",
       "addressLocality": building.locality,
-      "addressRegion": building.city || "Delhi NCR",
+      "addressRegion": "Delhi NCR", // Changed from building.city to a static value
       "addressCountry": "IN"
     },
     "geo": {
