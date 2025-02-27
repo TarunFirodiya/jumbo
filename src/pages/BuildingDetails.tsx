@@ -1,6 +1,7 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ImageCarousel } from "@/components/building/ImageCarousel";
 import { BuildingHeader } from "@/components/building/BuildingHeader";
 import { BasicDetails } from "@/components/building/BasicDetails";
@@ -10,7 +11,7 @@ import { ReviewsTab } from "@/components/building/tabs/ReviewsTab";
 import { ListingVariants } from "@/components/building/ListingVariants";
 import { useBuildingData } from "@/components/building/hooks/useBuildingData";
 import { useShortlist } from "@/components/building/hooks/useShortlist";
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 
 export default function BuildingDetails() {
   const { id } = useParams();
@@ -21,22 +22,37 @@ export default function BuildingDetails() {
   const { building, listings, isLoading } = useBuildingData(id!);
   const { isShortlisted, toggleShortlist } = useShortlist(id!, building?.name || '');
 
+  // Memoize expensive calculations
+  const startingPrice = useMemo(() => {
+    if (!listings?.length) return Number(building?.min_price || 0);
+    return Math.min(...listings.map(l => Number(l.price || 0)));
+  }, [listings, building?.min_price]);
+
+  // Get images based on selected listing or fallback to building images
+  const displayImages = useMemo(() => {
+    if (selectedListing && listings) {
+      const selectedListingImages = listings.find(l => l.id === selectedListing)?.images;
+      return selectedListingImages?.length ? selectedListingImages : building?.images || [];
+    }
+    return building?.images || [];
+  }, [selectedListing, listings, building?.images]);
+
+  // Use callback for event handlers
+  const handleListingSelect = useCallback((id: string) => {
+    setSelectedListing(id);
+  }, []);
+
   if (isLoading) {
-    return <div className="container mx-auto px-4 py-8">Loading...</div>;
+    return (
+      <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[60vh]">
+        <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
+      </div>
+    );
   }
 
   if (!building) {
     return <div className="container mx-auto px-4 py-8">Building not found</div>;
   }
-
-  const startingPrice = listings?.length 
-    ? Math.min(...listings.map(l => Number(l.price || 0))) 
-    : Number(building.min_price || 0);
-
-  // Get images based on selected listing or fallback to building images
-  const displayImages = selectedListing
-    ? listings?.find(l => l.id === selectedListing)?.images || building.images || []
-    : building.images || [];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -63,7 +79,7 @@ export default function BuildingDetails() {
             buildingId={building.id}
             buildingName={building.name}
             isMobile={true}
-            onListingSelect={setSelectedListing}
+            onListingSelect={handleListingSelect}
             selectedListingId={selectedListing}
           />
           <BasicDetails
@@ -140,7 +156,7 @@ export default function BuildingDetails() {
               listings={listings} 
               buildingId={building.id}
               buildingName={building.name}
-              onListingSelect={setSelectedListing}
+              onListingSelect={handleListingSelect}
               selectedListingId={selectedListing}
             />
           </div>

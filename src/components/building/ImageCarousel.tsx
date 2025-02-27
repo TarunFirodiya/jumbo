@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo, useCallback } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
@@ -19,33 +19,59 @@ interface ImageCarouselProps {
 }
 
 const isYoutubeUrl = (url: string) => {
-  return url.includes('youtube.com') || url.includes('youtu.be');
+  return url?.includes('youtube.com') || url?.includes('youtu.be');
 };
 
 const getYoutubeEmbedUrl = (url: string) => {
+  if (!url) return '';
   const videoId = url.includes('youtu.be') 
     ? url.split('/').pop() 
     : url.split('v=')[1]?.split('&')[0];
   return `https://www.youtube.com/embed/${videoId}`;
 };
 
-export function ImageCarousel({ images }: ImageCarouselProps) {
+// Memoized media element component to prevent re-renders
+const MediaElement = memo(({ url, index, onError }: { url: string; index: number; onError: (index: number) => void }) => {
+  if (isYoutubeUrl(url)) {
+    return (
+      <iframe
+        src={getYoutubeEmbedUrl(url)}
+        className="w-full h-full"
+        loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
+    );
+  }
+
+  // Process image URL to handle special cases
+  const processedUrl = url?.includes('maps.googleapis.com') ? 
+    '/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png' : url;
+
+  return (
+    <img
+      src={processedUrl}
+      alt={`Image ${index + 1}`}
+      className="w-full h-full object-cover"
+      loading="lazy"
+      onError={() => onError(index)}
+    />
+  );
+});
+
+MediaElement.displayName = 'MediaElement';
+
+export const ImageCarousel = memo(function ImageCarousel({ images, onImageClick }: ImageCarouselProps) {
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [emblaRef, setEmblaRef] = useState<UseEmblaCarouselType[1] | null>(null);
   const [failedImages, setFailedImages] = useState<Record<number, boolean>>({});
 
-  const handleImageError = (index: number) => {
+  const handleImageError = useCallback((index: number) => {
     setFailedImages(prev => ({ ...prev, [index]: true }));
-  };
+  }, []);
 
-  const processImageUrl = (url: string) => {
-    if (url.includes('maps.googleapis.com')) {
-      return '/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png';
-    }
-    return url;
-  };
-
+  // If no images, show placeholder
   if (!images?.length) {
     return (
       <div className="w-full aspect-video bg-muted flex items-center justify-center">
@@ -53,53 +79,26 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
           src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
           alt="Building placeholder"
           className="w-full h-full object-cover"
+          loading="lazy"
         />
       </div>
     );
   }
 
-  const MediaElement = ({ url, index }: { url: string; index: number }) => {
-    if (isYoutubeUrl(url)) {
-      return (
-        <iframe
-          src={getYoutubeEmbedUrl(url)}
-          className="w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      );
-    }
-
-    return failedImages[index] ? (
-      <img 
-        src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
-        alt={`Placeholder ${index + 1}`}
-        className="w-full h-full object-cover"
-      />
-    ) : (
-      <img
-        src={processImageUrl(url)}
-        alt={`Image ${index + 1}`}
-        className="w-full h-full object-cover"
-        onError={() => handleImageError(index)}
-      />
-    );
-  };
-
-  // Image Grid for Desktop
+  // Grid view for desktop
   const GridView = () => (
     <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-2 aspect-[2/1]" onClick={() => setShowAllPhotos(true)}>
       <div className="col-span-2 row-span-2 relative overflow-hidden rounded-l-lg">
-        <MediaElement url={images[0]} index={0} />
+        <MediaElement url={images[0]} index={0} onError={handleImageError} />
       </div>
       <div className="relative overflow-hidden">
-        <MediaElement url={images[1]} index={1} />
+        {images.length > 1 && <MediaElement url={images[1]} index={1} onError={handleImageError} />}
       </div>
       <div className="relative overflow-hidden rounded-tr-lg">
-        <MediaElement url={images[2]} index={2} />
+        {images.length > 2 && <MediaElement url={images[2]} index={2} onError={handleImageError} />}
       </div>
       <div className="relative overflow-hidden">
-        <MediaElement url={images[3]} index={3} />
+        {images.length > 3 && <MediaElement url={images[3]} index={3} onError={handleImageError} />}
       </div>
       <div className="relative overflow-hidden rounded-br-lg">
         {images.length > 4 && (
@@ -113,7 +112,11 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
             <span>+{images.length - 4} more</span>
           </div>
         )}
-        <MediaElement url={images[4] || images[3]} index={4} />
+        {images.length > 4 ? (
+          <MediaElement url={images[4]} index={4} onError={handleImageError} />
+        ) : images.length > 3 ? (
+          <MediaElement url={images[3]} index={3} onError={handleImageError} />
+        ) : null}
       </div>
     </div>
   );
@@ -121,7 +124,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
   // Single Image for Mobile
   const MobileView = () => (
     <div className="md:hidden w-full aspect-video relative" onClick={() => setShowAllPhotos(true)}>
-      <MediaElement url={images[0]} index={0} />
+      <MediaElement url={images[0]} index={0} onError={handleImageError} />
     </div>
   );
 
@@ -150,7 +153,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
             {images.map((image, index) => (
               <CarouselItem key={index} className="h-[90vh] flex items-center justify-center">
                 <div className="relative w-full h-full flex items-center justify-center">
-                  <MediaElement url={image} index={index} />
+                  <MediaElement url={image} index={index} onError={handleImageError} />
                 </div>
               </CarouselItem>
             ))}
@@ -182,4 +185,4 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
       <FullScreenCarousel />
     </>
   );
-}
+});

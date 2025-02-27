@@ -1,16 +1,104 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useCallback, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
-import BuildingsMap from "@/components/BuildingsMap";
 import { Input } from "@/components/ui/input";
 import { ImageCarousel } from "@/components/building/ImageCarousel";
 import { CollectionsBar } from "@/components/buildings/CollectionsBar";
 import { AuthModal } from "@/components/auth/AuthModal";
+
+// Lazy load the map component since it's heavy
+const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
+
+// Building Card component to reduce re-renders
+const BuildingCard = ({ building, onNavigate, onShortlist, isShortlisted }) => {
+  return (
+    <Card 
+      key={building.id} 
+      className="overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow"
+      onClick={() => onNavigate(`/buildings/${building.id}`)}
+    >
+      <div className="aspect-video relative bg-muted">
+        {building.images && building.images.length > 0 ? (
+          <ImageCarousel 
+            images={building.images} 
+            onImageClick={(e) => {
+              e.stopPropagation();
+              onNavigate(`/buildings/${building.id}`);
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <img 
+              src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
+              alt="Building placeholder"
+              className="object-cover w-full h-full"
+            />
+          </div>
+        )}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onShortlist(building.id);
+          }}
+          className="absolute top-2 right-2 p-2 z-10 hover:scale-110 transition-transform"
+        >
+          <Heart
+            className={`h-6 w-6 ${isShortlisted ? "fill-red-500 stroke-red-500" : "stroke-white fill-black/20"}`}
+          />
+        </button>
+      </div>
+      <CardHeader>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">{building.name}</CardTitle>
+            {building.google_rating && (
+              <div className="flex items-center gap-1 text-sm">
+                <Star className="h-4 w-4 fill-yellow-400 stroke-yellow-400" />
+                <span className="font-medium">{building.google_rating}</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4" />
+            <span>{building.locality}</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            {building.age && (
+              <div className="flex items-center gap-1">
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{building.age} years</span>
+              </div>
+            )}
+            {building.total_floors && (
+              <div className="flex items-center gap-1">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{building.total_floors} floors</span>
+              </div>
+            )}
+            {building.bhk_types && (
+              <div className="flex items-center gap-1">
+                <Home className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{building.bhk_types.join(", ")} BHK</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-baseline">
+            <span className="text-xs text-muted-foreground mr-1">Starting at</span>
+            <span className="text-lg font-semibold">
+              ₹{(building.min_price/10000000).toFixed(1)} Cr
+            </span>
+          </div>
+        </div>
+      </CardHeader>
+    </Card>
+  );
+};
 
 export default function Buildings() {
   const { toast } = useToast();
@@ -20,7 +108,6 @@ export default function Buildings() {
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authAction, setAuthAction] = useState<"shortlist" | "visit" | "notify">("shortlist");
-  const [activeCarouselIndex, setActiveCarouselIndex] = useState<Record<string, number>>({});
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -56,8 +143,6 @@ export default function Buildings() {
   const { data: buildings, isLoading: buildingsLoading } = useQuery({
     queryKey: ['buildings', selectedCollections],
     queryFn: async () => {
-      console.log('Fetching buildings with collections:', selectedCollections); // Debug log
-
       let query = supabase
         .from('buildings')
         .select('*');
@@ -74,18 +159,20 @@ export default function Buildings() {
         throw error;
       }
       
-      console.log('Fetched buildings:', data); // Debug log
       return data;
     },
   });
 
-  const filteredBuildings = buildings?.filter(building => 
-    building.name.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  // Memoize filtered buildings to avoid re-filtering on every render
+  const filteredBuildings = useMemo(() => 
+    buildings?.filter(building => 
+      building.name.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [], 
+    [buildings, searchTerm]
+  );
 
-  console.log('Filtered buildings:', filteredBuildings); // Debug log
-
-  const handleShortlistToggle = async (buildingId: string) => {
+  // Use callbacks for event handlers
+  const handleShortlistToggle = useCallback(async (buildingId: string) => {
     if (!user) {
       setAuthAction("shortlist");
       setShowAuthModal(true);
@@ -120,16 +207,28 @@ export default function Buildings() {
         variant: "destructive",
       });
     }
-  };
+  }, [user, buildingScores, toast, supabase]);
 
-  const handleCollectionToggle = (collectionId: string) => {
+  const handleCollectionToggle = useCallback((collectionId: string) => {
     setSelectedCollections(prev => 
       prev.includes(collectionId)
         ? prev.filter(id => id !== collectionId)
         : [...prev, collectionId]
     );
-    console.log('Toggled collection:', collectionId); // Debug log
-  };
+  }, []);
+
+  const navigateToBuilding = useCallback((path: string) => {
+    navigate(path);
+  }, [navigate]);
+
+  // Loading state UI
+  if (buildingsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-20">
@@ -158,21 +257,7 @@ export default function Buildings() {
         </div>
       </div>
 
-      {buildingsLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="overflow-hidden">
-              <div className="aspect-video bg-muted animate-pulse" />
-              <CardContent className="p-6">
-                <div className="space-y-2">
-                  <div className="h-4 bg-muted rounded animate-pulse w-2/3" />
-                  <div className="h-4 bg-muted rounded animate-pulse w-1/2" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : !filteredBuildings?.length ? (
+      {!filteredBuildings?.length ? (
         <Card>
           <CardContent className="pt-6">
             <p className="text-center text-muted-foreground">
@@ -181,92 +266,24 @@ export default function Buildings() {
           </CardContent>
         </Card>
       ) : isMapView ? (
-        <BuildingsMap buildings={filteredBuildings} />
+        <Suspense fallback={<div className="h-[60vh] flex items-center justify-center">
+          <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
+        </div>}>
+          <BuildingsMap buildings={filteredBuildings} />
+        </Suspense>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBuildings?.map((building) => {
+          {filteredBuildings.map((building) => {
             const isShortlisted = buildingScores?.[building.id]?.shortlisted || false;
-
+            
             return (
-              <Card 
-                key={building.id} 
-                className="overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow"
-                onClick={() => navigate(`/buildings/${building.id}`)}
-              >
-                <div className="aspect-video relative bg-muted">
-                  {building.images && building.images.length > 0 ? (
-                    <ImageCarousel 
-                      images={building.images} 
-                      onImageClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/buildings/${building.id}`);
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <img 
-                        src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
-                        alt="Building placeholder"
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleShortlistToggle(building.id);
-                    }}
-                    className="absolute top-2 right-2 p-2 z-10 hover:scale-110 transition-transform"
-                  >
-                    <Heart
-                      className={`h-6 w-6 ${isShortlisted ? "fill-red-500 stroke-red-500" : "stroke-white fill-black/20"}`}
-                    />
-                  </button>
-                </div>
-                <CardHeader>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{building.name}</CardTitle>
-                      {building.google_rating && (
-                        <div className="flex items-center gap-1 text-sm">
-                          <Star className="h-4 w-4 fill-yellow-400 stroke-yellow-400" />
-                          <span className="font-medium">{building.google_rating}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
-                      <span>{building.locality}</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-sm">
-                      {building.age && (
-                        <div className="flex items-center gap-1">
-                          <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{building.age} years</span>
-                        </div>
-                      )}
-                      {building.total_floors && (
-                        <div className="flex items-center gap-1">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{building.total_floors} floors</span>
-                        </div>
-                      )}
-                      {building.bhk_types && (
-                        <div className="flex items-center gap-1">
-                          <Home className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{building.bhk_types.join(", ")} BHK</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="text-xs text-muted-foreground mr-1">Starting at</span>
-                      <span className="text-lg font-semibold">
-                        ₹{(building.min_price/10000000).toFixed(1)} Cr
-                      </span>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Card>
+              <BuildingCard
+                key={building.id}
+                building={building}
+                onNavigate={navigateToBuilding}
+                onShortlist={handleShortlistToggle}
+                isShortlisted={isShortlisted}
+              />
             );
           })}
         </div>
