@@ -1,3 +1,4 @@
+
 import { useState, useCallback, memo, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -158,7 +159,10 @@ export const PropertyGallery = memo(function PropertyGallery({ images, videUrl, 
 
       <Button 
         className="absolute bottom-4 right-4 bg-white/90 text-black hover:bg-white/100 backdrop-blur-sm z-10"
-        onClick={() => setShowAllPhotos(true)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowAllPhotos(true);
+        }}
       >
         <Grid className="h-4 w-4 mr-2" />
         View All Photos ({images.length})

@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -7,7 +6,6 @@ import { BuildingHeader } from "@/components/building/BuildingHeader";
 import { PropertyDetailsSection } from "@/components/building/PropertyDetailsSection";
 import { PropertyTabs } from "@/components/building/PropertyTabs";
 import { BreadcrumbNav } from "@/components/building/BreadcrumbNav";
-import { KeyHighlights } from "@/components/building/KeyHighlights";
 import { ListingVariants } from "@/components/building/ListingVariants";
 import { SimilarProperties } from "@/components/building/SimilarProperties";
 import { useBuildingData } from "@/components/building/hooks/useBuildingData";
@@ -37,6 +35,12 @@ export default function BuildingDetails() {
 
   const { building, listings, isLoading } = useBuildingData(id!);
   const { isShortlisted, toggleShortlist } = useShortlist(id!, building?.name || '');
+
+  useEffect(() => {
+    if (listings && listings.length > 0 && !selectedListing) {
+      setSelectedListing(listings[0].id);
+    }
+  }, [listings, selectedListing]);
 
   const startingPrice = useMemo(() => {
     if (!listings?.length) return Number(building?.min_price || 0);
@@ -142,15 +146,8 @@ export default function BuildingDetails() {
         structuredData={structuredData}
       />
 
-      {/* Moved breadcrumb and highlights above the header */}
       <div className="container mx-auto px-4 pt-4">
         <BreadcrumbNav buildingName={building.name} locality={building.locality || ''} />
-        <KeyHighlights 
-          bhkTypes={building.bhk_types} 
-          locality={building.locality || ''} 
-          minPrice={building.min_price} 
-          age={building.age?.toString()}
-        />
       </div>
 
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -162,17 +159,8 @@ export default function BuildingDetails() {
             isShortlisted={isShortlisted || false}
             onToggleShortlist={toggleShortlist}
             startingPrice={startingPrice}
-            matchScore={building.google_rating}
+            onShareClick={handleShare}
           />
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-16 top-4 md:right-20 md:top-6"
-            onClick={handleShare}
-          >
-            <Share2 className="h-5 w-5" />
-          </Button>
         </div>
       </div>
 

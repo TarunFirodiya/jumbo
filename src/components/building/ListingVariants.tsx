@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,10 +24,21 @@ export function ListingVariants({
   onListingSelect,
   selectedListingId
 }: ListingVariantsProps) {
-  const [selectedListing, setSelectedListing] = useState<Tables<'listings'> | null>(
-    listings?.find(l => l.id === selectedListingId) || listings?.[0] || null
-  );
+  const [selectedListing, setSelectedListing] = useState<Tables<'listings'> | null>(null);
   const [showVisitModal, setShowVisitModal] = useState(false);
+
+  // Set the first listing as selected by default once listings are loaded
+  useEffect(() => {
+    if (listings?.length && selectedListingId) {
+      const listing = listings.find(l => l.id === selectedListingId);
+      if (listing) {
+        setSelectedListing(listing);
+      }
+    } else if (listings?.length) {
+      setSelectedListing(listings[0]);
+      onListingSelect?.(listings[0].id);
+    }
+  }, [listings, selectedListingId, onListingSelect]);
 
   if (!listings?.length) return null;
 
@@ -46,7 +57,7 @@ export function ListingVariants({
   };
 
   const ActionButtons = () => (
-    <div className="flex flex-col gap-3">
+    <div className="grid grid-cols-2 gap-3">
       <div>
         <RainbowButton 
           className="w-full" 
