@@ -1,4 +1,3 @@
-
 import { useState, useCallback, memo, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { cn } from "@/lib/utils";
-import { useEmblaCarousel } from 'embla-carousel-react';
+import useEmblaCarousel from 'embla-carousel-react';
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface PropertyGalleryProps {
@@ -111,7 +110,6 @@ export const PropertyGallery = memo(function PropertyGallery({ images, videUrl, 
     };
   }, [emblaApi, onSlideChange]);
 
-  // If no images, show placeholder
   if (!images?.length) {
     return (
       <div className="w-full aspect-video bg-muted flex items-center justify-center rounded-lg">
@@ -125,7 +123,6 @@ export const PropertyGallery = memo(function PropertyGallery({ images, videUrl, 
     );
   }
 
-  // Enhanced Grid View for desktop
   const GridView = () => (
     <div className="relative hidden md:grid grid-cols-4 grid-rows-2 gap-2 aspect-[2/1] rounded-lg overflow-hidden">
       <div className="col-span-2 row-span-2 relative overflow-hidden">
@@ -159,7 +156,6 @@ export const PropertyGallery = memo(function PropertyGallery({ images, videUrl, 
         ) : null}
       </div>
 
-      {/* View all photos button overlay */}
       <Button 
         className="absolute bottom-4 right-4 bg-white/90 text-black hover:bg-white/100 backdrop-blur-sm z-10"
         onClick={() => setShowAllPhotos(true)}
@@ -170,7 +166,6 @@ export const PropertyGallery = memo(function PropertyGallery({ images, videUrl, 
     </div>
   );
 
-  // Carousel for Mobile
   const MobileView = () => (
     <div className="md:hidden relative">
       <Carousel className="w-full">
@@ -184,7 +179,6 @@ export const PropertyGallery = memo(function PropertyGallery({ images, videUrl, 
         <CarouselPrevious className="left-2" />
         <CarouselNext className="right-2" />
         
-        {/* Mobile view all button */}
         <div className="absolute bottom-4 right-4 z-10">
           <Button 
             size="sm"
@@ -200,7 +194,6 @@ export const PropertyGallery = memo(function PropertyGallery({ images, videUrl, 
     </div>
   );
 
-  // Full Screen Gallery with thumbnails
   const FullScreenGallery = () => (
     <Dialog open={showAllPhotos} onOpenChange={setShowAllPhotos}>
       <DialogContent className="max-w-7xl w-full h-[90vh] p-0 gap-0">
@@ -287,7 +280,6 @@ export const PropertyGallery = memo(function PropertyGallery({ images, videUrl, 
             </Button>
           </div>
           
-          {/* Thumbnails */}
           <div className="h-20 py-3 px-4 overflow-hidden bg-gray-900">
             <div className="h-full overflow-hidden" ref={thumbsRef}>
               <div className="flex h-full gap-3">

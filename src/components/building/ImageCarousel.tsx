@@ -1,4 +1,3 @@
-
 import { useState, useEffect, memo, useCallback } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,8 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { cn } from "@/lib/utils";
-import { type UseEmblaCarouselType } from 'embla-carousel-react';
+import useEmblaCarousel from 'embla-carousel-react';
+import type { UseEmblaCarouselType } from 'embla-carousel-react';
 
 interface ImageCarouselProps {
   images: string[];
@@ -30,7 +30,6 @@ const getYoutubeEmbedUrl = (url: string) => {
   return `https://www.youtube.com/embed/${videoId}`;
 };
 
-// Memoized media element component to prevent re-renders
 const MediaElement = memo(({ url, index, onError }: { url: string; index: number; onError: (index: number) => void }) => {
   if (isYoutubeUrl(url)) {
     return (
@@ -44,7 +43,6 @@ const MediaElement = memo(({ url, index, onError }: { url: string; index: number
     );
   }
 
-  // Process image URL to handle special cases
   const processedUrl = url?.includes('maps.googleapis.com') ? 
     '/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png' : url;
 
@@ -64,14 +62,13 @@ MediaElement.displayName = 'MediaElement';
 export const ImageCarousel = memo(function ImageCarousel({ images, onImageClick }: ImageCarouselProps) {
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [emblaRef, setEmblaRef] = useState<UseEmblaCarouselType[1] | null>(null);
+  const [emblaApi, setEmblaApi] = useState<UseEmblaCarouselType[1] | null>(null);
   const [failedImages, setFailedImages] = useState<Record<number, boolean>>({});
 
   const handleImageError = useCallback((index: number) => {
     setFailedImages(prev => ({ ...prev, [index]: true }));
   }, []);
 
-  // If no images, show placeholder
   if (!images?.length) {
     return (
       <div className="w-full aspect-video bg-muted flex items-center justify-center">
@@ -85,7 +82,6 @@ export const ImageCarousel = memo(function ImageCarousel({ images, onImageClick 
     );
   }
 
-  // Grid view for desktop
   const GridView = () => (
     <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-2 aspect-[2/1]" onClick={() => setShowAllPhotos(true)}>
       <div className="col-span-2 row-span-2 relative overflow-hidden rounded-l-lg">
@@ -121,14 +117,12 @@ export const ImageCarousel = memo(function ImageCarousel({ images, onImageClick 
     </div>
   );
 
-  // Single Image for Mobile
   const MobileView = () => (
     <div className="md:hidden w-full aspect-video relative" onClick={() => setShowAllPhotos(true)}>
       <MediaElement url={images[0]} index={0} onError={handleImageError} />
     </div>
   );
 
-  // Full Screen Carousel
   const FullScreenCarousel = () => (
     <Dialog open={showAllPhotos} onOpenChange={setShowAllPhotos}>
       <DialogContent className="max-w-7xl w-full h-[90vh] p-0">
@@ -142,10 +136,10 @@ export const ImageCarousel = memo(function ImageCarousel({ images, onImageClick 
         
         <Carousel
           className="w-full h-full"
-          setApi={setEmblaRef}
+          setApi={setEmblaApi}
           onSelect={() => {
-            if (emblaRef) {
-              setCurrentSlide(emblaRef.selectedScrollSnap());
+            if (emblaApi) {
+              setCurrentSlide(emblaApi.selectedScrollSnap());
             }
           }}
         >
@@ -169,7 +163,7 @@ export const ImageCarousel = memo(function ImageCarousel({ images, onImageClick 
                   "w-2 h-2 rounded-full transition-all",
                   currentSlide === index ? "bg-white scale-125" : "bg-white/50"
                 )}
-                onClick={() => emblaRef?.scrollTo(index)}
+                onClick={() => emblaApi?.scrollTo(index)}
               />
             ))}
           </div>
