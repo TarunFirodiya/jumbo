@@ -158,7 +158,7 @@ export default function BuildingDetails() {
             isShortlisted={isShortlisted || false}
             onToggleShortlist={toggleShortlist}
             startingPrice={startingPrice}
-            matchScore={building.overall_match_score}
+            matchScore={building.google_rating}
           />
           
           {/* Share button */}

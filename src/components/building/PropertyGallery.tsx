@@ -1,8 +1,8 @@
 
-import { useState, useCallback, memo, useMemo } from 'react';
+import { useState, useCallback, memo, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, Grid, X, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
+import { Camera, Grid, X, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
