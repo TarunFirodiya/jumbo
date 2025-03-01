@@ -1,12 +1,16 @@
 
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface VisitRequestModalProps {
   open: boolean;
@@ -14,9 +18,6 @@ interface VisitRequestModalProps {
   buildingId: string;
   buildingName: string;
   listingId: string;
-  visitId?: string; // Optional - present only for rescheduling
-  initialDay?: string;
-  initialTime?: string;
 }
 
 export function VisitRequestModal({
@@ -25,168 +26,133 @@ export function VisitRequestModal({
   buildingId,
   buildingName,
   listingId,
-  visitId,
-  initialDay,
-  initialTime,
 }: VisitRequestModalProps) {
-  const { toast } = useToast();
+  const [date, setDate] = useState<Date>();
+  const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [day, setDay] = useState<string>();
-  const [timeSlot, setTimeSlot] = useState<string>();
+  const [email, setEmail] = useState("");
+  const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
-  // Set initial values when rescheduling
-  useEffect(() => {
-    if (visitId) {
-      setDay(initialDay);
-      setTimeSlot(initialTime);
-    }
-  }, [visitId, initialDay, initialTime]);
-
-  // Fetch user's phone number on mount
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('phone_number')
-          .eq('id', user.id)
-          .single();
-        
-        if (profile?.phone_number) {
-          setPhone(profile.phone_number);
-        }
-      }
-    };
-    fetchUserProfile();
-  }, []);
-
-  const handleSubmit = async () => {
-    if (!phone || !day || !timeSlot) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!name || !phone || !date) {
       toast({
-        title: "Please fill all fields",
-        description: "Phone number, day and time slot are required",
+        title: "Missing Information",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
     }
-
+    
     setIsSubmitting(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      // Update phone number in profile
-      await supabase
-        .from('profiles')
-        .update({ phone_number: phone })
-        .eq('id', user.id);
-
-      if (visitId) {
-        // Update existing visit (reschedule)
-        const { error: visitError } = await supabase
-          .from('visits')
-          .update({
-            visit_day: day,
-            visit_time: timeSlot,
-            status: 'to be confirmed'
-          })
-          .eq('id', visitId);
-
-        if (visitError) throw visitError;
-
-        toast({
-          title: "Visit Rescheduled",
-          description: "Your visit has been rescheduled and will be confirmed shortly.",
-        });
-      } else {
-        // Create new visit request
-        const { error: visitError } = await supabase
-          .from('visits')
-          .insert({
-            user_id: user.id,
-            building_id: buildingId,
-            listing_id: listingId,
-            visit_day: day,
-            visit_time: timeSlot,
-          });
-
-        if (visitError) throw visitError;
-
-        toast({
-          title: "Visit Requested",
-          description: "We'll confirm your visit request shortly.",
-        });
-      }
-      
-      onOpenChange(false);
-    } catch (error) {
-      console.error('Error scheduling visit:', error);
-      toast({
-        title: "Error",
-        description: "Could not schedule visit. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
+    
+    // Simulate API call
+    setTimeout(() => {
       setIsSubmitting(false);
-    }
+      onOpenChange(false);
+      toast({
+        title: "Visit Scheduled",
+        description: `Your visit to ${buildingName} has been scheduled for ${date ? format(date, "PPP") : ""}`,
+      });
+      
+      // Reset form
+      setName("");
+      setPhone("");
+      setEmail("");
+      setNotes("");
+      setDate(undefined);
+    }, 1500);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{visitId ? "Reschedule Visit" : "Schedule a Visit"}</DialogTitle>
+          <DialogTitle>Schedule a Visit</DialogTitle>
         </DialogHeader>
-        <div className="space-y-6 py-4">
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="Enter your phone number"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+            <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
+            <Input 
+              id="name" 
+              placeholder="Enter your full name" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
             />
           </div>
-
+          
           <div className="space-y-2">
-            <Label>Select Day</Label>
-            <RadioGroup value={day} onValueChange={setDay}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Saturday" id="saturday" />
-                <Label htmlFor="saturday">Saturday</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Sunday" id="sunday" />
-                <Label htmlFor="sunday">Sunday</Label>
-              </div>
-            </RadioGroup>
+            <Label htmlFor="phone">Phone Number <span className="text-red-500">*</span></Label>
+            <Input 
+              id="phone" 
+              placeholder="Enter your contact number" 
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+            />
           </div>
-
+          
           <div className="space-y-2">
-            <Label>Select Time Slot</Label>
-            <RadioGroup value={timeSlot} onValueChange={setTimeSlot}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="11 am to 2 pm" id="slot1" />
-                <Label htmlFor="slot1">11 am to 2 pm</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="3 pm to 6 pm" id="slot2" />
-                <Label htmlFor="slot2">3 pm to 6 pm</Label>
-              </div>
-            </RadioGroup>
+            <Label htmlFor="email">Email</Label>
+            <Input 
+              id="email" 
+              placeholder="Enter your email address" 
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
-
-          <Button 
-            className="w-full" 
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Requesting..." : visitId ? "Reschedule Visit" : "Request Visit"}
-          </Button>
-        </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="date">Preferred Date <span className="text-red-500">*</span></Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, "PPP") : "Select a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  initialFocus
+                  disabled={(date) => date < new Date()}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="notes">Additional Notes</Label>
+            <Textarea 
+              id="notes" 
+              placeholder="Any specific requirements or questions?"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="min-h-[80px]"
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Scheduling..." : "Schedule Visit"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

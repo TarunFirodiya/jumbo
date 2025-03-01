@@ -2,23 +2,40 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ImageCarousel } from "@/components/building/ImageCarousel";
+import { PropertyGallery } from "@/components/building/PropertyGallery";
 import { BuildingHeader } from "@/components/building/BuildingHeader";
-import { BasicDetails } from "@/components/building/BasicDetails";
-import { LocationTab } from "@/components/building/tabs/LocationTab";
-import { AmenitiesTab } from "@/components/building/tabs/AmenitiesTab";
-import { ReviewsTab } from "@/components/building/tabs/ReviewsTab";
+import { PropertyDetailsSection } from "@/components/building/PropertyDetailsSection";
+import { PropertyTabs } from "@/components/building/PropertyTabs";
+import { BreadcrumbNav } from "@/components/building/BreadcrumbNav";
+import { KeyHighlights } from "@/components/building/KeyHighlights";
 import { ListingVariants } from "@/components/building/ListingVariants";
+import { BookingSection } from "@/components/building/BookingSection";
+import { SimilarProperties } from "@/components/building/SimilarProperties";
 import { useBuildingData } from "@/components/building/hooks/useBuildingData";
 import { useShortlist } from "@/components/building/hooks/useShortlist";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
+import { Share2, ChevronUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function BuildingDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [selectedListing, setSelectedListing] = useState<string | null>(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  // Scroll tracking for back-to-top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 500);
+    };
+    
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const { building, listings, isLoading } = useBuildingData(id!);
   const { isShortlisted, toggleShortlist } = useShortlist(id!, building?.name || '');
@@ -42,6 +59,28 @@ export default function BuildingDetails() {
   const handleListingSelect = useCallback((id: string) => {
     setSelectedListing(id);
   }, []);
+
+  const handleShare = useCallback(() => {
+    if (navigator.share) {
+      navigator.share({
+        title: building?.name || 'Property Details',
+        text: `Check out this property: ${building?.name}`,
+        url: window.location.href,
+      })
+        .catch(err => console.error('Error sharing:', err));
+    } else {
+      // Fallback - copy to clipboard
+      navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "Link copied to clipboard",
+        description: "You can now share it with anyone.",
+      });
+    }
+  }, [building?.name, toast]);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   if (isLoading) {
     return (
@@ -100,7 +139,7 @@ export default function BuildingDetails() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
       <SEO
         title={`${building.name} | ${building.bhk_types?.join(', ')} BHK in ${building.locality}`}
         description={`${building.bhk_types?.join(', ')} BHK apartments available in ${building.locality}. Starting at ₹${(startingPrice/10000000).toFixed(1)} Cr. Features: ${amenitiesText}.`}
@@ -119,15 +158,36 @@ export default function BuildingDetails() {
             isShortlisted={isShortlisted || false}
             onToggleShortlist={toggleShortlist}
             startingPrice={startingPrice}
+            matchScore={building.overall_match_score}
           />
+          
+          {/* Share button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-16 top-4 md:right-20 md:top-6"
+            onClick={handleShare}
+          >
+            <Share2 className="h-5 w-5" />
+          </Button>
         </div>
       </div>
 
-      <ImageCarousel images={displayImages} />
+      <div className="container mx-auto px-4 pt-4">
+        <BreadcrumbNav buildingName={building.name} locality={building.locality || ''} />
+        <KeyHighlights 
+          bhkTypes={building.bhk_types} 
+          locality={building.locality || ''} 
+          minPrice={building.min_price} 
+          age={building.age?.toString()}
+        />
+      </div>
+
+      <PropertyGallery images={displayImages} />
 
       <div className="container mx-auto px-4 py-8">
         {/* Mobile: Stacked layout */}
-        <div className="md:hidden space-y-8">
+        <div className="md:hidden space-y-8 pb-24">
           <ListingVariants 
             listings={listings} 
             buildingId={building.id}
@@ -136,7 +196,8 @@ export default function BuildingDetails() {
             onListingSelect={handleListingSelect}
             selectedListingId={selectedListing}
           />
-          <BasicDetails
+          
+          <PropertyDetailsSection
             totalFloors={building.total_floors}
             age={building.age?.toString()}
             pricePsqft={building.price_psqft}
@@ -144,36 +205,30 @@ export default function BuildingDetails() {
             maxPrice={building.max_price}
             water={building.water}
             bank={building.bank}
+            bhkTypes={building.bhk_types}
           />
           
-          <div className="space-y-12">
-            <section>
-              <h2 className="text-2xl font-semibold mb-6">Where is the home</h2>
-              <LocationTab
-                latitude={building.latitude}
-                longitude={building.longitude}
-                buildingName={building.name}
-              />
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-semibold mb-6">What this place offers</h2>
-              <AmenitiesTab features={building.features} />
-            </section>
-
-            {building.google_rating && (
-              <section>
-                <h2 className="text-2xl font-semibold mb-6">What people say</h2>
-                <ReviewsTab />
-              </section>
-            )}
-          </div>
+          <PropertyTabs
+            buildingName={building.name}
+            latitude={building.latitude}
+            longitude={building.longitude}
+            features={features}
+            googleRating={building.google_rating}
+          />
+          
+          <SimilarProperties 
+            currentBuildingId={building.id}
+            bhkTypes={building.bhk_types}
+            locality={building.locality}
+            minPrice={building.min_price}
+            maxPrice={building.max_price}
+          />
         </div>
 
         {/* Desktop: Two-column layout */}
         <div className="hidden md:grid md:grid-cols-[1fr_400px] gap-8">
           <div className="space-y-12">
-            <BasicDetails
+            <PropertyDetailsSection
               totalFloors={building.total_floors}
               age={building.age?.toString()}
               pricePsqft={building.price_psqft}
@@ -181,41 +236,62 @@ export default function BuildingDetails() {
               maxPrice={building.max_price}
               water={building.water}
               bank={building.bank}
+              bhkTypes={building.bhk_types}
             />
 
-            <section>
-              <h2 className="text-2xl font-semibold mb-6">Where is the home</h2>
-              <LocationTab
-                latitude={building.latitude}
-                longitude={building.longitude}
-                buildingName={building.name}
-              />
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-semibold mb-6">What this place offers</h2>
-              <AmenitiesTab features={building.features} />
-            </section>
-
-            {building.google_rating && (
-              <section>
-                <h2 className="text-2xl font-semibold mb-6">What people say</h2>
-                <ReviewsTab />
-              </section>
-            )}
+            <PropertyTabs
+              buildingName={building.name}
+              latitude={building.latitude}
+              longitude={building.longitude}
+              features={features}
+              googleRating={building.google_rating}
+            />
+            
+            <SimilarProperties 
+              currentBuildingId={building.id}
+              bhkTypes={building.bhk_types}
+              locality={building.locality}
+              minPrice={building.min_price}
+              maxPrice={building.max_price}
+            />
           </div>
 
           <div>
-            <ListingVariants 
-              listings={listings} 
-              buildingId={building.id}
-              buildingName={building.name}
-              onListingSelect={handleListingSelect}
-              selectedListingId={selectedListing}
-            />
+            <div className="md:sticky md:top-28">
+              <ListingVariants 
+                listings={listings} 
+                buildingId={building.id}
+                buildingName={building.name}
+                onListingSelect={handleListingSelect}
+                selectedListingId={selectedListing}
+              />
+              
+              {/* Only show booking section on desktop for now */}
+              <div className="mt-8">
+                <BookingSection 
+                  buildingId={building.id} 
+                  buildingName={building.name}
+                  selectedListingId={selectedListing || undefined}
+                  price={selectedListing && listings ? 
+                    listings.find(l => l.id === selectedListing)?.price : 
+                    building.min_price}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
+      
+      {/* Back to top button */}
+      {showBackToTop && (
+        <Button 
+          onClick={scrollToTop} 
+          className="fixed bottom-6 right-6 z-50 size-12 rounded-full shadow-lg p-0"
+          size="icon"
+        >
+          <ChevronUp className="h-6 w-6" />
+        </Button>
+      )}
     </div>
   );
 }
