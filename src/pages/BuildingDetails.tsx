@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,7 +9,6 @@ import { PropertyTabs } from "@/components/building/PropertyTabs";
 import { BreadcrumbNav } from "@/components/building/BreadcrumbNav";
 import { KeyHighlights } from "@/components/building/KeyHighlights";
 import { ListingVariants } from "@/components/building/ListingVariants";
-import { BookingSection } from "@/components/building/BookingSection";
 import { SimilarProperties } from "@/components/building/SimilarProperties";
 import { useBuildingData } from "@/components/building/hooks/useBuildingData";
 import { useShortlist } from "@/components/building/hooks/useShortlist";
