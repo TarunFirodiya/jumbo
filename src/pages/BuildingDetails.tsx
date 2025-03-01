@@ -142,6 +142,17 @@ export default function BuildingDetails() {
         structuredData={structuredData}
       />
 
+      {/* Moved breadcrumb and highlights above the header */}
+      <div className="container mx-auto px-4 pt-4">
+        <BreadcrumbNav buildingName={building.name} locality={building.locality || ''} />
+        <KeyHighlights 
+          bhkTypes={building.bhk_types} 
+          locality={building.locality || ''} 
+          minPrice={building.min_price} 
+          age={building.age?.toString()}
+        />
+      </div>
+
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 py-4">
           <BuildingHeader
@@ -163,16 +174,6 @@ export default function BuildingDetails() {
             <Share2 className="h-5 w-5" />
           </Button>
         </div>
-      </div>
-
-      <div className="container mx-auto px-4 pt-4">
-        <BreadcrumbNav buildingName={building.name} locality={building.locality || ''} />
-        <KeyHighlights 
-          bhkTypes={building.bhk_types} 
-          locality={building.locality || ''} 
-          minPrice={building.min_price} 
-          age={building.age?.toString()}
-        />
       </div>
 
       <PropertyGallery images={displayImages} />
