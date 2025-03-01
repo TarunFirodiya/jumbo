@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -27,7 +26,6 @@ export default function BuildingDetails() {
   const [selectedListing, setSelectedListing] = useState<string | null>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
-  // Scroll tracking for back-to-top button
   useEffect(() => {
     const handleScroll = () => {
       setShowBackToTop(window.scrollY > 500);
@@ -40,13 +38,11 @@ export default function BuildingDetails() {
   const { building, listings, isLoading } = useBuildingData(id!);
   const { isShortlisted, toggleShortlist } = useShortlist(id!, building?.name || '');
 
-  // Memoize expensive calculations
   const startingPrice = useMemo(() => {
     if (!listings?.length) return Number(building?.min_price || 0);
     return Math.min(...listings.map(l => Number(l.price || 0)));
   }, [listings, building?.min_price]);
 
-  // Get images based on selected listing or fallback to building images
   const displayImages = useMemo(() => {
     if (selectedListing && listings) {
       const selectedListingImages = listings.find(l => l.id === selectedListing)?.images;
@@ -55,7 +51,6 @@ export default function BuildingDetails() {
     return building?.images || [];
   }, [selectedListing, listings, building?.images]);
 
-  // Use callback for event handlers
   const handleListingSelect = useCallback((id: string) => {
     setSelectedListing(id);
   }, []);
@@ -69,7 +64,6 @@ export default function BuildingDetails() {
       })
         .catch(err => console.error('Error sharing:', err));
     } else {
-      // Fallback - copy to clipboard
       navigator.clipboard.writeText(window.location.href);
       toast({
         title: "Link copied to clipboard",
@@ -105,7 +99,6 @@ export default function BuildingDetails() {
   const features = Array.isArray(building.features) ? building.features.map(f => String(f)) : [];
   const amenitiesText = features.slice(0, 3).join(', ');
   
-  // Generate structured data for this building
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Apartment",
@@ -114,7 +107,7 @@ export default function BuildingDetails() {
     "address": {
       "@type": "PostalAddress",
       "addressLocality": building.locality,
-      "addressRegion": "Delhi NCR", // Changed from building.city to a static value
+      "addressRegion": "Delhi NCR",
       "addressCountry": "IN"
     },
     "geo": {
@@ -161,7 +154,6 @@ export default function BuildingDetails() {
             matchScore={building.google_rating}
           />
           
-          {/* Share button */}
           <Button
             variant="ghost"
             size="icon"
@@ -186,7 +178,6 @@ export default function BuildingDetails() {
       <PropertyGallery images={displayImages} />
 
       <div className="container mx-auto px-4 py-8">
-        {/* Mobile: Stacked layout */}
         <div className="md:hidden space-y-8 pb-24">
           <ListingVariants 
             listings={listings} 
@@ -225,7 +216,6 @@ export default function BuildingDetails() {
           />
         </div>
 
-        {/* Desktop: Two-column layout */}
         <div className="hidden md:grid md:grid-cols-[1fr_400px] gap-8">
           <div className="space-y-12">
             <PropertyDetailsSection
@@ -265,24 +255,11 @@ export default function BuildingDetails() {
                 onListingSelect={handleListingSelect}
                 selectedListingId={selectedListing}
               />
-              
-              {/* Only show booking section on desktop for now */}
-              <div className="mt-8">
-                <BookingSection 
-                  buildingId={building.id} 
-                  buildingName={building.name}
-                  selectedListingId={selectedListing || undefined}
-                  price={selectedListing && listings ? 
-                    listings.find(l => l.id === selectedListing)?.price : 
-                    building.min_price}
-                />
-              </div>
             </div>
           </div>
         </div>
       </div>
       
-      {/* Back to top button */}
       {showBackToTop && (
         <Button 
           onClick={scrollToTop} 
