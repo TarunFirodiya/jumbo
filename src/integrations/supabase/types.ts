@@ -14,6 +14,7 @@ export type Database = {
           age: number | null
           bank: string[] | null
           bhk_types: number[] | null
+          city: string | null
           collections: string[] | null
           created_at: string | null
           data_source: string | null
@@ -42,6 +43,7 @@ export type Database = {
           age?: number | null
           bank?: string[] | null
           bhk_types?: number[] | null
+          city?: string | null
           collections?: string[] | null
           created_at?: string | null
           data_source?: string | null
@@ -70,6 +72,7 @@ export type Database = {
           age?: number | null
           bank?: string[] | null
           bhk_types?: number[] | null
+          city?: string | null
           collections?: string[] | null
           created_at?: string | null
           data_source?: string | null

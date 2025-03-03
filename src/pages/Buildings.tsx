@@ -11,6 +11,7 @@ import { ImageCarousel } from "@/components/building/ImageCarousel";
 import { CollectionsBar } from "@/components/buildings/CollectionsBar";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { SEO } from "@/components/SEO";
+import { SparklesText } from "@/components/ui/sparkles-text";
 
 // Lazy load the map component since it's heavy
 const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
@@ -74,6 +75,7 @@ const BuildingCard = ({
       </CardHeader>
     </Card>;
 };
+
 export default function Buildings() {
   const {
     toast
@@ -223,7 +225,13 @@ export default function Buildings() {
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 py-12 mb-8">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-4">Zero Spam Home Buying</h1>
+            <div className="flex justify-center mb-4">
+              <SparklesText 
+                text="Zero Spam Home Buying" 
+                className="text-4xl md:text-5xl"
+                colors={{ first: "#9E7AFF", second: "#FE8BBB" }}
+              />
+            </div>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">Choose from over 1000 ready to move homes in Bangalore
 Visit multiple homes over a weekend
 Buy with 100% legal safety</p>
