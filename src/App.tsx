@@ -44,6 +44,7 @@ const App = () => (
           <MainLayout>
             <Suspense fallback={<PageLoader />}>
               <Routes>
+                <Route path="/" element={<Navigate to="/buildings" replace />} />
                 <Route path="/buildings" element={<Buildings />} />
                 <Route path="/buildings/locality/:locality" element={<LocalityBuildings />} />
                 <Route path="/buildings/:id" element={<BuildingDetails />} />
@@ -51,7 +52,6 @@ const App = () => (
                 <Route path="/visits" element={<Visits />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/" element={<Navigate to="/buildings" replace />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

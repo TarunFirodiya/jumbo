@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -164,7 +165,8 @@ export default function Buildings() {
 
   const filteredBuildings = useMemo(() => 
     buildings?.filter(building => 
-      building.name.toLowerCase().includes(searchTerm.toLowerCase())
+      building.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (building.locality && building.locality.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [], 
     [buildings, searchTerm]
   );
@@ -227,6 +229,20 @@ export default function Buildings() {
     return description;
   };
 
+  // Extract unique localities for navigation
+  const localities = useMemo(() => {
+    if (!buildings) return [];
+    const localitySet = new Set<string>();
+    buildings.forEach(building => {
+      if (building.locality) localitySet.add(building.locality);
+    });
+    return Array.from(localitySet);
+  }, [buildings]);
+
+  const handleLocalityClick = useCallback((locality: string) => {
+    navigate(`/buildings/locality/${encodeURIComponent(locality)}`);
+  }, [navigate]);
+
   if (buildingsLoading) {
     return (
       <>
@@ -258,19 +274,48 @@ export default function Buildings() {
         }}
       />
       
-      <div className="sticky top-0 z-10 bg-background py-4 space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-primary/10 to-primary/5 py-12 mb-8">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold mb-4">Find Your Dream Home</h1>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Discover beautiful properties in premium locations with detailed information and transparent pricing.
+            </p>
+          </div>
+          
+          <div className="relative max-w-2xl mx-auto">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
             <Input
-              placeholder="Search buildings..."
+              placeholder="Search by property name or location..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
+              className="pl-10 py-6 text-lg shadow-lg"
             />
           </div>
+          
+          {localities.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-center text-sm uppercase tracking-wider text-muted-foreground mb-4">Popular Localities</h2>
+              <div className="flex flex-wrap justify-center gap-2">
+                {localities.slice(0, 8).map(locality => (
+                  <Button 
+                    key={locality} 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleLocalityClick(locality)}
+                    className="rounded-full"
+                  >
+                    {locality}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-        
+      </div>
+      
+      <div className="sticky top-0 z-10 bg-background py-4 space-y-4">
         <CollectionsBar
           selectedCollections={selectedCollections}
           onCollectionToggle={handleCollectionToggle}

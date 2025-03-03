@@ -28,6 +28,7 @@ export function useBuildingData(id: string) {
       if (error) throw error;
       return data;
     },
+    enabled: !!id,
   });
 
   return {
