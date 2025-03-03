@@ -12,6 +12,7 @@ import { CollectionsBar } from "@/components/buildings/CollectionsBar";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { SEO } from "@/components/SEO";
 import { SparklesText } from "@/components/ui/sparkles-text";
+import { ActionSearchBar, Action } from "@/components/ui/action-search-bar";
 
 // Lazy load the map component since it's heavy
 const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
@@ -86,6 +87,7 @@ export default function Buildings() {
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authAction, setAuthAction] = useState<"shortlist" | "visit" | "notify">("shortlist");
+  
   const {
     data: user
   } = useQuery({
@@ -99,6 +101,7 @@ export default function Buildings() {
       return user;
     }
   });
+  
   const {
     data: buildingScores
   } = useQuery({
@@ -122,6 +125,7 @@ export default function Buildings() {
     },
     enabled: !!user
   });
+  
   const {
     data: buildings,
     isLoading: buildingsLoading
@@ -143,7 +147,32 @@ export default function Buildings() {
       return data;
     }
   });
-  const filteredBuildings = useMemo(() => buildings?.filter(building => building.name.toLowerCase().includes(searchTerm.toLowerCase()) || building.locality && building.locality.toLowerCase().includes(searchTerm.toLowerCase())) || [], [buildings, searchTerm]);
+  
+  const localityActions = useMemo(() => {
+    if (!buildings) return [];
+    
+    const localitySet = new Set<string>();
+    buildings.forEach(building => {
+      if (building.locality) localitySet.add(building.locality);
+    });
+    
+    return Array.from(localitySet).map((locality, index) => ({
+      id: `locality-${index}`,
+      label: locality,
+      icon: <MapPin className="h-4 w-4 text-blue-500" />,
+      description: "Locality",
+      value: locality
+    }));
+  }, [buildings]);
+  
+  const filteredBuildings = useMemo(() => 
+    buildings?.filter(building => 
+      building.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      building.locality && building.locality.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [], 
+    [buildings, searchTerm]
+  );
+  
   const handleShortlistToggle = useCallback(async (buildingId: string) => {
     if (!user) {
       setAuthAction("shortlist");
@@ -175,12 +204,26 @@ export default function Buildings() {
       });
     }
   }, [user, buildingScores, toast, supabase]);
+  
   const handleCollectionToggle = useCallback((collectionId: string) => {
     setSelectedCollections(prev => prev.includes(collectionId) ? prev.filter(id => id !== collectionId) : [...prev, collectionId]);
   }, []);
+  
   const navigateToBuilding = useCallback((path: string) => {
     navigate(path);
   }, [navigate]);
+  
+  const handleSearch = useCallback((query: string) => {
+    setSearchTerm(query);
+  }, []);
+  
+  const handleLocalitySelect = useCallback((action: Action) => {
+    setSearchTerm(action.value || action.label);
+    if (action.value) {
+      navigate(`/buildings/locality/${encodeURIComponent(action.value)}`);
+    }
+  }, [navigate]);
+  
   const getSEODescription = () => {
     let description = "Browse apartments, villas, and houses in popular locations. ";
     if (selectedCollections.length) {
@@ -190,7 +233,6 @@ export default function Buildings() {
     return description;
   };
 
-  // Extract unique localities for navigation
   const localities = useMemo(() => {
     if (!buildings) return [];
     const localitySet = new Set<string>();
@@ -199,9 +241,11 @@ export default function Buildings() {
     });
     return Array.from(localitySet);
   }, [buildings]);
+  
   const handleLocalityClick = useCallback((locality: string) => {
     navigate(`/buildings/locality/${encodeURIComponent(locality)}`);
   }, [navigate]);
+  
   if (buildingsLoading) {
     return <>
         <SEO title="Loading Properties | Cozy Dwell Search" />
@@ -210,6 +254,7 @@ export default function Buildings() {
         </div>
       </>;
   }
+  
   return <div className="min-h-screen pb-20">
       <SEO title={selectedCollections.length ? `Properties in ${selectedCollections.join(', ')} | Cozy Dwell Search` : 'Find Your Perfect Home | Cozy Dwell Search'} description={getSEODescription()} canonical="/buildings" structuredData={{
       "@context": "https://schema.org",
@@ -238,8 +283,14 @@ Buy with 100% legal safety</p>
           </div>
           
           <div className="relative max-w-2xl mx-auto">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-            <Input placeholder="Search by property name or location..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 py-6 text-lg shadow-lg" />
+            <ActionSearchBar 
+              actions={localityActions}
+              onSearch={handleSearch}
+              onActionSelect={handleLocalitySelect}
+              placeholderText="Search by property name or location..."
+              labelText=""
+              className="shadow-lg"
+            />
           </div>
           
           {localities.length > 0 && <div className="mt-8">
