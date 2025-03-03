@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, Heart } from "lucide-react";
@@ -8,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useState, useCallback, useMemo, lazy, Suspense } from "react";
 import { Input } from "@/components/ui/input";
-import { ImageCarousel } from "@/components/building/ImageCarousel";
+import { ListingCardCarousel } from "@/components/building/ListingCardCarousel";
 import { CollectionsBar } from "@/components/buildings/CollectionsBar";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { SEO } from "@/components/SEO";
@@ -24,24 +23,11 @@ const BuildingCard = ({ building, onNavigate, onShortlist, isShortlisted }) => {
       className="overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow"
       onClick={() => onNavigate(`/buildings/${building.id}`)}
     >
-      <div className="aspect-video relative bg-muted">
-        {building.images && building.images.length > 0 ? (
-          <ImageCarousel 
-            images={building.images} 
-            onImageClick={(e) => {
-              e.stopPropagation();
-              onNavigate(`/buildings/${building.id}`);
-            }}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <img 
-              src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
-              alt="Building placeholder"
-              className="object-cover w-full h-full"
-            />
-          </div>
-        )}
+      <div className="relative bg-muted">
+        <ListingCardCarousel 
+          images={building.images || []} 
+          onImageClick={() => onNavigate(`/buildings/${building.id}`)}
+        />
         <button
           onClick={(e) => {
             e.stopPropagation();

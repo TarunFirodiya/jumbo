@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useCallback, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
-import { ImageCarousel } from "@/components/building/ImageCarousel";
+import { ListingCardCarousel } from "@/components/building/ListingCardCarousel";
 import { CollectionsBar } from "@/components/buildings/CollectionsBar";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { SEO } from "@/components/SEO";
@@ -24,18 +24,24 @@ const BuildingCard = ({
   onShortlist,
   isShortlisted
 }) => {
-  return <Card key={building.id} className="overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow" onClick={() => onNavigate(`/buildings/${building.id}`)}>
-      <div className="aspect-video relative bg-muted">
-        {building.images && building.images.length > 0 ? <ImageCarousel images={building.images} onImageClick={e => {
-        e.stopPropagation();
-        onNavigate(`/buildings/${building.id}`);
-      }} /> : <div className="w-full h-full flex items-center justify-center">
-            <img src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png" alt="Building placeholder" className="object-cover w-full h-full" />
-          </div>}
-        <button onClick={e => {
-        e.stopPropagation();
-        onShortlist(building.id);
-      }} className="absolute top-2 right-2 p-2 z-10 hover:scale-110 transition-transform">
+  return (
+    <Card 
+      key={building.id} 
+      className="overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow" 
+      onClick={() => onNavigate(`/buildings/${building.id}`)}
+    >
+      <div className="relative bg-muted">
+        <ListingCardCarousel 
+          images={building.images || []} 
+          onImageClick={() => onNavigate(`/buildings/${building.id}`)}
+        />
+        <button
+          onClick={e => {
+            e.stopPropagation();
+            onShortlist(building.id);
+          }} 
+          className="absolute top-2 right-2 p-2 z-10 hover:scale-110 transition-transform"
+        >
           <Heart className={`h-6 w-6 ${isShortlisted ? "fill-red-500 stroke-red-500" : "stroke-white fill-black/20"}`} />
         </button>
       </div>
@@ -43,28 +49,36 @@ const BuildingCard = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">{building.name}</CardTitle>
-            {building.google_rating && <div className="flex items-center gap-1 text-sm">
+            {building.google_rating && (
+              <div className="flex items-center gap-1 text-sm">
                 <Star className="h-4 w-4 fill-yellow-400 stroke-yellow-400" />
                 <span className="font-medium">{building.google_rating}</span>
-              </div>}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
             <MapPin className="h-4 w-4" />
             <span>{building.locality}</span>
           </div>
           <div className="grid grid-cols-3 gap-2 text-sm">
-            {building.age && <div className="flex items-center gap-1">
+            {building.age && (
+              <div className="flex items-center gap-1">
                 <CalendarDays className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">{building.age} years</span>
-              </div>}
-            {building.total_floors && <div className="flex items-center gap-1">
+              </div>
+            )}
+            {building.total_floors && (
+              <div className="flex items-center gap-1">
                 <Building2 className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">{building.total_floors} floors</span>
-              </div>}
-            {building.bhk_types && <div className="flex items-center gap-1">
+              </div>
+            )}
+            {building.bhk_types && (
+              <div className="flex items-center gap-1">
                 <Home className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">{building.bhk_types.join(", ")} BHK</span>
-              </div>}
+              </div>
+            )}
           </div>
           <div className="flex items-baseline">
             <span className="text-xs text-muted-foreground mr-1">Starting at</span>
@@ -74,8 +88,10 @@ const BuildingCard = ({
           </div>
         </div>
       </CardHeader>
-    </Card>;
+    </Card>
+  );
 };
+
 export default function Buildings() {
   const {
     toast

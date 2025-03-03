@@ -1,22 +1,14 @@
+
 "use client";
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Facebook, Instagram, Linkedin, Moon, Send, Sun, Twitter } from "lucide-react";
+import { Facebook, Instagram, Linkedin, Send, Twitter } from "lucide-react";
+
 function Footerdemo() {
-  const [isDarkMode, setIsDarkMode] = React.useState(true);
-  const [isChatOpen, setIsChatOpen] = React.useState(false);
-  React.useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
   return <footer className="relative border-t bg-background text-foreground transition-colors duration-300">
       <div className="container mx-auto px-4 py-12 md:px-6 lg:px-8">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
@@ -119,7 +111,6 @@ function Footerdemo() {
                 </Tooltip>
               </TooltipProvider>
             </div>
-            
           </div>
         </div>
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t pt-8 text-center md:flex-row">
