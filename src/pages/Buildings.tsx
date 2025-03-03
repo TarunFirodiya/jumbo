@@ -76,7 +76,6 @@ const BuildingCard = ({
       </CardHeader>
     </Card>;
 };
-
 export default function Buildings() {
   const {
     toast
@@ -87,7 +86,6 @@ export default function Buildings() {
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authAction, setAuthAction] = useState<"shortlist" | "visit" | "notify">("shortlist");
-  
   const {
     data: user
   } = useQuery({
@@ -101,7 +99,6 @@ export default function Buildings() {
       return user;
     }
   });
-  
   const {
     data: buildingScores
   } = useQuery({
@@ -125,7 +122,6 @@ export default function Buildings() {
     },
     enabled: !!user
   });
-  
   const {
     data: buildings,
     isLoading: buildingsLoading
@@ -147,15 +143,12 @@ export default function Buildings() {
       return data;
     }
   });
-  
   const localityActions = useMemo(() => {
     if (!buildings) return [];
-    
     const localitySet = new Set<string>();
     buildings.forEach(building => {
       if (building.locality) localitySet.add(building.locality);
     });
-    
     return Array.from(localitySet).map((locality, index) => ({
       id: `locality-${index}`,
       label: locality,
@@ -164,15 +157,7 @@ export default function Buildings() {
       value: locality
     }));
   }, [buildings]);
-  
-  const filteredBuildings = useMemo(() => 
-    buildings?.filter(building => 
-      building.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      building.locality && building.locality.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [], 
-    [buildings, searchTerm]
-  );
-  
+  const filteredBuildings = useMemo(() => buildings?.filter(building => building.name.toLowerCase().includes(searchTerm.toLowerCase()) || building.locality && building.locality.toLowerCase().includes(searchTerm.toLowerCase())) || [], [buildings, searchTerm]);
   const handleShortlistToggle = useCallback(async (buildingId: string) => {
     if (!user) {
       setAuthAction("shortlist");
@@ -204,26 +189,21 @@ export default function Buildings() {
       });
     }
   }, [user, buildingScores, toast, supabase]);
-  
   const handleCollectionToggle = useCallback((collectionId: string) => {
     setSelectedCollections(prev => prev.includes(collectionId) ? prev.filter(id => id !== collectionId) : [...prev, collectionId]);
   }, []);
-  
   const navigateToBuilding = useCallback((path: string) => {
     navigate(path);
   }, [navigate]);
-  
   const handleSearch = useCallback((query: string) => {
     setSearchTerm(query);
   }, []);
-  
   const handleLocalitySelect = useCallback((action: Action) => {
     setSearchTerm(action.value || action.label);
     if (action.value) {
       navigate(`/buildings/locality/${encodeURIComponent(action.value)}`);
     }
   }, [navigate]);
-  
   const getSEODescription = () => {
     let description = "Browse apartments, villas, and houses in popular locations. ";
     if (selectedCollections.length) {
@@ -232,7 +212,6 @@ export default function Buildings() {
     description += "Find your perfect home with detailed listings, amenities, and pricing information.";
     return description;
   };
-
   const localities = useMemo(() => {
     if (!buildings) return [];
     const localitySet = new Set<string>();
@@ -241,11 +220,9 @@ export default function Buildings() {
     });
     return Array.from(localitySet);
   }, [buildings]);
-  
   const handleLocalityClick = useCallback((locality: string) => {
     navigate(`/buildings/locality/${encodeURIComponent(locality)}`);
   }, [navigate]);
-  
   if (buildingsLoading) {
     return <>
         <SEO title="Loading Properties | Cozy Dwell Search" />
@@ -254,7 +231,6 @@ export default function Buildings() {
         </div>
       </>;
   }
-  
   return <div className="min-h-screen pb-20">
       <SEO title={selectedCollections.length ? `Properties in ${selectedCollections.join(', ')} | Cozy Dwell Search` : 'Find Your Perfect Home | Cozy Dwell Search'} description={getSEODescription()} canonical="/buildings" structuredData={{
       "@context": "https://schema.org",
@@ -271,11 +247,10 @@ export default function Buildings() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
-              <SparklesText 
-                text="Zero Spam Home Buying" 
-                className="text-4xl md:text-5xl"
-                colors={{ first: "#9E7AFF", second: "#FE8BBB" }}
-              />
+              <SparklesText text="Zero Spam Home Buying" className="text-4xl md:text-5xl" colors={{
+              first: "#9E7AFF",
+              second: "#FE8BBB"
+            }} />
             </div>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">Choose from over 1000 ready to move homes in Bangalore
 Visit multiple homes over a weekend
@@ -283,24 +258,10 @@ Buy with 100% legal safety</p>
           </div>
           
           <div className="relative max-w-2xl mx-auto">
-            <ActionSearchBar 
-              actions={localityActions}
-              onSearch={handleSearch}
-              onActionSelect={handleLocalitySelect}
-              placeholderText="Search by property name or location..."
-              labelText=""
-              className="shadow-lg"
-            />
+            <ActionSearchBar actions={localityActions} onSearch={handleSearch} onActionSelect={handleLocalitySelect} placeholderText="Search by property name or location..." labelText="" className="shadow-lg" />
           </div>
           
-          {localities.length > 0 && <div className="mt-8">
-              <h2 className="text-center text-sm uppercase tracking-wider text-muted-foreground mb-4">Popular Localities</h2>
-              <div className="flex flex-wrap justify-center gap-2">
-                {localities.slice(0, 8).map(locality => <Button key={locality} variant="outline" size="sm" onClick={() => handleLocalityClick(locality)} className="rounded-full">
-                    {locality}
-                  </Button>)}
-              </div>
-            </div>}
+          {localities.length > 0}
         </div>
       </div>
       
