@@ -30,6 +30,7 @@ function useDebounce<T>(value: T, delay: number = 500): T {
     return debouncedValue;
 }
 
+// Change this to an interface with export type
 export interface Action {
     id: string;
     label: string;
@@ -266,4 +267,5 @@ function ActionSearchBar({
     );
 }
 
-export { ActionSearchBar, Action };
+// Fix the export here by separating the component and interface
+export { ActionSearchBar };
