@@ -1,6 +1,6 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { PropertyGallery } from "@/components/building/PropertyGallery";
 import { BuildingHeader } from "@/components/building/BuildingHeader";
 import { PropertyDetailsSection } from "@/components/building/PropertyDetailsSection";
@@ -13,7 +13,7 @@ import { useShortlist } from "@/components/building/hooks/useShortlist";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
-import { Share2, ChevronUp } from "lucide-react";
+import { ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function BuildingDetails() {
