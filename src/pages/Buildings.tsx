@@ -14,20 +14,30 @@ import { SEO } from "@/components/SEO";
 import { SparklesText } from "@/components/ui/sparkles-text";
 import { ActionSearchBar, Action } from "@/components/ui/action-search-bar";
 
-// Lazy load the map component since it's heavy
 const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
 
-// Building Card component to reduce re-renders
 const BuildingCard = ({
   building,
   onNavigate,
   onShortlist,
   isShortlisted
 }) => {
+  const [isShortlisting, setIsShortlisting] = useState(false);
+  
+  const handleShortlist = (e, buildingId) => {
+    e.stopPropagation();
+    setIsShortlisting(true);
+    onShortlist(buildingId);
+    
+    setTimeout(() => {
+      setIsShortlisting(false);
+    }, 800);
+  };
+  
   return (
     <Card 
       key={building.id} 
-      className="overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow" 
+      className="overflow-hidden cursor-pointer group hover:shadow-xl transition-all duration-300 hover:-translate-y-1" 
       onClick={() => onNavigate(`/buildings/${building.id}`)}
     >
       <div className="relative bg-muted">
@@ -36,16 +46,24 @@ const BuildingCard = ({
           onImageClick={() => onNavigate(`/buildings/${building.id}`)}
         />
         <button
-          onClick={e => {
-            e.stopPropagation();
-            onShortlist(building.id);
-          }} 
-          className="absolute top-2 right-2 p-2 z-10 hover:scale-110 transition-transform"
+          onClick={e => handleShortlist(e, building.id)} 
+          className={cn(
+            "absolute top-2 right-2 p-2 z-10 transition-all",
+            isShortlisting ? "scale-125" : "hover:scale-110"
+          )}
         >
-          <Heart className={`h-6 w-6 ${isShortlisted ? "fill-red-500 stroke-red-500" : "stroke-white fill-black/20"}`} />
+          <Heart 
+            className={cn(
+              "h-6 w-6 transition-all duration-300",
+              isShortlisted 
+                ? "fill-red-500 stroke-red-500" 
+                : "stroke-white fill-black/20 group-hover:fill-black/30",
+              isShortlisting && !isShortlisted && "animate-pulse fill-red-500 stroke-red-500"
+            )} 
+          />
         </button>
       </div>
-      <CardHeader>
+      <CardHeader className="p-4 group-hover:bg-slate-50 transition-colors duration-300">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">{building.name}</CardTitle>

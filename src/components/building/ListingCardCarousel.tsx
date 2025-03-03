@@ -67,7 +67,7 @@ export function ListingCardCarousel({
         src={images[currentIndex]}
         alt={`${alt} ${currentIndex + 1}`}
         onClick={handleImageClick}
-        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        className="h-full w-full object-cover transition-all duration-500 group-hover:scale-105"
         onError={(e) => {
           // Fallback to placeholder on error
           (e.target as HTMLImageElement).src = "/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png";

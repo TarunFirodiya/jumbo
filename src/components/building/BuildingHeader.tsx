@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { MapPin, Heart, Star, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,18 @@ export function BuildingHeader({
   startingPrice,
   onShareClick,
 }: BuildingHeaderProps) {
+  const [isShortlisting, setIsShortlisting] = useState(false);
+  
+  const handleToggleShortlist = () => {
+    setIsShortlisting(true);
+    onToggleShortlist();
+    
+    // Reset animation state after animation completes
+    setTimeout(() => {
+      setIsShortlisting(false);
+    }, 800);
+  };
+  
   const renderStars = (rating: number) => {
     return Array(5).fill(0).map((_, i) => (
       <Star
@@ -64,7 +77,7 @@ export function BuildingHeader({
               variant="ghost"
               size="icon"
               onClick={onShareClick}
-              className="text-gray-400 hover:text-gray-500"
+              className="text-gray-400 hover:text-gray-500 hover:scale-105 transition-transform"
             >
               <Share2 className="h-6 w-6" />
             </Button>
@@ -72,13 +85,20 @@ export function BuildingHeader({
           <Button
             variant="ghost"
             size="icon"
-            onClick={onToggleShortlist}
+            onClick={handleToggleShortlist}
             className={cn(
-              "transition-colors hover:bg-transparent",
-              isShortlisted ? "text-red-500 hover:text-red-600" : "text-gray-400 hover:text-gray-500"
+              "transition-all",
+              isShortlisted ? "text-red-500 hover:text-red-600" : "text-gray-400 hover:text-gray-500",
+              isShortlisting ? "scale-125" : "hover:scale-105"
             )}
           >
-            <Heart className={cn("h-6 w-6", isShortlisted && "fill-current")} />
+            <Heart 
+              className={cn(
+                "h-6 w-6 transition-all duration-300", 
+                isShortlisted && "fill-current",
+                isShortlisting && !isShortlisted && "animate-pulse fill-red-500"
+              )} 
+            />
           </Button>
         </div>
       </div>
