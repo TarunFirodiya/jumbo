@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Search, Home, Heart, Route, Settings, User2, LogOut, Menu, LayoutDashboard } from "lucide-react";
+import { Footerdemo } from "@/components/ui/footer-section";
+
 export default function MainLayout({
   children
 }: {
@@ -114,7 +117,7 @@ export default function MainLayout({
     e.preventDefault();
     console.log("Search term:", searchTerm);
   };
-  return <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background flex flex-col">
       <div className={`fixed top-0 left-0 w-full z-50 transition-transform duration-300 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${showLogo ? 'translate-y-0' : '-translate-y-full'}`}>
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
@@ -160,8 +163,10 @@ export default function MainLayout({
         </div>
       </div>
       
-      <main className="container mx-auto px-4 py-8 mt-16">
+      <main className="container mx-auto px-4 py-8 mt-16 flex-grow">
         {children}
       </main>
+      
+      <Footerdemo />
     </div>;
 }
