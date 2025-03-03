@@ -224,9 +224,9 @@ export default function Buildings() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold mb-4">Zero Spam Home Buying</h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Discover beautiful properties in premium locations with detailed information and transparent pricing.
-            </p>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">Choose from over 1000 ready to move homes in Bangalore
+Visit multiple homes over a weekend
+Buy with 100% legal safety</p>
           </div>
           
           <div className="relative max-w-2xl mx-auto">
