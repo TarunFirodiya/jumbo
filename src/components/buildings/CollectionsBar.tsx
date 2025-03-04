@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRef, useState, useEffect } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Collection {
   id: string;
@@ -80,6 +81,7 @@ export function CollectionsBar({ selectedCollections, onCollectionToggle }: Coll
   const isMobile = useIsMobile();
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   useEffect(() => {
     const checkScroll = () => {
@@ -105,48 +107,73 @@ export function CollectionsBar({ selectedCollections, onCollectionToggle }: Coll
     scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
   };
 
+  const handleFilterClick = (collectionId: string) => {
+    setActiveFilter(collectionId);
+    onCollectionToggle(collectionId);
+    
+    // Reset active state after animation completes
+    setTimeout(() => {
+      setActiveFilter(null);
+    }, 300);
+  };
+
   return (
-    <div className="border-b relative">
+    <div className="border-b relative bg-white/80 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
       <ScrollArea 
         ref={scrollContainerRef}
-        className="w-full pb-4"
+        className="w-full py-2"
       >
-        <div className="flex space-x-8 px-4">
-          {collections.map((collection) => (
-            <Button
-              key={collection.id}
-              variant="ghost"
-              className={cn(
-                "flex flex-col items-center justify-center h-auto py-2 space-y-2 rounded-none",
-                "transition-all duration-300 min-w-[72px] hover:bg-transparent relative",
-                selectedCollections.includes(collection.id) ? 
-                  "after:absolute after:bottom-[-16px] after:left-0 after:right-0 after:h-0.5 after:bg-foreground scale-105" : 
-                  "hover:scale-105"
-              )}
-              onClick={() => onCollectionToggle(collection.id)}
-            >
-              <div className={cn(
-                "transition-all duration-300 w-8 h-8",
-                selectedCollections.includes(collection.id) 
-                  ? "opacity-100 scale-110" 
-                  : "opacity-50 hover:opacity-70"
-              )}>
-                <img 
-                  src={collection.iconUrl} 
-                  alt={collection.name}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <span className={cn(
-                "text-xs font-medium transition-colors duration-300",
-                selectedCollections.includes(collection.id)
-                  ? "text-foreground"
-                  : "text-muted-foreground"
-              )}>
-                {collection.name}
-              </span>
-            </Button>
-          ))}
+        <div className="flex space-x-2 px-4">
+          {collections.map((collection) => {
+            const isSelected = selectedCollections.includes(collection.id);
+            const isActive = activeFilter === collection.id;
+            
+            return (
+              <TooltipProvider key={collection.id} delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "flex flex-col items-center justify-center h-auto px-3 py-3 space-y-1.5 rounded-lg",
+                        "transition-all duration-300 min-w-[80px] hover:bg-gray-100",
+                        isSelected && "bg-gray-100 ring-1 ring-gray-200",
+                        isActive && "animate-pulse scale-105"
+                      )}
+                      onClick={() => handleFilterClick(collection.id)}
+                    >
+                      <div className={cn(
+                        "transition-all duration-300 w-10 h-10 p-1.5 rounded-full",
+                        isSelected 
+                          ? "bg-white shadow-sm" 
+                          : "opacity-80 hover:opacity-100"
+                      )}>
+                        <img 
+                          src={collection.iconUrl} 
+                          alt={collection.name}
+                          className={cn(
+                            "w-full h-full object-contain transition-transform duration-300",
+                            isSelected && "scale-110"
+                          )}
+                        />
+                      </div>
+                      <span className={cn(
+                        "text-xs font-medium transition-colors duration-300",
+                        isSelected
+                          ? "text-foreground font-semibold"
+                          : "text-muted-foreground"
+                      )}>
+                        {collection.name}
+                      </span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="bg-gray-900 text-white border-none text-xs">
+                    {collection.description || collection.name}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          })}
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
@@ -155,9 +182,9 @@ export function CollectionsBar({ selectedCollections, onCollectionToggle }: Coll
         <>
           {showLeftArrow && (
             <Button
-              variant="ghost"
+              variant="secondary"
               size="icon"
-              className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm shadow-md z-10"
+              className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm shadow-md z-10 rounded-full h-8 w-8 border"
               onClick={() => scroll('left')}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -165,9 +192,9 @@ export function CollectionsBar({ selectedCollections, onCollectionToggle }: Coll
           )}
           {showRightArrow && (
             <Button
-              variant="ghost"
+              variant="secondary"
               size="icon"
-              className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm shadow-md z-10"
+              className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm shadow-md z-10 rounded-full h-8 w-8 border"
               onClick={() => scroll('right')}
             >
               <ChevronRight className="h-4 w-4" />

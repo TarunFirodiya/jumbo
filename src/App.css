@@ -79,3 +79,41 @@
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* Filter animations */
+.filter-pulse {
+  animation: filterPulse 0.3s ease-in-out;
+}
+
+@keyframes filterPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.filter-selected {
+  position: relative;
+}
+
+.filter-selected::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 2px;
+  background-color: black;
+  border-radius: 1px;
+  transition: width 0.3s ease;
+}
+
+.filter-selected:hover::after {
+  width: 60%;
+}
