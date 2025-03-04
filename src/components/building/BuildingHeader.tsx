@@ -49,7 +49,7 @@ export function BuildingHeader({
       <Star
         key={i}
         className={cn(
-          "h-4 w-4",
+          "h-4 w-4 transition-transform",
           i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
         )}
       />
@@ -57,22 +57,22 @@ export function BuildingHeader({
   };
 
   return (
-    <div className="flex justify-between items-start">
-      <div>
-        <h1 className="text-2xl font-semibold">{name}</h1>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <MapPin className="h-4 w-4" />
+    <div className="flex justify-between items-start animate-fade-in p-1">
+      <div className="space-y-1">
+        <h1 className="font-serif font-semibold text-2xl md:text-3xl tracking-tight">{name}</h1>
+        <div className="flex items-center gap-2 text-muted-foreground group">
+          <MapPin className="h-4 w-4 group-hover:text-primary transition-colors" />
           <span>{locality}</span>
         </div>
         {startingPrice && (
-          <div className="mt-1 text-sm font-medium">
+          <div className="mt-1 text-sm font-medium bg-secondary/50 px-2 py-1 rounded-md inline-block">
             Starting at ₹{(startingPrice/10000000).toFixed(1)} Cr
           </div>
         )}
       </div>
       <div className="flex items-center gap-3">
         {googleRating && (
-          <div className="flex flex-col items-end">
+          <div className="flex flex-col items-end animate-fade-down">
             <div className="flex items-center gap-1">
               {renderStars(googleRating)}
               <span className="font-semibold ml-1">{googleRating}</span>
@@ -80,15 +80,15 @@ export function BuildingHeader({
             <span className="text-sm text-muted-foreground">Google Ratings</span>
           </div>
         )}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 animate-fade-down">
           {onShareClick && (
             <Button
               variant="ghost"
               size="icon"
               onClick={onShareClick}
-              className="text-gray-400 hover:text-gray-500 hover:scale-105 transition-transform"
+              className="text-gray-500 hover:text-gray-700 hover:scale-105 transition-all duration-300"
             >
-              <Share2 className="h-6 w-6" />
+              <Share2 className="h-5 w-5" />
             </Button>
           )}
           <Button
@@ -96,14 +96,14 @@ export function BuildingHeader({
             size="icon"
             onClick={handleToggleShortlist}
             className={cn(
-              "transition-all",
-              currentShortlistedState ? "text-red-500 hover:text-red-600" : "text-gray-400 hover:text-gray-500",
-              isShortlisting ? "scale-125" : "hover:scale-105"
+              "transition-all duration-300",
+              currentShortlistedState ? "text-red-500 hover:text-red-600" : "text-gray-500 hover:text-gray-700",
+              isShortlisting ? "scale-125" : "hover:scale-110"
             )}
           >
             <Heart 
               className={cn(
-                "h-6 w-6 transition-all duration-300", 
+                "h-5 w-5 transition-all duration-300", 
                 currentShortlistedState && "fill-current",
                 isShortlisting && !currentShortlistedState && "animate-pulse fill-red-500"
               )} 

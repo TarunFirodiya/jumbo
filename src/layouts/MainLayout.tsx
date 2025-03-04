@@ -43,6 +43,21 @@ export default function MainLayout({
     }
   });
   
+  // Listen for auth events and handle modals
+  useEffect(() => {
+    // Listen for custom auth modal trigger events
+    const handleAuthTriggerEvent = (e: CustomEvent<{action: "shortlist" | "visit" | "notify"}>) => {
+      setAuthActionType(e.detail.action);
+      setShowAuthModal(true);
+    };
+    
+    document.addEventListener('triggerAuthModal', handleAuthTriggerEvent as EventListener);
+    
+    return () => {
+      document.removeEventListener('triggerAuthModal', handleAuthTriggerEvent as EventListener);
+    };
+  }, []);
+  
   useEffect(() => {
     let lastScrollY = window.scrollY;
     const handleScroll = () => {
@@ -123,17 +138,23 @@ export default function MainLayout({
     console.log("Search term:", searchTerm);
   };
   
-  return <div className="min-h-screen bg-background flex flex-col">
-      <div className={`fixed top-0 left-0 w-full z-50 transition-transform duration-300 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${showLogo ? 'translate-y-0' : '-translate-y-full'}`}>
-        <div className="container mx-auto px-4 py-4">
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b ${showLogo ? 'translate-y-0' : '-translate-y-full'}`}>
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
-            <img src="/lovable-uploads/aa29ee67-7c22-40ce-b82d-f704e9c92c3a.png" alt="Serai Homes" className="h-8 md:h-10 w-auto cursor-pointer" onClick={() => navigate('/buildings')} />
+            <img 
+              src="/lovable-uploads/aa29ee67-7c22-40ce-b82d-f704e9c92c3a.png" 
+              alt="Serai Homes" 
+              className="h-9 md:h-10 w-auto cursor-pointer transition-transform duration-300 hover:scale-105" 
+              onClick={() => navigate('/buildings')} 
+            />
             
-            {!isAuthPage && !isPreferencesPage && <>
+            {!isAuthPage && !isPreferencesPage && (
+              <>
                 <form onSubmit={handleSearch} className="hidden md:flex items-center flex-1 max-w-xl mx-auto">
                   <div className="relative w-full">
-                    
-                    
+                    {/* Search implementation can go here */}
                   </div>
                 </form>
 
@@ -143,20 +164,26 @@ export default function MainLayout({
                   ) : profile ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full">
+                        <Button variant="ghost" size="icon" className="rounded-full transition-colors hover:bg-secondary">
                           <Menu className="h-5 w-5 md:hidden" />
                           <User2 className="h-5 w-5 hidden md:block" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuContent align="end" className="w-56 animate-scale-in">
                         <div className="px-2 py-1.5 text-sm font-medium">
                           {profile.email}
                         </div>
                         <DropdownMenuSeparator />
-                        {menuItems.map(item => <DropdownMenuItem key={item.path} onClick={() => navigate(item.path)} className="cursor-pointer">
-                            <item.icon className="mr-2 h-4 w-4" />
+                        {menuItems.map(item => (
+                          <DropdownMenuItem 
+                            key={item.path} 
+                            onClick={() => navigate(item.path)} 
+                            className="cursor-pointer flex items-center transition-colors hover:bg-secondary"
+                          >
+                            <item.icon className="mr-2 h-4 w-4 transition-transform group-hover:rotate-6" />
                             <span>{item.name}</span>
-                          </DropdownMenuItem>)}
+                          </DropdownMenuItem>
+                        ))}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
                           <LogOut className="mr-2 h-4 w-4" />
@@ -169,18 +196,19 @@ export default function MainLayout({
                       variant="ghost" 
                       size="icon" 
                       onClick={() => openAuthModal("shortlist")} 
-                      className="rounded-full"
+                      className="rounded-full transition-colors hover:bg-secondary"
                     >
                       <User2 className="h-5 w-5" />
                     </Button>
                   )}
                 </div>
-              </>}
+              </>
+            )}
           </div>
         </div>
       </div>
       
-      <main className="container mx-auto px-4 py-8 mt-16 flex-grow">
+      <main className="container mx-auto px-4 py-8 mt-16 flex-grow animate-fade-in">
         {children}
       </main>
       
@@ -192,5 +220,6 @@ export default function MainLayout({
         onOpenChange={setShowAuthModal} 
         actionType={authActionType} 
       />
-    </div>;
+    </div>
+  );
 }
