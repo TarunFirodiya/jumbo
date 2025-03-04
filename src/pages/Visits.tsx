@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { VisitRequestModal } from "@/components/VisitRequestModal";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface Visit {
   id: string;
@@ -28,13 +29,14 @@ interface Visit {
 }
 
 const Visits = () => {
-  const [visits, setVisits] = useState<Visit[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isCancelling, setIsCancelling] = useState<string | null>(null);
 
-  const fetchVisits = async () => {
-    try {
+  const { data: visits, isLoading } = useQuery<Visit[]>({
+    queryKey: ['user-visits'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('visits')
         .select(`
@@ -49,9 +51,12 @@ const Visits = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching visits:', error);
+        throw error;
+      }
 
-      setVisits(data.map(visit => ({
+      return (data || []).map(visit => ({
         id: visit.id,
         building_id: visit.building_id,
         building_name: visit.buildings.name,
@@ -60,46 +65,44 @@ const Visits = () => {
         visit_time: visit.visit_time,
         status: visit.status,
         created_at: visit.created_at,
-      })));
-    } catch (error) {
-      console.error('Error fetching visits:', error);
-      toast({
-        title: "Error",
-        description: "Could not load visits",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      }));
     }
-  };
+  });
 
-  useEffect(() => {
-    fetchVisits();
-  }, []);
-
-  const handleCancel = async (visitId: string) => {
-    try {
+  const cancelVisit = useMutation({
+    mutationFn: async (visitId: string) => {
+      setIsCancelling(visitId);
+      
       const { error } = await supabase
         .from('visits')
         .update({ status: 'cancelled' })
         .eq('id', visitId);
 
       if (error) throw error;
-
+      
+      return visitId;
+    },
+    onSuccess: (visitId) => {
+      queryClient.invalidateQueries({ queryKey: ['user-visits'] });
       toast({
         title: "Visit Cancelled",
         description: "Your visit has been cancelled successfully",
       });
-      
-      fetchVisits(); // Refresh the list
-    } catch (error) {
+      setIsCancelling(null);
+    },
+    onError: (error) => {
       console.error('Error cancelling visit:', error);
       toast({
         title: "Error",
         description: "Could not cancel visit",
         variant: "destructive",
       });
+      setIsCancelling(null);
     }
+  });
+
+  const handleCancel = (visitId: string) => {
+    cancelVisit.mutate(visitId);
   };
 
   return (
@@ -108,9 +111,11 @@ const Visits = () => {
       <Card>
         <CardContent className="p-6">
           {isLoading ? (
-            <p className="text-center text-muted-foreground">Loading visits...</p>
-          ) : visits.length === 0 ? (
-            <p className="text-center text-muted-foreground">No visits scheduled yet</p>
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : visits?.length === 0 ? (
+            <p className="text-center text-muted-foreground py-6">No visits scheduled yet</p>
           ) : (
             <Table>
               <TableHeader>
@@ -124,7 +129,7 @@ const Visits = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {visits.map((visit) => (
+                {visits?.map((visit) => (
                   <TableRow key={visit.id}>
                     <TableCell className="font-medium">{visit.building_name}</TableCell>
                     <TableCell>{visit.visit_day}</TableCell>
@@ -150,10 +155,14 @@ const Visits = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleCancel(visit.id)}
-                          disabled={visit.status === 'cancelled'}
+                          disabled={visit.status === 'cancelled' || isCancelling === visit.id}
                           className="text-destructive hover:text-destructive"
                         >
-                          <XOctagon className="h-4 w-4 mr-1" />
+                          {isCancelling === visit.id ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-destructive mr-1"></div>
+                          ) : (
+                            <XOctagon className="h-4 w-4 mr-1" />
+                          )}
                           Cancel
                         </Button>
                       </div>

@@ -10,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PencilIcon, Plus, MapPin, Building } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
 
 interface BuildingManagementProps {
   currentUser: Profile;
