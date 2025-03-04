@@ -10,9 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface AuthModalProps {
   open: boolean;
@@ -27,9 +28,22 @@ export function AuthModal({ open, onOpenChange, actionType }: AuthModalProps) {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
-  const [isPhoneAuth, setIsPhoneAuth] = useState(false);
   const [verificationStep, setVerificationStep] = useState<'input' | 'verify'>('input');
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Listen for auth modal trigger events
+  useEffect(() => {
+    const handleAuthTrigger = (e: CustomEvent<{action: "shortlist" | "visit" | "notify"}>) => {
+      onOpenChange(true);
+    };
+
+    document.addEventListener('triggerAuthModal', handleAuthTrigger as EventListener);
+    
+    return () => {
+      document.removeEventListener('triggerAuthModal', handleAuthTrigger as EventListener);
+    };
+  }, [onOpenChange]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();

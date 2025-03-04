@@ -10,12 +10,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, XOctagon } from "lucide-react";
+import { RefreshCw, XOctagon, CalendarPlus } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { VisitRequestModal } from "@/components/VisitRequestModal";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 interface Visit {
   id: string;
@@ -30,13 +31,39 @@ interface Visit {
 
 const Visits = () => {
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isCancelling, setIsCancelling] = useState<string | null>(null);
 
+  // Check if user is authenticated
+  const { data: user, isLoading: userLoading } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) throw error;
+      return data.user;
+    }
+  });
+
+  // Listen for auth modal trigger events
+  useEffect(() => {
+    const handleAuthTrigger = () => {
+      setShowAuthModal(true);
+    };
+
+    document.addEventListener('triggerAuthModal', handleAuthTrigger as EventListener);
+    
+    return () => {
+      document.removeEventListener('triggerAuthModal', handleAuthTrigger as EventListener);
+    };
+  }, []);
+
   const { data: visits, isLoading } = useQuery<Visit[]>({
     queryKey: ['user-visits'],
     queryFn: async () => {
+      if (!user) return [];
+      
       const { data, error } = await supabase
         .from('visits')
         .select(`
@@ -66,7 +93,8 @@ const Visits = () => {
         status: visit.status,
         created_at: visit.created_at,
       }));
-    }
+    },
+    enabled: !!user, // Only run query if user is authenticated
   });
 
   const cancelVisit = useMutation({
@@ -105,9 +133,70 @@ const Visits = () => {
     cancelVisit.mutate(visitId);
   };
 
+  const handleScheduleVisit = () => {
+    if (!user) {
+      // Trigger auth modal if not logged in
+      document.dispatchEvent(new CustomEvent('triggerAuthModal', {
+        detail: { action: 'visit' }
+      }));
+      return;
+    }
+    
+    // Navigate to buildings page for scheduling
+    // This is just a placeholder - you'd likely have a more specific flow
+    window.location.href = '/buildings';
+  };
+
+  if (userLoading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Your Visits</h1>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!user) {
+    // Show a simplified view for non-authenticated users
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Your Visits</h1>
+        <Card>
+          <CardContent className="p-6 py-12">
+            <div className="text-center space-y-4">
+              <p className="text-muted-foreground">Sign in to view and manage your visits</p>
+              <Button onClick={() => setShowAuthModal(true)}>
+                Sign in
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <AuthModal 
+          open={showAuthModal} 
+          onOpenChange={setShowAuthModal} 
+          actionType="visit" 
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Your Visits</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Your Visits</h1>
+        <Button onClick={handleScheduleVisit} className="flex items-center gap-2">
+          <CalendarPlus className="h-4 w-4" />
+          Schedule a Visit
+        </Button>
+      </div>
+      
       <Card>
         <CardContent className="p-6">
           {isLoading ? (
@@ -115,7 +204,12 @@ const Visits = () => {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : visits?.length === 0 ? (
-            <p className="text-center text-muted-foreground py-6">No visits scheduled yet</p>
+            <div className="text-center py-10 space-y-4">
+              <p className="text-muted-foreground">No visits scheduled yet</p>
+              <Button onClick={handleScheduleVisit} variant="outline">
+                Schedule your first visit
+              </Button>
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -135,7 +229,13 @@ const Visits = () => {
                     <TableCell>{visit.visit_day}</TableCell>
                     <TableCell>{visit.visit_time}</TableCell>
                     <TableCell>
-                      <span className="capitalize">{visit.status}</span>
+                      <span className={`capitalize px-2 py-1 rounded-full text-xs ${
+                        visit.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
+                        visit.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {visit.status}
+                      </span>
                     </TableCell>
                     <TableCell>
                       {format(new Date(visit.created_at), 'MMM d, yyyy')}
@@ -187,6 +287,12 @@ const Visits = () => {
           initialTime={selectedVisit.visit_time}
         />
       )}
+      
+      <AuthModal 
+        open={showAuthModal} 
+        onOpenChange={setShowAuthModal} 
+        actionType="visit" 
+      />
     </div>
   );
 };

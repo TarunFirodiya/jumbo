@@ -2,10 +2,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+
+// Create a global event system for auth related actions
+export const triggerAuthModal = new CustomEvent('triggerAuthModal', {
+  detail: { action: 'shortlist' }
+});
 
 export function useShortlist(id: string, buildingName: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isOptimisticallyShortlisted, setIsOptimisticallyShortlisted] = useState<boolean | null>(null);
 
   const { data: isShortlisted, isLoading: isShortlistedLoading } = useQuery({
     queryKey: ['shortlist', id],
@@ -26,16 +33,33 @@ export function useShortlist(id: string, buildingName: string) {
       }
       return data?.shortlisted || false;
     },
+    onSuccess: (data) => {
+      // Reset optimistic state once we have the real data
+      if (isOptimisticallyShortlisted !== null) {
+        setIsOptimisticallyShortlisted(null);
+      }
+    }
   });
 
   const { mutate: toggleShortlist, isPending } = useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        // Dispatch an event to trigger the auth modal
+        document.dispatchEvent(new CustomEvent('triggerAuthModal', {
+          detail: { action: 'shortlist' }
+        }));
         throw new Error("User not logged in");
       }
 
-      const newShortlistState = !isShortlisted;
+      // Determine the new state (either from optimistic state or current data)
+      const currentState = isOptimisticallyShortlisted !== null 
+        ? isOptimisticallyShortlisted 
+        : isShortlisted;
+      const newShortlistState = !currentState;
+
+      // Set optimistic state immediately
+      setIsOptimisticallyShortlisted(newShortlistState);
 
       const { error } = await supabase
         .from('user_building_scores')
@@ -52,7 +76,7 @@ export function useShortlist(id: string, buildingName: string) {
       return newShortlistState;
     },
     onSuccess: (newState) => {
-      // Invalidate both queries to ensure UI updates everywhere
+      // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ['shortlist', id] });
       queryClient.invalidateQueries({ queryKey: ['buildingScores'] });
       queryClient.invalidateQueries({ queryKey: ['shortlistedBuildings'] });
@@ -63,12 +87,12 @@ export function useShortlist(id: string, buildingName: string) {
       });
     },
     onError: (error) => {
+      // Reset optimistic state on error
+      setIsOptimisticallyShortlisted(null);
+      
       if (error.message === "User not logged in") {
-        toast({
-          title: "Please login",
-          description: "You need to be logged in to shortlist buildings",
-          variant: "destructive",
-        });
+        // Don't show error toast when opening auth modal
+        console.log("Opening auth modal for shortlist action");
       } else {
         console.error('Error toggling shortlist:', error);
         toast({
@@ -80,8 +104,12 @@ export function useShortlist(id: string, buildingName: string) {
     },
   });
 
+  // Determine the current shortlist state, prioritizing optimistic updates
+  const currentShortlistState = 
+    isOptimisticallyShortlisted !== null ? isOptimisticallyShortlisted : (isShortlisted || false);
+
   return {
-    isShortlisted: isShortlisted || false,
+    isShortlisted: currentShortlistState,
     isShortlistedLoading,
     toggleShortlist,
     isToggling: isPending
