@@ -33,9 +33,7 @@ function Footerdemo() {
               <a href="#" className="block transition-colors hover:text-primary">
                 About Us
               </a>
-              <a href="#" className="block transition-colors hover:text-primary">
-                Services
-              </a>
+              <a href="#" className="block transition-colors hover:text-primary">Careers</a>
               <a href="#" className="block transition-colors hover:text-primary">
                 Products
               </a>
@@ -120,9 +118,7 @@ function Footerdemo() {
             <a href="#" className="transition-colors hover:text-primary">
               Terms of Service
             </a>
-            <a href="#" className="transition-colors hover:text-primary">
-              Cookie Settings
-            </a>
+            
           </nav>
         </div>
       </div>
