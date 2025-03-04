@@ -45,8 +45,9 @@ interface VisitManagementProps {
 export function VisitManagement({ currentUser }: VisitManagementProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
-  const { data: visits } = useQuery<Visit[]>({
+  const { data: visits, isLoading } = useQuery<Visit[]>({
     queryKey: ['visits'],
     queryFn: async () => {
       let query = supabase
@@ -71,7 +72,10 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
 
       const { data: rawData, error } = await query.order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching visits:', error);
+        throw error;
+      }
       
       // Transform the raw data to match our simplified Visit type
       return (rawData || []).map(item => ({
@@ -90,19 +94,27 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
 
   const updateVisitStatus = useMutation({
     mutationFn: async ({ visitId, status }: { visitId: string; status: VisitStatus }) => {
+      setIsUpdating(visitId);
+      
       const { error } = await supabase
         .from('visits')
         .update({ status })
         .eq('id', visitId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating visit status:', error);
+        throw error;
+      }
+      
+      return { visitId, status };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['visits'] });
       toast({
         title: "Success",
-        description: "Visit status updated successfully",
+        description: `Visit status updated to ${data.status}`,
       });
+      setIsUpdating(null);
     },
     onError: (error) => {
       toast({
@@ -111,6 +123,7 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
         variant: "destructive",
       });
       console.error('Error updating visit status:', error);
+      setIsUpdating(null);
     }
   });
 
@@ -131,6 +144,12 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
       </Badge>
     );
   };
+
+  if (isLoading) {
+    return <div className="flex justify-center py-8">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -173,24 +192,34 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
                               variant="outline"
                               size="sm"
                               className="gap-1"
+                              disabled={isUpdating === visit.id}
                               onClick={() => updateVisitStatus.mutate({ 
                                 visitId: visit.id, 
                                 status: 'confirmed' 
                               })}
                             >
-                              <CheckCircle className="h-4 w-4" />
+                              {isUpdating === visit.id ? (
+                                <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-primary"></div>
+                              ) : (
+                                <CheckCircle className="h-4 w-4" />
+                              )}
                               Confirm
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               className="gap-1"
+                              disabled={isUpdating === visit.id}
                               onClick={() => updateVisitStatus.mutate({ 
                                 visitId: visit.id, 
                                 status: 'cancelled' 
                               })}
                             >
-                              <XCircle className="h-4 w-4" />
+                              {isUpdating === visit.id ? (
+                                <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-primary"></div>
+                              ) : (
+                                <XCircle className="h-4 w-4" />
+                              )}
                               Cancel
                             </Button>
                           </>
@@ -200,12 +229,17 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
                             variant="outline"
                             size="sm"
                             className="gap-1"
+                            disabled={isUpdating === visit.id}
                             onClick={() => updateVisitStatus.mutate({ 
                               visitId: visit.id, 
                               status: 'completed' 
                             })}
                           >
-                            <CheckCircle className="h-4 w-4" />
+                            {isUpdating === visit.id ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-primary"></div>
+                            ) : (
+                              <CheckCircle className="h-4 w-4" />
+                            )}
                             Mark as Complete
                           </Button>
                         )}

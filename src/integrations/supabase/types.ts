@@ -185,66 +185,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_building_scores: {
-        Row: {
-          bhk_match_score: number | null
-          budget_match_score: number | null
-          building_id: string | null
-          calculated_at: string | null
-          id: string
-          last_calculation_time: string | null
-          lifestyle_match_score: number | null
-          location_match_score: number | null
-          notes: string | null
-          overall_match_score: number | null
-          shortlisted: boolean | null
-          user_id: string | null
-        }
-        Insert: {
-          bhk_match_score?: number | null
-          budget_match_score?: number | null
-          building_id?: string | null
-          calculated_at?: string | null
-          id?: string
-          last_calculation_time?: string | null
-          lifestyle_match_score?: number | null
-          location_match_score?: number | null
-          notes?: string | null
-          overall_match_score?: number | null
-          shortlisted?: boolean | null
-          user_id?: string | null
-        }
-        Update: {
-          bhk_match_score?: number | null
-          budget_match_score?: number | null
-          building_id?: string | null
-          calculated_at?: string | null
-          id?: string
-          last_calculation_time?: string | null
-          lifestyle_match_score?: number | null
-          location_match_score?: number | null
-          notes?: string | null
-          overall_match_score?: number | null
-          shortlisted?: boolean | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_building_scores_building_id_fkey"
-            columns: ["building_id"]
-            isOneToOne: false
-            referencedRelation: "buildings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_building_scores_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_preferences: {
         Row: {
           amenities: string[] | null
@@ -368,21 +308,7 @@ export type Database = {
       }
     }
     Views: {
-      user_shortlisted_buildings: {
-        Row: {
-          shortlisted_building_ids: string[] | null
-          user_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_building_scores_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       binary_quantize:

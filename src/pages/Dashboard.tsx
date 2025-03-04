@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AgentManagement } from "@/components/dashboard/AgentManagement";
 import { ListingManagement } from "@/components/dashboard/ListingManagement";
 import { VisitManagement } from "@/components/dashboard/VisitManagement";
-import { UserPlus, ListChecks, Calendar } from "lucide-react";
+import { BuildingManagement } from "@/components/dashboard/BuildingManagement";
+import { UserPlus, ListChecks, Calendar, Building } from "lucide-react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -69,8 +70,12 @@ export default function Dashboard() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
       {profile?.role === 'admin' && (
-        <Tabs defaultValue="agents" className="space-y-6">
+        <Tabs defaultValue="buildings" className="space-y-6">
           <TabsList>
+            <TabsTrigger value="buildings" className="gap-2">
+              <Building className="h-4 w-4" />
+              Buildings
+            </TabsTrigger>
             <TabsTrigger value="agents" className="gap-2">
               <UserPlus className="h-4 w-4" />
               Agent Management
@@ -84,6 +89,9 @@ export default function Dashboard() {
               Visits
             </TabsTrigger>
           </TabsList>
+          <TabsContent value="buildings">
+            <BuildingManagement currentUser={profile} />
+          </TabsContent>
           <TabsContent value="agents">
             <AgentManagement />
           </TabsContent>
