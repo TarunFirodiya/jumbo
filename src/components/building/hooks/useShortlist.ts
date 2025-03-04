@@ -33,13 +33,13 @@ export function useShortlist(id: string, buildingName: string) {
       }
       return data?.shortlisted || false;
     },
-    onSuccess: (data) => {
-      // Reset optimistic state once we have the real data
-      if (isOptimisticallyShortlisted !== null) {
-        setIsOptimisticallyShortlisted(null);
-      }
-    }
   });
+
+  // Reset optimistic state once we have the real data
+  const previousIsShortlisted = isShortlisted;
+  if (previousIsShortlisted !== undefined && isOptimisticallyShortlisted !== null) {
+    setIsOptimisticallyShortlisted(null);
+  }
 
   const { mutate: toggleShortlist, isPending } = useMutation({
     mutationFn: async () => {
