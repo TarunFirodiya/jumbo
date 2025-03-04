@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,7 +45,6 @@ type Building = {
 
 type ShortlistedBuilding = {
   building_id: string;
-  overall_match_score: number | null;
   notes: string | null;
   buildings: Building | null;
 };
@@ -63,7 +63,6 @@ export default function Shortlist() {
         .from('user_building_scores')
         .select(`
           building_id,
-          overall_match_score,
           notes,
           buildings (
             id,
@@ -221,22 +220,6 @@ export default function Shortlist() {
           : location;
         
         return <div>{displayLocation}</div>;
-      },
-    },
-    {
-      id: "match_score",
-      header: "Match Score",
-      accessorFn: (row) => row.overall_match_score,
-      cell: ({ row }) => {
-        const score = row.original.overall_match_score;
-        if (!score) return null;
-        
-        return (
-          <div className="flex items-center gap-1">
-            <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-            <span>{Math.round(score * 100)}%</span>
-          </div>
-        );
       },
     },
     {

@@ -185,6 +185,41 @@ export type Database = {
         }
         Relationships: []
       }
+      user_building_scores: {
+        Row: {
+          building_id: string
+          calculated_at: string
+          id: string
+          notes: string | null
+          shortlisted: boolean
+          user_id: string
+        }
+        Insert: {
+          building_id: string
+          calculated_at?: string
+          id?: string
+          notes?: string | null
+          shortlisted?: boolean
+          user_id: string
+        }
+        Update: {
+          building_id?: string
+          calculated_at?: string
+          id?: string
+          notes?: string | null
+          shortlisted?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_building_scores_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_preferences: {
         Row: {
           amenities: string[] | null
