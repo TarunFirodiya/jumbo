@@ -13,6 +13,7 @@ import { AuthModal } from "@/components/auth/AuthModal";
 import { SEO } from "@/components/SEO";
 import { SparklesText } from "@/components/ui/sparkles-text";
 import { ActionSearchBar, Action } from "@/components/ui/action-search-bar";
+import { cn } from "@/lib/utils";
 
 const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
 

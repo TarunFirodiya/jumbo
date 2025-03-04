@@ -11,6 +11,7 @@ import { ListingCardCarousel } from "@/components/building/ListingCardCarousel";
 import { CollectionsBar } from "@/components/buildings/CollectionsBar";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { SEO } from "@/components/SEO";
+import { cn } from "@/lib/utils";
 
 const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
 
