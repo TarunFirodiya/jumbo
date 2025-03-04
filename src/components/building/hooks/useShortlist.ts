@@ -7,7 +7,7 @@ export function useShortlist(id: string, buildingName: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: isShortlisted } = useQuery({
+  const { data: isShortlisted, isLoading: isShortlistedLoading } = useQuery({
     queryKey: ['shortlist', id],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -28,33 +28,38 @@ export function useShortlist(id: string, buildingName: string) {
     },
   });
 
-  const { mutate: toggleShortlist } = useMutation({
+  const { mutate: toggleShortlist, isPending } = useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error("User not logged in");
       }
 
+      const newShortlistState = !isShortlisted;
+
       const { error } = await supabase
         .from('user_building_scores')
         .upsert({
           user_id: user.id,
           building_id: id,
-          shortlisted: !isShortlisted,
+          shortlisted: newShortlistState,
         }, {
           onConflict: 'user_id,building_id',
         });
 
       if (error) throw error;
+      
+      return newShortlistState;
     },
-    onSuccess: () => {
+    onSuccess: (newState) => {
       // Invalidate both queries to ensure UI updates everywhere
       queryClient.invalidateQueries({ queryKey: ['shortlist', id] });
       queryClient.invalidateQueries({ queryKey: ['buildingScores'] });
+      queryClient.invalidateQueries({ queryKey: ['shortlistedBuildings'] });
       
       toast({
-        title: isShortlisted ? "Removed from shortlist" : "Added to shortlist",
-        description: `${buildingName} has been ${isShortlisted ? 'removed from' : 'added to'} your shortlist`,
+        title: newState ? "Added to shortlist" : "Removed from shortlist",
+        description: `${buildingName} has been ${newState ? 'added to' : 'removed from'} your shortlist`,
       });
     },
     onError: (error) => {
@@ -77,6 +82,8 @@ export function useShortlist(id: string, buildingName: string) {
 
   return {
     isShortlisted: isShortlisted || false,
-    toggleShortlist
+    isShortlistedLoading,
+    toggleShortlist,
+    isToggling: isPending
   };
 }

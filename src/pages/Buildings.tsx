@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -136,7 +135,8 @@ export default function Buildings() {
     }
   });
   const {
-    data: buildingScores
+    data: buildingScores,
+    refetch: refetchBuildingScores
   } = useQuery({
     queryKey: ['buildingScores', user?.id],
     queryFn: async () => {
@@ -212,6 +212,9 @@ export default function Buildings() {
         onConflict: 'user_id,building_id'
       });
       if (error) throw error;
+      
+      await refetchBuildingScores();
+      
       toast({
         title: currentShortlistStatus ? "Removed from shortlist" : "Added to shortlist",
         description: currentShortlistStatus ? "Building has been removed from your shortlist" : "Building has been added to your shortlist"
@@ -224,7 +227,7 @@ export default function Buildings() {
         variant: "destructive"
       });
     }
-  }, [user, buildingScores, toast, supabase]);
+  }, [user, buildingScores, toast, supabase, refetchBuildingScores]);
   const handleCollectionToggle = useCallback((collectionId: string) => {
     setSelectedCollections(prev => prev.includes(collectionId) ? prev.filter(id => id !== collectionId) : [...prev, collectionId]);
   }, []);

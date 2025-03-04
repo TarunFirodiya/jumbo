@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapPin, Heart, Star, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -24,9 +24,18 @@ export function BuildingHeader({
   onShareClick,
 }: BuildingHeaderProps) {
   const [isShortlisting, setIsShortlisting] = useState(false);
+  const [currentShortlistedState, setCurrentShortlistedState] = useState(isShortlisted);
+  
+  // Update local state when prop changes
+  useEffect(() => {
+    setCurrentShortlistedState(isShortlisted);
+  }, [isShortlisted]);
   
   const handleToggleShortlist = () => {
     setIsShortlisting(true);
+    // Optimistically update UI
+    setCurrentShortlistedState(!currentShortlistedState);
+    // Call the actual toggle function
     onToggleShortlist();
     
     // Reset animation state after animation completes
@@ -88,15 +97,15 @@ export function BuildingHeader({
             onClick={handleToggleShortlist}
             className={cn(
               "transition-all",
-              isShortlisted ? "text-red-500 hover:text-red-600" : "text-gray-400 hover:text-gray-500",
+              currentShortlistedState ? "text-red-500 hover:text-red-600" : "text-gray-400 hover:text-gray-500",
               isShortlisting ? "scale-125" : "hover:scale-105"
             )}
           >
             <Heart 
               className={cn(
                 "h-6 w-6 transition-all duration-300", 
-                isShortlisted && "fill-current",
-                isShortlisting && !isShortlisted && "animate-pulse fill-red-500"
+                currentShortlistedState && "fill-current",
+                isShortlisting && !currentShortlistedState && "animate-pulse fill-red-500"
               )} 
             />
           </Button>

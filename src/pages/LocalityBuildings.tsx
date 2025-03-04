@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, Heart } from "lucide-react";
@@ -123,7 +122,7 @@ export default function LocalityBuildings() {
     },
   });
 
-  const { data: buildingScores } = useQuery({
+  const { data: buildingScores, refetch: refetchBuildingScores } = useQuery({
     queryKey: ['buildingScores', user?.id],
     queryFn: async () => {
       if (!user) return null;
@@ -200,6 +199,8 @@ export default function LocalityBuildings() {
 
       if (error) throw error;
       
+      await refetchBuildingScores();
+      
       toast({
         title: currentShortlistStatus ? "Removed from shortlist" : "Added to shortlist",
         description: currentShortlistStatus 
@@ -214,7 +215,7 @@ export default function LocalityBuildings() {
         variant: "destructive",
       });
     }
-  }, [user, buildingScores, toast]);
+  }, [user, buildingScores, toast, supabase, refetchBuildingScores]);
 
   const handleCollectionToggle = useCallback((collectionId: string) => {
     setSelectedCollections(prev => 
