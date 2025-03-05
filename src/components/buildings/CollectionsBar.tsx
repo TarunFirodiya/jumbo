@@ -121,7 +121,7 @@ export function CollectionsBar({ selectedCollections, onCollectionToggle }: Coll
     <div className="border-b relative bg-white/80 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
       <ScrollArea 
         ref={scrollContainerRef}
-        className="w-full py-2"
+        className="w-full py-3"
       >
         <div className="flex space-x-2 px-4">
           {collections.map((collection) => {
@@ -135,17 +135,17 @@ export function CollectionsBar({ selectedCollections, onCollectionToggle }: Coll
                     <Button
                       variant="ghost"
                       className={cn(
-                        "flex flex-col items-center justify-center h-auto px-3 py-3 space-y-1.5 rounded-lg",
+                        "flex flex-col items-center justify-center h-auto px-3 py-3 space-y-2 rounded-lg",
                         "transition-all duration-300 min-w-[80px] hover:bg-gray-100",
-                        isSelected && "bg-gray-100 ring-1 ring-gray-200",
-                        isActive && "animate-pulse scale-105"
+                        isSelected && "bg-gray-100 ring-1 ring-gray-200 filter-selected",
+                        isActive && "filter-pulse"
                       )}
                       onClick={() => handleFilterClick(collection.id)}
                     >
                       <div className={cn(
-                        "transition-all duration-300 w-10 h-10 p-1.5 rounded-full",
+                        "transition-all duration-300 w-11 h-11 p-1.5 rounded-full",
                         isSelected 
-                          ? "bg-white shadow-sm" 
+                          ? "bg-white shadow-md" 
                           : "opacity-80 hover:opacity-100"
                       )}>
                         <img 
