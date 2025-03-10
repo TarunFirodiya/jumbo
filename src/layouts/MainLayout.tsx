@@ -1,9 +1,8 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Profile } from "@/types/profile";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -20,6 +19,7 @@ export default function MainLayout({
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authActionType, setAuthActionType] = useState<"shortlist" | "visit" | "notify">("shortlist");
   const isAuthPage = location.pathname === "/auth";
@@ -27,7 +27,7 @@ export default function MainLayout({
   const [showLogo, setShowLogo] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   
-  const { data: profile, isLoading: profileLoading } = useQuery<Profile>({
+  const { data: profile, isLoading: profileLoading, refetch: refetchProfile } = useQuery<Profile>({
     queryKey: ['profile'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -74,6 +74,11 @@ export default function MainLayout({
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
+        // Invalidate all auth-dependent queries
+        queryClient.invalidateQueries({ queryKey: ['profile'] });
+        queryClient.invalidateQueries({ queryKey: ['buildingScores'] });
+        queryClient.invalidateQueries({ queryKey: ['shortlistedBuildings'] });
+        
         // Navigate to buildings page instead of auth page when signing out
         navigate("/buildings");
         toast({
@@ -81,16 +86,25 @@ export default function MainLayout({
           description: "You have been signed out successfully"
         });
       } else if (event === "SIGNED_IN") {
+        // Invalidate all auth-dependent queries
+        queryClient.invalidateQueries({ queryKey: ['profile'] });
+        queryClient.invalidateQueries({ queryKey: ['buildingScores'] });
+        queryClient.invalidateQueries({ queryKey: ['shortlistedBuildings'] });
+        
+        // Manually refetch profile
+        refetchProfile();
+        
         // Close the auth modal if it's open when a user signs in
         setShowAuthModal(false);
-        toast({
-          title: "Signed in",
-          description: "You have been signed in successfully"
-        });
+        
+        // Dispatch a global event to notify other components
+        window.dispatchEvent(new CustomEvent('supabase.auth.stateChange', { 
+          detail: { event, session } 
+        }));
       }
     });
     return () => subscription.unsubscribe();
-  }, [navigate, toast]);
+  }, [navigate, toast, queryClient, refetchProfile]);
   
   const handleLogout = async () => {
     try {

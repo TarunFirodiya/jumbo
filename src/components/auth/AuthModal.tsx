@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { EmailAuth } from "@/components/auth/EmailAuth";
 import { PhoneAuth } from "@/components/auth/PhoneAuth";
 import { SocialAuth } from "@/components/auth/SocialAuth";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthModalProps {
   open: boolean;
@@ -20,6 +21,8 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ open, onOpenChange, actionType }: AuthModalProps) {
+  const { toast } = useToast();
+  
   // Listen for auth modal trigger events
   useEffect(() => {
     const handleAuthTrigger = (e: CustomEvent<{action: "shortlist" | "visit" | "notify"}>) => {
@@ -37,15 +40,24 @@ export function AuthModal({ open, onOpenChange, actionType }: AuthModalProps) {
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        // Close the modal and redirect if needed
+        // Close the modal and notify
         onOpenChange(false);
+        toast({
+          title: "Signed in successfully",
+          description: "You are now logged in",
+        });
+        
+        // Force a refresh of auth-dependent queries
+        window.dispatchEvent(new CustomEvent('supabase.auth.stateChange', { 
+          detail: { event, session } 
+        }));
       }
     });
 
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [onOpenChange]);
+  }, [onOpenChange, toast]);
 
   const handleAuthSuccess = () => {
     // This will be handled by the auth state change listener

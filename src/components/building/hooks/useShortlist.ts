@@ -2,29 +2,61 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
-
-// Create a global event system for auth related actions
-export const triggerAuthModal = new CustomEvent('triggerAuthModal', {
-  detail: { action: 'shortlist' }
-});
+import { useState, useEffect } from "react";
 
 export function useShortlist(id: string, buildingName: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isOptimisticallyShortlisted, setIsOptimisticallyShortlisted] = useState<boolean | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Listen for auth state changes to refresh shortlist status
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setCurrentUser(data.user);
+    };
+    
+    checkUser();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        const { data } = await supabase.auth.getUser();
+        setCurrentUser(data.user);
+        
+        // Invalidate relevant queries when auth state changes
+        queryClient.invalidateQueries({ queryKey: ['shortlist', id] });
+        queryClient.invalidateQueries({ queryKey: ['buildingScores'] });
+        queryClient.invalidateQueries({ queryKey: ['shortlistedBuildings'] });
+      }
+    });
+
+    // Listen for global auth state change events
+    const handleAuthStateChange = () => {
+      checkUser();
+      queryClient.invalidateQueries({ queryKey: ['shortlist', id] });
+      queryClient.invalidateQueries({ queryKey: ['buildingScores'] });
+      queryClient.invalidateQueries({ queryKey: ['shortlistedBuildings'] });
+    };
+
+    window.addEventListener('supabase.auth.stateChange', handleAuthStateChange);
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+      window.removeEventListener('supabase.auth.stateChange', handleAuthStateChange);
+    };
+  }, [id, queryClient]);
 
   const { data: isShortlisted, isLoading: isShortlistedLoading } = useQuery({
     queryKey: ['shortlist', id],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
+      if (!currentUser) return false;
 
       const { data, error } = await supabase
         .from('user_building_scores')
         .select('shortlisted')
         .eq('building_id', id)
-        .eq('user_id', user.id)
+        .eq('user_id', currentUser.id)
         .maybeSingle();
 
       if (error) {
@@ -33,6 +65,7 @@ export function useShortlist(id: string, buildingName: string) {
       }
       return data?.shortlisted || false;
     },
+    enabled: !!currentUser,
   });
 
   // Reset optimistic state once we have the real data
@@ -43,8 +76,7 @@ export function useShortlist(id: string, buildingName: string) {
 
   const { mutate: toggleShortlist, isPending } = useMutation({
     mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      if (!currentUser) {
         // Dispatch an event to trigger the auth modal
         document.dispatchEvent(new CustomEvent('triggerAuthModal', {
           detail: { action: 'shortlist' }
@@ -64,7 +96,7 @@ export function useShortlist(id: string, buildingName: string) {
       const { error } = await supabase
         .from('user_building_scores')
         .upsert({
-          user_id: user.id,
+          user_id: currentUser.id,
           building_id: id,
           shortlisted: newShortlistState,
         }, {
