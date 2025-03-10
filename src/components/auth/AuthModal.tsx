@@ -45,38 +45,73 @@ export function AuthModal({ open, onOpenChange, actionType }: AuthModalProps) {
     };
   }, [onOpenChange]);
 
+  // Listen for auth state changes
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        // Close the modal and redirect if needed
+        onOpenChange(false);
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [onOpenChange, navigate]);
+
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              full_name: email.split('@')[0], // Default name from email
+            },
+          },
         });
+        
         if (error) throw error;
+        
         toast({
           title: "Account created",
           description: "Please check your email to verify your account",
         });
+        
+        // Check if email confirmation is required
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+          toast({
+            title: "Email verification required",
+            description: "Please check your email to verify your account",
+          });
+        } else {
+          // Auto-login if email confirmation is not required
+          onOpenChange(false);
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
+        
         if (error) throw error;
+        
         toast({
           title: "Welcome back!",
           description: "You have been signed in successfully",
         });
+        
         onOpenChange(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Auth error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Authentication failed",
         variant: "destructive",
       });
     } finally {
@@ -112,11 +147,11 @@ export function AuthModal({ open, onOpenChange, actionType }: AuthModalProps) {
         });
         onOpenChange(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Phone auth error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Authentication failed",
         variant: "destructive",
       });
     } finally {
@@ -129,15 +164,15 @@ export function AuthModal({ open, onOpenChange, actionType }: AuthModalProps) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       if (error) throw error;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Google auth error:", error);
       toast({
         title: "Error",
-        description: "Failed to sign in with Google",
+        description: error.message || "Failed to sign in with Google",
         variant: "destructive",
       });
     }

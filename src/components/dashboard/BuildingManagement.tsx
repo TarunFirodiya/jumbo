@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Profile } from "@/types/profile";
@@ -24,6 +23,7 @@ interface Building {
   latitude: number | null;
   longitude: number | null;
   images: string[] | null;
+  user_id?: string;
 }
 
 export function BuildingManagement({ currentUser }: BuildingManagementProps) {
@@ -33,21 +33,45 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
   const [editingBuilding, setEditingBuilding] = useState<Building | null>(null);
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [currentSession, setCurrentSession] = useState<any>(null);
   
-  // Fetch buildings
+  useEffect(() => {
+    const getSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      setCurrentSession(data.session);
+    };
+    
+    getSession();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setCurrentSession(session);
+    });
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+  
   const { data: buildings, isLoading } = useQuery<Building[]>({
     queryKey: ['buildings'],
     queryFn: async () => {
+      if (!currentSession?.user?.id) {
+        return [];
+      }
+      
       const { data, error } = await supabase
         .from('buildings')
-        .select('id, name, city, locality, sub_locality, latitude, longitude, images');
+        .select('id, name, city, locality, sub_locality, latitude, longitude, images, user_id');
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching buildings:", error);
+        throw error;
+      }
       return data || [];
-    }
+    },
+    enabled: !!currentSession?.user?.id
   });
 
-  // Upload images to Supabase Storage
   const uploadImages = async (files: File[]) => {
     if (!files.length) return [];
     
@@ -55,6 +79,16 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     const uploadedUrls: string[] = [];
     
     try {
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const buildingsBucket = buckets?.find(bucket => bucket.name === 'buildings');
+      
+      if (!buildingsBucket) {
+        await supabase.storage.createBucket('buildings', {
+          public: true,
+          fileSizeLimit: 10485760,
+        });
+      }
+      
       for (const file of files) {
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
@@ -87,9 +121,12 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     }
   };
 
-  // Create building mutation
   const createBuilding = useMutation({
     mutationFn: async (formData: FormData) => {
+      if (!currentSession?.user?.id) {
+        throw new Error('You must be logged in to create a building');
+      }
+      
       const uploadedUrls = await uploadImages(uploadedImages);
       
       const buildingData = {
@@ -99,14 +136,21 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         sub_locality: formData.get('sub_locality')?.toString() || null,
         latitude: formData.get('latitude') ? Number(formData.get('latitude')) : null,
         longitude: formData.get('longitude') ? Number(formData.get('longitude')) : null,
-        images: uploadedUrls.length ? uploadedUrls : null
+        images: uploadedUrls.length ? uploadedUrls : null,
+        user_id: currentSession.user.id
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('buildings')
-        .insert(buildingData);
+        .insert(buildingData)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating building:', error);
+        throw error;
+      }
+      
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['buildings'] });
@@ -117,17 +161,16 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         description: "Building created successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to create building. Please try again.",
+        description: `Failed to create building: ${error.message}`,
         variant: "destructive"
       });
       console.error('Error creating building:', error);
     }
   });
 
-  // Update building mutation
   const updateBuilding = useMutation({
     mutationFn: async (formData: FormData) => {
       const buildingId = formData.get('buildingId')?.toString();
@@ -135,7 +178,6 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
       
       let imageUrls: string[] | null = editingBuilding?.images || null;
       
-      // Upload new images if any
       if (uploadedImages.length) {
         const newUrls = await uploadImages(uploadedImages);
         imageUrls = editingBuilding?.images ? [...editingBuilding.images, ...newUrls] : newUrls;
@@ -167,10 +209,10 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         description: "Building updated successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to update building. Please try again.",
+        description: `Failed to update building: ${error.message}`,
         variant: "destructive"
       });
       console.error('Error updating building:', error);
@@ -322,6 +364,15 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     return <div className="flex justify-center py-8">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
     </div>;
+  }
+
+  if (!currentSession) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 space-y-4">
+        <p className="text-muted-foreground">You need to be logged in to manage buildings.</p>
+        <Button onClick={() => navigate('/auth')}>Sign In</Button>
+      </div>
+    );
   }
 
   return (
