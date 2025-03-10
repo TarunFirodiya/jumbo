@@ -48,7 +48,7 @@ export function useShortlist(id: string, buildingName: string) {
   }, [id, queryClient]);
 
   const { data: isShortlisted, isLoading: isShortlistedLoading } = useQuery({
-    queryKey: ['shortlist', id],
+    queryKey: ['shortlist', id, currentUser?.id],
     queryFn: async () => {
       if (!currentUser) return false;
 
@@ -69,10 +69,11 @@ export function useShortlist(id: string, buildingName: string) {
   });
 
   // Reset optimistic state once we have the real data
-  const previousIsShortlisted = isShortlisted;
-  if (previousIsShortlisted !== undefined && isOptimisticallyShortlisted !== null) {
-    setIsOptimisticallyShortlisted(null);
-  }
+  useEffect(() => {
+    if (isShortlisted !== undefined && isOptimisticallyShortlisted !== null) {
+      setIsOptimisticallyShortlisted(null);
+    }
+  }, [isShortlisted]);
 
   const { mutate: toggleShortlist, isPending } = useMutation({
     mutationFn: async () => {
@@ -93,6 +94,8 @@ export function useShortlist(id: string, buildingName: string) {
       // Set optimistic state immediately
       setIsOptimisticallyShortlisted(newShortlistState);
 
+      console.log("Toggling shortlist for user:", currentUser.id, "building:", id, "new state:", newShortlistState);
+
       const { error } = await supabase
         .from('user_building_scores')
         .upsert({
@@ -103,7 +106,10 @@ export function useShortlist(id: string, buildingName: string) {
           onConflict: 'user_id,building_id',
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Shortlist error details:", error);
+        throw error;
+      }
       
       return newShortlistState;
     },
@@ -129,7 +135,7 @@ export function useShortlist(id: string, buildingName: string) {
         console.error('Error toggling shortlist:', error);
         toast({
           title: "Error",
-          description: "Could not update shortlist",
+          description: "Could not update shortlist. " + error.message,
           variant: "destructive",
         });
       }
