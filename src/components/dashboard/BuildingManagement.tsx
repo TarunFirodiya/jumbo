@@ -1,4 +1,6 @@
+
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Profile } from "@/types/profile";
@@ -23,11 +25,12 @@ interface Building {
   latitude: number | null;
   longitude: number | null;
   images: string[] | null;
-  user_id?: string;
+  user_id: string | null;
 }
 
 export function BuildingManagement({ currentUser }: BuildingManagementProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingBuilding, setEditingBuilding] = useState<Building | null>(null);
@@ -406,7 +409,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {buildings?.map((building) => (
+            {buildings && buildings.map((building) => (
               <TableRow key={building.id}>
                 <TableCell className="font-medium">{building.name}</TableCell>
                 <TableCell>

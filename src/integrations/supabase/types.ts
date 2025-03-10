@@ -36,6 +36,7 @@ export type Database = {
           total_floors: number | null
           type: string | null
           updated_at: string | null
+          user_id: string | null
           video_thumbnail: string | null
           water: string[] | null
         }
@@ -65,6 +66,7 @@ export type Database = {
           total_floors?: number | null
           type?: string | null
           updated_at?: string | null
+          user_id?: string | null
           video_thumbnail?: string | null
           water?: string[] | null
         }
@@ -94,6 +96,7 @@ export type Database = {
           total_floors?: number | null
           type?: string | null
           updated_at?: string | null
+          user_id?: string | null
           video_thumbnail?: string | null
           water?: string[] | null
         }
