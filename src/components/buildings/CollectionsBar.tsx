@@ -6,6 +6,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRef, useState, useEffect } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { motion } from "framer-motion";
+import { staggerContainer, itemFadeIn } from "@/components/ui/motion-animations";
 
 interface Collection {
   id: string;
@@ -118,12 +120,22 @@ export function CollectionsBar({ selectedCollections, onCollectionToggle }: Coll
   };
 
   return (
-    <div className="border-b relative bg-white/80 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
+    <motion.div 
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="border-b relative bg-white/80 backdrop-blur-sm sticky top-0 z-10 shadow-sm"
+    >
       <ScrollArea 
         ref={scrollContainerRef}
         className="w-full py-3"
       >
-        <div className="flex space-x-2 px-4">
+        <motion.div 
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="flex space-x-2 px-4"
+        >
           {collections.map((collection) => {
             const isSelected = selectedCollections.includes(collection.id);
             const isActive = activeFilter === collection.id;
@@ -132,40 +144,48 @@ export function CollectionsBar({ selectedCollections, onCollectionToggle }: Coll
               <TooltipProvider key={collection.id} delayDuration={300}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        "flex flex-col items-center justify-center h-auto px-3 py-3 space-y-2 rounded-lg",
-                        "transition-all duration-300 min-w-[80px] hover:bg-gray-100",
-                        isSelected && "bg-gray-100 ring-1 ring-gray-200 filter-selected",
-                        isActive && "filter-pulse"
-                      )}
-                      onClick={() => handleFilterClick(collection.id)}
+                    <motion.div
+                      variants={itemFadeIn}
                     >
-                      <div className={cn(
-                        "transition-all duration-300 w-11 h-11 p-1.5 rounded-full",
-                        isSelected 
-                          ? "bg-white shadow-md" 
-                          : "opacity-80 hover:opacity-100"
-                      )}>
-                        <img 
-                          src={collection.iconUrl} 
-                          alt={collection.name}
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "flex flex-col items-center justify-center h-auto px-3 py-3 space-y-2 rounded-lg",
+                          "transition-all duration-300 min-w-[80px] hover:bg-gray-100",
+                          isSelected && "bg-gray-100 ring-1 ring-gray-200 filter-selected",
+                          isActive && "filter-pulse"
+                        )}
+                        onClick={() => handleFilterClick(collection.id)}
+                      >
+                        <motion.div 
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
                           className={cn(
-                            "w-full h-full object-contain transition-transform duration-300",
-                            isSelected && "scale-110"
+                            "transition-all duration-300 w-11 h-11 p-1.5 rounded-full",
+                            isSelected 
+                              ? "bg-white shadow-md" 
+                              : "opacity-80 hover:opacity-100"
                           )}
-                        />
-                      </div>
-                      <span className={cn(
-                        "text-xs font-medium transition-colors duration-300",
-                        isSelected
-                          ? "text-foreground font-semibold"
-                          : "text-muted-foreground"
-                      )}>
-                        {collection.name}
-                      </span>
-                    </Button>
+                        >
+                          <img 
+                            src={collection.iconUrl} 
+                            alt={collection.name}
+                            className={cn(
+                              "w-full h-full object-contain transition-transform duration-300",
+                              isSelected && "scale-110"
+                            )}
+                          />
+                        </motion.div>
+                        <span className={cn(
+                          "text-xs font-medium transition-colors duration-300",
+                          isSelected
+                            ? "text-foreground font-semibold"
+                            : "text-muted-foreground"
+                        )}>
+                          {collection.name}
+                        </span>
+                      </Button>
+                    </motion.div>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="bg-gray-900 text-white border-none text-xs">
                     {collection.description || collection.name}
@@ -174,34 +194,46 @@ export function CollectionsBar({ selectedCollections, onCollectionToggle }: Coll
               </TooltipProvider>
             );
           })}
-        </div>
+        </motion.div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
 
       {isMobile && (
         <>
           {showLeftArrow && (
-            <Button
-              variant="secondary"
-              size="icon"
-              className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm shadow-md z-10 rounded-full h-8 w-8 border"
-              onClick={() => scroll('left')}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
             >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm shadow-md z-10 rounded-full h-8 w-8 border"
+                onClick={() => scroll('left')}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </motion.div>
           )}
           {showRightArrow && (
-            <Button
-              variant="secondary"
-              size="icon"
-              className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm shadow-md z-10 rounded-full h-8 w-8 border"
-              onClick={() => scroll('right')}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
             >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm shadow-md z-10 rounded-full h-8 w-8 border"
+                onClick={() => scroll('right')}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </motion.div>
           )}
         </>
       )}
-    </div>
+    </motion.div>
   );
 }
