@@ -1,5 +1,5 @@
 
-import { motion } from "framer-motion";
+import { motion, HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 import React from "react";
 
@@ -40,8 +40,10 @@ export const itemFadeIn = {
   }
 };
 
-interface MotionCardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface MotionCardProps extends Omit<HTMLMotionProps<"div">, "children"> {
+  children: React.ReactNode;
   delay?: number;
+  className?: string;
 }
 
 export const MotionCard = ({ 
@@ -70,7 +72,18 @@ export const MotionCard = ({
   );
 };
 
-export const MotionImage = ({ src, alt, className, ...props }) => {
+interface MotionImageProps extends Omit<HTMLMotionProps<"img">, "src" | "alt"> {
+  src: string;
+  alt: string;
+  className?: string;
+}
+
+export const MotionImage = ({ 
+  src, 
+  alt, 
+  className, 
+  ...props 
+}: MotionImageProps) => {
   return (
     <motion.img
       src={src}
@@ -84,7 +97,18 @@ export const MotionImage = ({ src, alt, className, ...props }) => {
   );
 };
 
-export const MotionButton = ({ children, className, onClick, ...props }) => {
+interface MotionButtonProps extends Omit<HTMLMotionProps<"button">, "children" | "onClick"> {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
+}
+
+export const MotionButton = ({ 
+  children, 
+  className, 
+  onClick, 
+  ...props 
+}: MotionButtonProps) => {
   return (
     <motion.button
       whileHover={{ scale: 1.05 }}
@@ -99,7 +123,13 @@ export const MotionButton = ({ children, className, onClick, ...props }) => {
   );
 };
 
-export const AnimatePresenceWrapper = ({ children }) => {
+interface AnimatePresenceWrapperProps {
+  children: React.ReactNode;
+}
+
+export const AnimatePresenceWrapper = ({ 
+  children 
+}: AnimatePresenceWrapperProps) => {
   return (
     <motion.div
       initial={{ opacity: 0 }}
