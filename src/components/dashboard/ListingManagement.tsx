@@ -11,7 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import { PencilIcon, Home, ImageIcon, X } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 
-// Add the missing imports for the new features
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -33,10 +32,8 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Add availability state
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
-  // Fetch buildings
   const { data: buildings } = useQuery({
     queryKey: ['buildings'],
     queryFn: async () => {
@@ -49,7 +46,6 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     }
   });
 
-  // Fetch listings
   const { data: listings } = useQuery({
     queryKey: ['listings'],
     queryFn: async () => {
@@ -69,7 +65,6 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     }
   });
 
-  // Upload images to Supabase Storage
   const uploadImages = async (files: File[]) => {
     if (!files.length) return [];
     
@@ -109,13 +104,11 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     }
   };
 
-  // Create listing mutation
   const createListing = useMutation({
     mutationFn: async (formData: FormData) => {
       const building_id = formData.get('building_id')?.toString() || null;
       const building = buildings?.find(b => b.id === building_id);
       
-      // Upload images if any
       const imageUrls = await uploadImages(uploadedImages);
 
       const listingData = {
@@ -157,7 +150,6 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     }
   });
 
-  // Update listing mutation
   const updateListing = useMutation({
     mutationFn: async (formData: FormData) => {
       const listingId = formData.get('listingId')?.toString();
@@ -166,7 +158,6 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
       
       let imageUrls = editingListing?.images || [];
       
-      // Upload new images if any
       if (uploadedImages.length) {
         const newUrls = await uploadImages(uploadedImages);
         imageUrls = [...(imageUrls || []), ...newUrls];
@@ -218,39 +209,172 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     const form = e.currentTarget;
     const formData = new FormData(form);
     
-    if (editingListing) {
-      updateListing.mutate(formData);
-    } else {
-      createListing.mutate(formData);
+    const floorPlanInput = form.querySelector('#floor_plan') as HTMLInputElement;
+    let floorPlanUpload = null;
+    
+    if (floorPlanInput && floorPlanInput.files && floorPlanInput.files.length > 0) {
+      floorPlanUpload = floorPlanInput.files[0];
     }
-  };
-  
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setUploadedImages(Array.from(e.target.files));
-    }
-  };
-  
-  const removeExistingImage = (index: number) => {
-    if (editingListing && editingListing.images) {
-      const updatedImages = [...editingListing.images];
-      updatedImages.splice(index, 1);
+    
+    const uploadFloorPlan = async () => {
+      if (!floorPlanUpload) return null;
       
-      setEditingListing({
-        ...editingListing,
-        images: updatedImages
+      setIsUploading(true);
+      try {
+        const fileExt = floorPlanUpload.name.split('.').pop();
+        const fileName = `floor-plan-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = `floor-plans/${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('listings')
+          .upload(filePath, floorPlanUpload);
+          
+        if (uploadError) throw uploadError;
+        
+        const { data } = supabase.storage
+          .from('listings')
+          .getPublicUrl(filePath);
+          
+        return data.publicUrl;
+      } catch (error) {
+        console.error('Error uploading floor plan:', error);
+        return null;
+      }
+    };
+    
+    if (editingListing) {
+      const processUpdate = async () => {
+        let imageUrls = editingListing?.images || [];
+        let floorPlanUrl = editingListing?.floor_plan_image || null;
+        
+        if (uploadedImages.length) {
+          const newUrls = await uploadImages(uploadedImages);
+          imageUrls = [...(imageUrls || []), ...newUrls];
+        }
+        
+        if (floorPlanUpload) {
+          const newFloorPlanUrl = await uploadFloorPlan();
+          if (newFloorPlanUrl) {
+            floorPlanUrl = newFloorPlanUrl;
+          }
+        }
+
+        const listingId = formData.get('listingId')?.toString();
+        const building_id = formData.get('building_id')?.toString() || null;
+        const building = buildings?.find(b => b.id === building_id);
+        
+        const listingData = {
+          building_id,
+          bedrooms: Number(formData.get('bedrooms')),
+          bathrooms: Number(formData.get('bathrooms')),
+          built_up_area: Number(formData.get('built_up_area')),
+          carpet_area: formData.get('carpet_area') ? Number(formData.get('carpet_area')) : null,
+          floor: Number(formData.get('floor')),
+          price: Number(formData.get('price')),
+          maintenance: Number(formData.get('maintenance')),
+          facing: formData.get('facing')?.toString() || null,
+          building_name: building?.name || null,
+          images: imageUrls,
+          floor_plan_image: floorPlanUrl,
+          parking_spots: formData.get('parking_spots') ? Number(formData.get('parking_spots')) : null,
+          balconies: formData.get('balconies') ? Number(formData.get('balconies')) : null,
+          furnishing_status: formData.get('furnishing_status')?.toString() || null,
+          status: formData.get('status')?.toString() || 'available',
+          availability: formData.get('availability')?.toString() || null
+        };
+
+        if (!listingId) throw new Error('Listing ID is required');
+
+        const { error } = await supabase
+          .from('listings')
+          .update(listingData)
+          .eq('id', listingId);
+
+        if (error) throw error;
+        
+        setIsUploading(false);
+        queryClient.invalidateQueries({ queryKey: ['listings'] });
+        setEditingListing(null);
+        setUploadedImages([]);
+        setSelectedDate(undefined);
+        toast({
+          title: "Success",
+          description: "Listing updated successfully",
+        });
+      };
+      
+      processUpdate().catch((error) => {
+        setIsUploading(false);
+        toast({
+          title: "Error",
+          description: "Failed to update listing. Please try again.",
+          variant: "destructive"
+        });
+        console.error('Error updating listing:', error);
+      });
+    } else {
+      const processCreate = async () => {
+        const building_id = formData.get('building_id')?.toString() || null;
+        const building = buildings?.find(b => b.id === building_id);
+        
+        const imageUrls = await uploadImages(uploadedImages);
+        
+        let floorPlanUrl = null;
+        if (floorPlanUpload) {
+          floorPlanUrl = await uploadFloorPlan();
+        }
+
+        const listingData = {
+          building_id,
+          bedrooms: Number(formData.get('bedrooms')),
+          bathrooms: Number(formData.get('bathrooms')),
+          built_up_area: Number(formData.get('built_up_area')),
+          carpet_area: formData.get('carpet_area') ? Number(formData.get('carpet_area')) : null,
+          floor: Number(formData.get('floor')),
+          price: Number(formData.get('price')),
+          maintenance: Number(formData.get('maintenance')),
+          facing: formData.get('facing')?.toString() || null,
+          agent_id: currentUser.id,
+          building_name: building?.name || null,
+          images: imageUrls.length ? imageUrls : [],
+          floor_plan_image: floorPlanUrl,
+          parking_spots: formData.get('parking_spots') ? Number(formData.get('parking_spots')) : null,
+          balconies: formData.get('balconies') ? Number(formData.get('balconies')) : null,
+          furnishing_status: formData.get('furnishing_status')?.toString() || null,
+          status: formData.get('status')?.toString() || 'available',
+          availability: formData.get('availability')?.toString() || null
+        };
+
+        const { error } = await supabase
+          .from('listings')
+          .insert(listingData);
+
+        if (error) throw error;
+        
+        setIsUploading(false);
+        queryClient.invalidateQueries({ queryKey: ['listings'] });
+        setIsCreateOpen(false);
+        setUploadedImages([]);
+        setSelectedDate(undefined);
+        toast({
+          title: "Success",
+          description: "Listing created successfully",
+        });
+      };
+      
+      processCreate().catch((error) => {
+        setIsUploading(false);
+        toast({
+          title: "Error",
+          description: "Failed to create listing. Please try again.",
+          variant: "destructive"
+        });
+        console.error('Error creating listing:', error);
       });
     }
   };
-  
-  const removeNewImage = (index: number) => {
-    const updatedImages = [...uploadedImages];
-    updatedImages.splice(index, 1);
-    setUploadedImages(updatedImages);
-  };
 
   const ListingForm = ({ listing }: { listing?: Listing }) => {
-    // Initialize selected date from listing if it exists
     useEffect(() => {
       if (listing?.availability) {
         try {
@@ -578,186 +702,30 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     );
   };
 
-  // Modify the handleSubmit function to handle the new floor_plan_image field
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-    
-    // Check if a floor plan was uploaded
-    const floorPlanInput = form.querySelector('#floor_plan') as HTMLInputElement;
-    let floorPlanUpload = null;
-    
-    if (floorPlanInput && floorPlanInput.files && floorPlanInput.files.length > 0) {
-      floorPlanUpload = floorPlanInput.files[0];
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setUploadedImages(Array.from(e.target.files));
     }
-    
-    // Save floor plan if needed
-    const uploadFloorPlan = async () => {
-      if (!floorPlanUpload) return null;
+  };
+  
+  const removeExistingImage = (index: number) => {
+    if (editingListing && editingListing.images) {
+      const updatedImages = [...editingListing.images];
+      updatedImages.splice(index, 1);
       
-      setIsUploading(true);
-      try {
-        const fileExt = floorPlanUpload.name.split('.').pop();
-        const fileName = `floor-plan-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-        const filePath = `floor-plans/${fileName}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('listings')
-          .upload(filePath, floorPlanUpload);
-          
-        if (uploadError) throw uploadError;
-        
-        const { data } = supabase.storage
-          .from('listings')
-          .getPublicUrl(filePath);
-          
-        return data.publicUrl;
-      } catch (error) {
-        console.error('Error uploading floor plan:', error);
-        return null;
-      }
-    };
-    
-    // Process the form
-    if (editingListing) {
-      // For updating
-      const processUpdate = async () => {
-        let imageUrls = editingListing?.images || [];
-        let floorPlanUrl = editingListing?.floor_plan_image || null;
-        
-        // Upload new images if any
-        if (uploadedImages.length) {
-          const newUrls = await uploadImages(uploadedImages);
-          imageUrls = [...(imageUrls || []), ...newUrls];
-        }
-        
-        // Upload floor plan if needed
-        if (floorPlanUpload) {
-          const newFloorPlanUrl = await uploadFloorPlan();
-          if (newFloorPlanUrl) {
-            floorPlanUrl = newFloorPlanUrl;
-          }
-        }
-
-        const listingId = formData.get('listingId')?.toString();
-        const building_id = formData.get('building_id')?.toString() || null;
-        const building = buildings?.find(b => b.id === building_id);
-        
-        const listingData = {
-          building_id,
-          bedrooms: Number(formData.get('bedrooms')),
-          bathrooms: Number(formData.get('bathrooms')),
-          built_up_area: Number(formData.get('built_up_area')),
-          carpet_area: formData.get('carpet_area') ? Number(formData.get('carpet_area')) : null,
-          floor: Number(formData.get('floor')),
-          price: Number(formData.get('price')),
-          maintenance: Number(formData.get('maintenance')),
-          facing: formData.get('facing')?.toString() || null,
-          building_name: building?.name || null,
-          images: imageUrls,
-          floor_plan_image: floorPlanUrl,
-          parking_spots: formData.get('parking_spots') ? Number(formData.get('parking_spots')) : null,
-          balconies: formData.get('balconies') ? Number(formData.get('balconies')) : null,
-          furnishing_status: formData.get('furnishing_status')?.toString() || null,
-          status: formData.get('status')?.toString() || 'available',
-          availability: formData.get('availability')?.toString() || null
-        };
-
-        if (!listingId) throw new Error('Listing ID is required');
-
-        const { error } = await supabase
-          .from('listings')
-          .update(listingData)
-          .eq('id', listingId);
-
-        if (error) throw error;
-        
-        setIsUploading(false);
-        queryClient.invalidateQueries({ queryKey: ['listings'] });
-        setEditingListing(null);
-        setUploadedImages([]);
-        setSelectedDate(undefined);
-        toast({
-          title: "Success",
-          description: "Listing updated successfully",
-        });
-      };
-      
-      processUpdate().catch((error) => {
-        setIsUploading(false);
-        toast({
-          title: "Error",
-          description: "Failed to update listing. Please try again.",
-          variant: "destructive"
-        });
-        console.error('Error updating listing:', error);
-      });
-    } else {
-      // For creating
-      const processCreate = async () => {
-        const building_id = formData.get('building_id')?.toString() || null;
-        const building = buildings?.find(b => b.id === building_id);
-        
-        // Upload images if any
-        const imageUrls = await uploadImages(uploadedImages);
-        
-        // Upload floor plan if any
-        let floorPlanUrl = null;
-        if (floorPlanUpload) {
-          floorPlanUrl = await uploadFloorPlan();
-        }
-
-        const listingData = {
-          building_id,
-          bedrooms: Number(formData.get('bedrooms')),
-          bathrooms: Number(formData.get('bathrooms')),
-          built_up_area: Number(formData.get('built_up_area')),
-          carpet_area: formData.get('carpet_area') ? Number(formData.get('carpet_area')) : null,
-          floor: Number(formData.get('floor')),
-          price: Number(formData.get('price')),
-          maintenance: Number(formData.get('maintenance')),
-          facing: formData.get('facing')?.toString() || null,
-          agent_id: currentUser.id,
-          building_name: building?.name || null,
-          images: imageUrls.length ? imageUrls : [],
-          floor_plan_image: floorPlanUrl,
-          parking_spots: formData.get('parking_spots') ? Number(formData.get('parking_spots')) : null,
-          balconies: formData.get('balconies') ? Number(formData.get('balconies')) : null,
-          furnishing_status: formData.get('furnishing_status')?.toString() || null,
-          status: formData.get('status')?.toString() || 'available',
-          availability: formData.get('availability')?.toString() || null
-        };
-
-        const { error } = await supabase
-          .from('listings')
-          .insert(listingData);
-
-        if (error) throw error;
-        
-        setIsUploading(false);
-        queryClient.invalidateQueries({ queryKey: ['listings'] });
-        setIsCreateOpen(false);
-        setUploadedImages([]);
-        setSelectedDate(undefined);
-        toast({
-          title: "Success",
-          description: "Listing created successfully",
-        });
-      };
-      
-      processCreate().catch((error) => {
-        setIsUploading(false);
-        toast({
-          title: "Error",
-          description: "Failed to create listing. Please try again.",
-          variant: "destructive"
-        });
-        console.error('Error creating listing:', error);
+      setEditingListing({
+        ...editingListing,
+        images: updatedImages
       });
     }
   };
   
+  const removeNewImage = (index: number) => {
+    const updatedImages = [...uploadedImages];
+    updatedImages.splice(index, 1);
+    setUploadedImages(updatedImages);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
