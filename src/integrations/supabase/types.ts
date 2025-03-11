@@ -12,13 +12,13 @@ export type Database = {
       buildings: {
         Row: {
           age: number | null
+          amenities: string[] | null
           bank: string[] | null
           bhk_types: number[] | null
           city: string | null
           collections: string[] | null
           created_at: string | null
           data_source: string | null
-          features: Json | null
           google_rating: number | null
           id: string
           images: string[] | null
@@ -43,13 +43,13 @@ export type Database = {
         }
         Insert: {
           age?: number | null
+          amenities?: string[] | null
           bank?: string[] | null
           bhk_types?: number[] | null
           city?: string | null
           collections?: string[] | null
           created_at?: string | null
           data_source?: string | null
-          features?: Json | null
           google_rating?: number | null
           id?: string
           images?: string[] | null
@@ -74,13 +74,13 @@ export type Database = {
         }
         Update: {
           age?: number | null
+          amenities?: string[] | null
           bank?: string[] | null
           bhk_types?: number[] | null
           city?: string | null
           collections?: string[] | null
           created_at?: string | null
           data_source?: string | null
-          features?: Json | null
           google_rating?: number | null
           id?: string
           images?: string[] | null
