@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -52,9 +51,9 @@ interface Building {
   street_view: string | null;
   video_thumbnail: string | null;
   data_source: string | null;
+  total_units: number | null;
 }
 
-// Pre-defined options for select fields
 const buildingTypes = ["Apartment", "Villa", "Penthouse", "Duplex", "Studio", "Row House", "Independent House"];
 const collectionOptions = ["Affordable", "Gated Apartment", "New Construction", "Child Friendly", "Luxury Community", "Spacious Layout", "Vastu Compliant"];
 const featureCategories = {
@@ -121,10 +120,8 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     enabled: !!currentSession?.user?.id
   });
 
-  // Reset form state when editing building changes
   useEffect(() => {
     if (editingBuilding) {
-      // Initialize selected features
       const features = editingBuilding.features || {};
       const featureState: {[key: string]: boolean} = {};
       
@@ -145,7 +142,6 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
       setSelectedWaterSources(editingBuilding.water || []);
       setSelectedBanks(editingBuilding.bank || []);
     } else {
-      // Reset selections for new building
       setSelectedFeatures({});
       setSelectedBHKTypes([]);
       setSelectedCollections([]);
@@ -203,7 +199,6 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     }
   };
 
-  // Prepare features object from selected features
   const prepareFeatures = () => {
     const features: { [key: string]: string[] } = {};
     
@@ -260,7 +255,8 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         video_thumbnail: formData.get('video_thumbnail')?.toString() || null,
         data_source: formData.get('data_source')?.toString() || null,
         images: uploadedUrls.length ? uploadedUrls : null,
-        user_id: currentSession.user.id
+        user_id: currentSession.user.id,
+        total_units: formData.get('total_units') ? Number(formData.get('total_units')) : null
       };
 
       const { data, error } = await supabase
@@ -333,7 +329,8 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         street_view: formData.get('street_view')?.toString() || null,
         video_thumbnail: formData.get('video_thumbnail')?.toString() || null,
         data_source: formData.get('data_source')?.toString() || null,
-        images: imageUrls
+        images: imageUrls,
+        total_units: formData.get('total_units') ? Number(formData.get('total_units')) : null
       };
 
       const { error } = await supabase
@@ -554,7 +551,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="age">Age (in years)</Label>
                 <Input 
@@ -575,6 +572,17 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
                   type="number" 
                   min="1" 
                   defaultValue={building?.total_floors || ''} 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="total_units">Total Units</Label>
+                <Input 
+                  id="total_units" 
+                  name="total_units" 
+                  type="number" 
+                  min="1" 
+                  defaultValue={building?.total_units || ''} 
                 />
               </div>
             </div>

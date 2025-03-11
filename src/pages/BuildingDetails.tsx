@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PropertyGallery } from "@/components/building/PropertyGallery";
@@ -186,6 +185,7 @@ export default function BuildingDetails() {
             water={building.water}
             bank={building.bank}
             bhkTypes={building.bhk_types}
+            totalUnits={building.total_units}
           />
           
           <PropertyTabs
@@ -216,6 +216,7 @@ export default function BuildingDetails() {
               water={building.water}
               bank={building.bank}
               bhkTypes={building.bhk_types}
+              totalUnits={building.total_units}
             />
 
             <PropertyTabs

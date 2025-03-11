@@ -34,6 +34,7 @@ export type Database = {
           street_view: string | null
           sub_locality: string | null
           total_floors: number | null
+          total_units: number | null
           type: string | null
           updated_at: string | null
           user_id: string | null
@@ -64,6 +65,7 @@ export type Database = {
           street_view?: string | null
           sub_locality?: string | null
           total_floors?: number | null
+          total_units?: number | null
           type?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -94,6 +96,7 @@ export type Database = {
           street_view?: string | null
           sub_locality?: string | null
           total_floors?: number | null
+          total_units?: number | null
           type?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -105,48 +108,69 @@ export type Database = {
       listings: {
         Row: {
           agent_id: string | null
+          availability: string | null
+          balconies: number | null
           bathrooms: number | null
           bedrooms: number | null
           building_id: string | null
           building_name: string | null
           built_up_area: number | null
+          carpet_area: number | null
           created_at: string
           facing: string | null
           floor: number | null
+          floor_plan_image: string | null
+          furnishing_status: string | null
           id: string
           images: string[] | null
           maintenance: number | null
+          parking_spots: number | null
           price: number | null
+          status: string | null
         }
         Insert: {
           agent_id?: string | null
+          availability?: string | null
+          balconies?: number | null
           bathrooms?: number | null
           bedrooms?: number | null
           building_id?: string | null
           building_name?: string | null
           built_up_area?: number | null
+          carpet_area?: number | null
           created_at?: string
           facing?: string | null
           floor?: number | null
+          floor_plan_image?: string | null
+          furnishing_status?: string | null
           id?: string
           images?: string[] | null
           maintenance?: number | null
+          parking_spots?: number | null
           price?: number | null
+          status?: string | null
         }
         Update: {
           agent_id?: string | null
+          availability?: string | null
+          balconies?: number | null
           bathrooms?: number | null
           bedrooms?: number | null
           building_id?: string | null
           building_name?: string | null
           built_up_area?: number | null
+          carpet_area?: number | null
           created_at?: string
           facing?: string | null
           floor?: number | null
+          floor_plan_image?: string | null
+          furnishing_status?: string | null
           id?: string
           images?: string[] | null
           maintenance?: number | null
+          parking_spots?: number | null
           price?: number | null
+          status?: string | null
         }
         Relationships: [
           {

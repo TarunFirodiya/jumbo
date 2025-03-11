@@ -1,4 +1,5 @@
-import { Building, Clock, BadgeIndianRupee, Droplets, Building2, Ruler, Compass, Home } from "lucide-react";
+
+import { Building, Clock, BadgeIndianRupee, Droplets, Building2, Ruler, Compass, Home, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 interface PropertyDetailsSectionProps {
@@ -12,6 +13,7 @@ interface PropertyDetailsSectionProps {
   bhkTypes?: (string | number)[] | null;
   minArea?: number;
   maxArea?: number;
+  totalUnits?: number;
 }
 export function PropertyDetailsSection({
   totalFloors,
@@ -23,7 +25,8 @@ export function PropertyDetailsSection({
   bank,
   bhkTypes,
   minArea,
-  maxArea
+  maxArea,
+  totalUnits
 }: PropertyDetailsSectionProps) {
   // Calculate median price for the price distribution
   const medianPrice = minPrice && maxPrice ? (minPrice + maxPrice) / 2 : minPrice;
@@ -41,6 +44,13 @@ export function PropertyDetailsSection({
                 Total Floors
               </p>
               <p className="font-medium">{totalFloors}</p>
+            </div>}
+          {totalUnits && <div>
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Total Units
+              </p>
+              <p className="font-medium">{totalUnits}</p>
             </div>}
           {age !== null && <div>
               <p className="text-sm text-muted-foreground flex items-center gap-2">

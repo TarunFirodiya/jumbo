@@ -3,9 +3,11 @@ import { useState, useEffect } from "react";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { IndianRupee, Building2, Compass } from "lucide-react";
+import { IndianRupee, Building2, Compass, Car, Armchair, CalendarClock, Ruler, Image } from "lucide-react";
 import { VisitRequestModal } from "@/components/VisitRequestModal";
 import { RainbowButton } from "@/components/ui/rainbow-button";
+import { format } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface ListingVariantsProps {
   listings: Tables<'listings'>[] | null;
@@ -26,6 +28,7 @@ export function ListingVariants({
 }: ListingVariantsProps) {
   const [selectedListing, setSelectedListing] = useState<Tables<'listings'> | null>(null);
   const [showVisitModal, setShowVisitModal] = useState(false);
+  const [showFloorPlan, setShowFloorPlan] = useState(false);
 
   // Set the first listing as selected by default once listings are loaded
   useEffect(() => {
@@ -54,6 +57,20 @@ export function ListingVariants({
   const handleListingSelect = (listing: Tables<'listings'>) => {
     setSelectedListing(listing);
     onListingSelect?.(listing.id);
+  };
+
+  const formatAvailabilityDate = (date: string | Date | null) => {
+    if (!date) return "Immediate";
+    try {
+      return format(new Date(date), "dd MMM yyyy");
+    } catch (e) {
+      return "Immediate";
+    }
+  };
+
+  const getFurnishingStatusText = (status: string | null) => {
+    if (!status) return "";
+    return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   const ActionButtons = () => (
@@ -114,13 +131,71 @@ export function ListingVariants({
                   <span>{selectedListing.built_up_area} sq.ft</span>
                 </div>
                 
+                {selectedListing.carpet_area && (
+                  <div className="flex items-center gap-2">
+                    <Ruler className="h-4 w-4 text-muted-foreground" />
+                    <span>{selectedListing.carpet_area} sq.ft carpet</span>
+                  </div>
+                )}
+                
                 {selectedListing.facing && (
                   <div className="flex items-center gap-2">
                     <Compass className="h-4 w-4 text-muted-foreground" />
                     <span>{selectedListing.facing}</span>
                   </div>
                 )}
+                
+                {selectedListing.balconies !== null && selectedListing.balconies !== undefined && (
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <span>{selectedListing.balconies} {selectedListing.balconies === 1 ? 'Balcony' : 'Balconies'}</span>
+                  </div>
+                )}
+                
+                {selectedListing.parking_spots !== null && selectedListing.parking_spots !== undefined && (
+                  <div className="flex items-center gap-2">
+                    <Car className="h-4 w-4 text-muted-foreground" />
+                    <span>{selectedListing.parking_spots} {selectedListing.parking_spots === 1 ? 'Parking Spot' : 'Parking Spots'}</span>
+                  </div>
+                )}
+                
+                {selectedListing.furnishing_status && (
+                  <div className="flex items-center gap-2">
+                    <Armchair className="h-4 w-4 text-muted-foreground" />
+                    <span>{getFurnishingStatusText(selectedListing.furnishing_status)}</span>
+                  </div>
+                )}
+                
+                {selectedListing.availability && (
+                  <div className="flex items-center gap-2">
+                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                    <span>{formatAvailabilityDate(selectedListing.availability)}</span>
+                  </div>
+                )}
+                
+                {selectedListing.status && (
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded text-xs ${
+                      selectedListing.status === 'available' ? 'bg-green-100 text-green-800' :
+                      selectedListing.status === 'reserved' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {selectedListing.status.charAt(0).toUpperCase() + selectedListing.status.slice(1)}
+                    </span>
+                  </div>
+                )}
               </div>
+              
+              {selectedListing.floor_plan_image && (
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center gap-2"
+                  onClick={() => setShowFloorPlan(true)}
+                >
+                  <Image className="h-4 w-4" />
+                  View Floor Plan
+                </Button>
+              )}
 
               {!isMobile && <ActionButtons />}
             </div>
@@ -141,6 +216,23 @@ export function ListingVariants({
         buildingName={buildingName}
         listingId={selectedListing?.id || ""}
       />
+      
+      {selectedListing && selectedListing.floor_plan_image && (
+        <Dialog open={showFloorPlan} onOpenChange={setShowFloorPlan}>
+          <DialogContent className="sm:max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>{selectedListing.bedrooms} BHK Floor Plan</DialogTitle>
+            </DialogHeader>
+            <div className="flex justify-center">
+              <img 
+                src={selectedListing.floor_plan_image} 
+                alt="Floor Plan" 
+                className="max-h-[70vh] object-contain" 
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }
