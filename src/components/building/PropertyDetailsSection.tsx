@@ -1,92 +1,94 @@
 
-import { Building, Clock, BadgeIndianRupee, Droplets, Building2, Ruler, Compass, Home, Users } from "lucide-react";
+import { Building2, Clock, BadgeIndianRupee, Droplets, Home, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { motion } from "framer-motion";
+
 interface PropertyDetailsSectionProps {
   totalFloors?: number;
   age?: string | null;
   pricePsqft?: number;
-  minPrice?: number;
-  maxPrice?: number;
   water?: string[] | null;
-  bank?: string[] | null;
   bhkTypes?: (string | number)[] | null;
-  minArea?: number;
-  maxArea?: number;
   totalUnits?: number;
 }
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 }
+};
+
 export function PropertyDetailsSection({
   totalFloors,
   age,
   pricePsqft,
-  minPrice,
-  maxPrice,
   water,
-  bank,
   bhkTypes,
-  minArea,
-  maxArea,
   totalUnits
 }: PropertyDetailsSectionProps) {
-  // Calculate median price for the price distribution
-  const medianPrice = minPrice && maxPrice ? (minPrice + maxPrice) / 2 : minPrice;
-  const priceRange = minPrice && maxPrice ? maxPrice - minPrice : 0;
-  const pricePosition = medianPrice && priceRange ? (medianPrice - minPrice) / priceRange * 100 : 50;
-  return <div className="space-y-6">
+  return (
+    <motion.div 
+      className="space-y-6"
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true }}
+      variants={container}
+    >
       <h2 className="text-2xl font-semibold">Property Details</h2>
       
-      {/* Key details card */}
       <Card className="p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {totalFloors && <div>
-              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                <Building className="h-4 w-4" />
-                Total Floors
-              </p>
-              <p className="font-medium">{totalFloors}</p>
-            </div>}
-          {totalUnits && <div>
-              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Total Units
-              </p>
-              <p className="font-medium">{totalUnits}</p>
-            </div>}
-          {age !== null && <div>
-              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Age
-              </p>
-              <p className="font-medium">{age}</p>
-            </div>}
-          {pricePsqft && <div>
+        <motion.div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6" variants={container}>
+          {pricePsqft && (
+            <motion.div variants={item}>
               <p className="text-sm text-muted-foreground flex items-center gap-2">
                 <BadgeIndianRupee className="h-4 w-4" />
                 Price per sq ft
               </p>
               <p className="font-medium">₹{pricePsqft.toLocaleString()}</p>
-            </div>}
-          {minPrice && <div>
+            </motion.div>
+          )}
+          
+          {age !== null && (
+            <motion.div variants={item}>
               <p className="text-sm text-muted-foreground flex items-center gap-2">
-                <BadgeIndianRupee className="h-4 w-4" />
-                Price
+                <Clock className="h-4 w-4" />
+                Age
               </p>
-              <p className="font-medium">
-                ₹{(minPrice / 10000000).toFixed(1)} Cr
-                {maxPrice && ` - ₹${(maxPrice / 10000000).toFixed(1)} Cr`}
-              </p>
-            </div>}
-          {minArea && <div>
+              <p className="font-medium">{age}</p>
+            </motion.div>
+          )}
+          
+          {totalFloors && (
+            <motion.div variants={item}>
               <p className="text-sm text-muted-foreground flex items-center gap-2">
-                <Ruler className="h-4 w-4" />
-                Area
+                <Building2 className="h-4 w-4" />
+                Total Floors
               </p>
-              <p className="font-medium">
-                {minArea} sq.ft
-                {maxArea && maxArea !== minArea && ` - ${maxArea} sq.ft`}
+              <p className="font-medium">{totalFloors}</p>
+            </motion.div>
+          )}
+          
+          {totalUnits && (
+            <motion.div variants={item}>
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Total Units
               </p>
-            </div>}
-          {bhkTypes && bhkTypes.length > 0 && <div>
+              <p className="font-medium">{totalUnits}</p>
+            </motion.div>
+          )}
+          
+          {bhkTypes && bhkTypes.length > 0 && (
+            <motion.div variants={item}>
               <p className="text-sm text-muted-foreground flex items-center gap-2">
                 <Home className="h-4 w-4" />
                 Configuration
@@ -94,25 +96,20 @@ export function PropertyDetailsSection({
               <p className="font-medium">
                 {Array.isArray(bhkTypes) ? bhkTypes.join(', ') : bhkTypes} BHK
               </p>
-            </div>}
-          {water?.length ? <div>
+            </motion.div>
+          )}
+          
+          {water?.length ? (
+            <motion.div variants={item}>
               <p className="text-sm text-muted-foreground flex items-center gap-2">
                 <Droplets className="h-4 w-4" />
-                Water
+                Water Source
               </p>
               <p className="font-medium">{water.join(", ")}</p>
-            </div> : null}
-          {bank?.length ? <div>
-              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Bank
-              </p>
-              <p className="font-medium">{bank.join(", ")}</p>
-            </div> : null}
-        </div>
+            </motion.div>
+          ) : null}
+        </motion.div>
       </Card>
-      
-      {/* Price distribution */}
-      {minPrice && maxPrice}
-    </div>;
+    </motion.div>
+  );
 }

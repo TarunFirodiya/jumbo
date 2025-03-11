@@ -1,8 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { MapPin, Heart, Star, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useScrollAnimation } from "@/hooks/use-scroll-animation";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface BuildingHeaderProps {
   name: string;
@@ -25,20 +26,17 @@ export function BuildingHeader({
 }: BuildingHeaderProps) {
   const [isShortlisting, setIsShortlisting] = useState(false);
   const [currentShortlistedState, setCurrentShortlistedState] = useState(isShortlisted);
+  const isScrolled = useScrollAnimation();
   
-  // Update local state when prop changes
   useEffect(() => {
     setCurrentShortlistedState(isShortlisted);
   }, [isShortlisted]);
   
   const handleToggleShortlist = () => {
     setIsShortlisting(true);
-    // Optimistically update UI
     setCurrentShortlistedState(!currentShortlistedState);
-    // Call the actual toggle function
     onToggleShortlist();
     
-    // Reset animation state after animation completes
     setTimeout(() => {
       setIsShortlisting(false);
     }, 800);
@@ -57,19 +55,44 @@ export function BuildingHeader({
   };
 
   return (
-    <div className="flex justify-between items-start animate-fade-in p-1">
+    <motion.div 
+      className={cn(
+        "flex justify-between items-start p-1 transition-all duration-300",
+        isScrolled ? "py-2" : "py-4"
+      )}
+      animate={{ 
+        height: isScrolled ? "60px" : "auto",
+        backgroundColor: isScrolled ? "hsl(var(--background)/0.9)" : "transparent",
+        backdropFilter: isScrolled ? "blur(10px)" : "none"
+      }}
+    >
       <div className="space-y-1">
-        <h1 className="font-serif font-semibold text-2xl md:text-3xl tracking-tight">{name}</h1>
-        <div className="flex items-center gap-2 text-muted-foreground group">
-          <MapPin className="h-4 w-4 group-hover:text-primary transition-colors" />
-          <span>{locality}</span>
-        </div>
-        {startingPrice && (
-          <div className="mt-1 text-sm font-medium bg-secondary/50 px-2 py-1 rounded-md inline-block">
-            Starting at ₹{(startingPrice/10000000).toFixed(1)} Cr
-          </div>
-        )}
+        <h1 className={cn(
+          "font-serif font-semibold tracking-tight transition-all duration-300",
+          isScrolled ? "text-xl" : "text-2xl md:text-3xl"
+        )}>
+          {name}
+        </h1>
+        <AnimatePresence>
+          {!isScrolled && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="flex items-center gap-2 text-muted-foreground group"
+            >
+              <MapPin className="h-4 w-4 group-hover:text-primary transition-colors" />
+              <span>{locality}</span>
+              {startingPrice && (
+                <span className="ml-2 text-sm font-medium bg-secondary/50 px-2 py-1 rounded-md">
+                  Starting at ₹{(startingPrice/10000000).toFixed(1)} Cr
+                </span>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+      
       <div className="flex items-center gap-3">
         {googleRating && (
           <div className="flex flex-col items-end animate-fade-down">
@@ -77,7 +100,9 @@ export function BuildingHeader({
               {renderStars(googleRating)}
               <span className="font-semibold ml-1">{googleRating}</span>
             </div>
-            <span className="text-sm text-muted-foreground">Google Ratings</span>
+            {!isScrolled && (
+              <span className="text-sm text-muted-foreground">Google Ratings</span>
+            )}
           </div>
         )}
         <div className="flex items-center gap-2 animate-fade-down">
@@ -111,6 +136,6 @@ export function BuildingHeader({
           </Button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

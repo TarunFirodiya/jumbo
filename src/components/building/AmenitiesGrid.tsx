@@ -1,4 +1,3 @@
-
 import { 
   Car, Wifi, Dumbbell, Building2, Gamepad2, 
   Building, Trees, Home, Shield, Droplet, 
@@ -36,19 +35,36 @@ interface AmenitiesGridProps {
 
 export function AmenitiesGrid({ features }: AmenitiesGridProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <motion.div 
+      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true }}
+      variants={{
+        hidden: {},
+        visible: {
+          transition: {
+            staggerChildren: 0.05
+          }
+        }
+      }}
+    >
       {features.map((feature) => {
         const Icon = amenityIconMap[feature] || DEFAULT_ICON;
         return (
-          <div 
-            key={feature} 
+          <motion.div
+            key={feature}
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
             className="flex items-center gap-2 p-3 rounded-lg border bg-card hover:bg-accent transition-colors"
           >
             <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
             <span className="text-sm">{feature}</span>
-          </div>
+          </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 }
