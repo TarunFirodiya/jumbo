@@ -4,14 +4,14 @@ import { AmenitiesGrid } from "../AmenitiesGrid";
 import { Json } from "@/integrations/supabase/types";
 
 interface AmenitiesTabProps {
-  features: Json | null;
+  features: string[];
 }
 
 export function AmenitiesTab({ features }: AmenitiesTabProps) {
   return (
     <div>
-      {features && Array.isArray(features) ? (
-        <AmenitiesGrid features={features.map(f => String(f))} />
+      {features && features.length > 0 ? (
+        <AmenitiesGrid features={features} />
       ) : (
         <p className="text-muted-foreground">No amenities information available</p>
       )}

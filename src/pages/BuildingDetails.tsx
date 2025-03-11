@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PropertyGallery } from "@/components/building/PropertyGallery";
@@ -107,8 +106,8 @@ export default function BuildingDetails() {
     );
   }
 
-  const features = Array.isArray(building.features) ? building.features.map(f => String(f)) : [];
-  const amenitiesText = features.slice(0, 3).join(', ');
+  const features = building.features || building.amenities || [];
+  const amenitiesText = Array.isArray(features) ? features.slice(0, 3).join(', ') : '';
   
   const structuredData = {
     "@context": "https://schema.org",
@@ -205,7 +204,7 @@ export default function BuildingDetails() {
             buildingName={building.name}
             latitude={building.latitude}
             longitude={building.longitude}
-            features={features}
+            features={Array.isArray(features) ? features.map(f => String(f)) : []}
             googleRating={building.google_rating}
           />
           
@@ -236,7 +235,7 @@ export default function BuildingDetails() {
               buildingName={building.name}
               latitude={building.latitude}
               longitude={building.longitude}
-              features={features}
+              features={Array.isArray(features) ? features.map(f => String(f)) : []}
               googleRating={building.google_rating}
             />
             

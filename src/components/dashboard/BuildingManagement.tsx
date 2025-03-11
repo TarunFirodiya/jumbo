@@ -19,6 +19,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Json } from "@/integrations/supabase/types";
 
 interface BuildingManagementProps {
   currentUser: Profile;
@@ -43,7 +44,8 @@ interface Building {
   bhk_types: number[] | null;
   lifestyle_cohort: number | null;
   collections: string[] | null;
-  features: any | null;
+  amenities: string[] | null;
+  features?: any | null;
   google_rating: number | null;
   bank: string[] | null;
   water: string[] | null;
@@ -115,7 +117,11 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         console.error("Error fetching buildings:", error);
         throw error;
       }
-      return data || [];
+      
+      return data?.map(building => ({
+        ...building,
+        features: building.amenities
+      })) || [];
     },
     enabled: !!currentSession?.user?.id
   });
@@ -246,6 +252,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         bhk_types: selectedBHKTypes.length ? selectedBHKTypes : null,
         lifestyle_cohort: formData.get('lifestyle_cohort') ? Number(formData.get('lifestyle_cohort')) : null,
         collections: selectedCollections.length ? selectedCollections : null,
+        amenities: Object.values(features).flat().length ? Object.values(features).flat() : null,
         features: Object.keys(features).length ? features : null,
         google_rating: formData.get('google_rating') ? Number(formData.get('google_rating')) : null,
         bank: selectedBanks.length ? selectedBanks : null,
@@ -321,6 +328,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         bhk_types: selectedBHKTypes.length ? selectedBHKTypes : null,
         lifestyle_cohort: formData.get('lifestyle_cohort') ? Number(formData.get('lifestyle_cohort')) : null,
         collections: selectedCollections.length ? selectedCollections : null,
+        amenities: Object.values(features).flat().length ? Object.values(features).flat() : null,
         features: Object.keys(features).length ? features : null,
         google_rating: formData.get('google_rating') ? Number(formData.get('google_rating')) : null,
         bank: selectedBanks.length ? selectedBanks : null,

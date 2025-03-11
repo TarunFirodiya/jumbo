@@ -13,6 +13,12 @@ export function useBuildingData(id: string) {
         .single();
 
       if (error) throw error;
+      
+      // Ensure backwards compatibility with code expecting 'features'
+      if (data && data.amenities) {
+        data.features = data.amenities;
+      }
+      
       return data;
     },
   });
