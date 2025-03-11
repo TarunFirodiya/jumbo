@@ -106,8 +106,9 @@ export default function BuildingDetails() {
     );
   }
 
-  const features = building.features || building.amenities || [];
-  const amenitiesText = Array.isArray(features) ? features.slice(0, 3).join(', ') : '';
+  const buildingFeatures = building.features || building.amenities || [];
+  const featuresArray = Array.isArray(buildingFeatures) ? buildingFeatures.map(f => String(f)) : [];
+  const amenitiesText = featuresArray.slice(0, 3).join(', ');
   
   const structuredData = {
     "@context": "https://schema.org",
@@ -127,7 +128,7 @@ export default function BuildingDetails() {
     },
     "image": building.images?.[0],
     "numberOfRooms": building.bhk_types?.[0] || "",
-    "petsAllowed": features.some(f => f.toLowerCase().includes("pet")),
+    "petsAllowed": featuresArray.some(f => f.toLowerCase().includes("pet")),
     "yearBuilt": building.age ? new Date().getFullYear() - building.age : undefined,
     "floorSize": {
       "@type": "QuantitativeValue",
@@ -204,7 +205,7 @@ export default function BuildingDetails() {
             buildingName={building.name}
             latitude={building.latitude}
             longitude={building.longitude}
-            features={Array.isArray(features) ? features.map(f => String(f)) : []}
+            features={featuresArray}
             googleRating={building.google_rating}
           />
           
@@ -235,7 +236,7 @@ export default function BuildingDetails() {
               buildingName={building.name}
               latitude={building.latitude}
               longitude={building.longitude}
-              features={Array.isArray(features) ? features.map(f => String(f)) : []}
+              features={featuresArray}
               googleRating={building.google_rating}
             />
             
