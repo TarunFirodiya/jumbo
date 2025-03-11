@@ -99,7 +99,7 @@ export function PropertyDetailsSection({
             </motion.div>
           )}
           
-          {water?.length ? (
+          {water && water.length > 0 && (
             <motion.div variants={item}>
               <p className="text-sm text-muted-foreground flex items-center gap-2">
                 <Droplets className="h-4 w-4" />
@@ -107,7 +107,7 @@ export function PropertyDetailsSection({
               </p>
               <p className="font-medium">{water.join(", ")}</p>
             </motion.div>
-          ) : null}
+          )}
         </motion.div>
       </Card>
     </motion.div>

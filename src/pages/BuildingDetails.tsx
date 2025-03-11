@@ -4,7 +4,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { PropertyGallery } from "@/components/building/PropertyGallery";
 import { BuildingHeader } from "@/components/building/BuildingHeader";
 import { PropertyDetailsSection } from "@/components/building/PropertyDetailsSection";
-import { PropertyTabs } from "@/components/building/PropertyTabs";
 import { BreadcrumbNav } from "@/components/building/BreadcrumbNav";
 import { ListingVariants } from "@/components/building/ListingVariants";
 import { SimilarProperties } from "@/components/building/SimilarProperties";
@@ -13,8 +12,12 @@ import { useShortlist } from "@/components/building/hooks/useShortlist";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
-import { ChevronUp } from "lucide-react";
+import { ChevronUp, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+import { useScrollAnimation } from "@/hooks/use-scroll-animation";
+import { AmenitiesGrid } from "@/components/building/AmenitiesGrid";
+import { LocationTab } from "@/components/building/tabs/LocationTab";
 
 export default function BuildingDetails() {
   const { id } = useParams();
@@ -23,6 +26,7 @@ export default function BuildingDetails() {
   const { toast } = useToast();
   const [selectedListing, setSelectedListing] = useState<string | null>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const isScrolled = useScrollAnimation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -197,21 +201,36 @@ export default function BuildingDetails() {
             totalFloors={building.total_floors}
             age={building.age?.toString()}
             pricePsqft={building.price_psqft}
-            minPrice={building.min_price}
-            maxPrice={building.max_price}
             water={building.water}
-            bank={building.bank}
             bhkTypes={building.bhk_types}
             totalUnits={building.total_units}
           />
           
-          <PropertyTabs
-            buildingName={building.name}
-            latitude={building.latitude}
-            longitude={building.longitude}
-            features={stringFeatures}
-            googleRating={building.google_rating}
-          />
+          <motion.div 
+            className="space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+          >
+            <h2 className="text-2xl font-semibold">Location</h2>
+            <LocationTab
+              latitude={building.latitude}
+              longitude={building.longitude}
+              buildingName={building.name}
+            />
+          </motion.div>
+          
+          <motion.div 
+            className="space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+          >
+            <h2 className="text-2xl font-semibold">Amenities</h2>
+            <AmenitiesGrid features={stringFeatures} />
+          </motion.div>
           
           <SimilarProperties 
             currentBuildingId={building.id}
@@ -228,21 +247,36 @@ export default function BuildingDetails() {
               totalFloors={building.total_floors}
               age={building.age?.toString()}
               pricePsqft={building.price_psqft}
-              minPrice={building.min_price}
-              maxPrice={building.max_price}
               water={building.water}
-              bank={building.bank}
               bhkTypes={building.bhk_types}
               totalUnits={building.total_units}
             />
 
-            <PropertyTabs
-              buildingName={building.name}
-              latitude={building.latitude}
-              longitude={building.longitude}
-              features={stringFeatures}
-              googleRating={building.google_rating}
-            />
+            <motion.div 
+              className="space-y-6"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+            >
+              <h2 className="text-2xl font-semibold">Location</h2>
+              <LocationTab
+                latitude={building.latitude}
+                longitude={building.longitude}
+                buildingName={building.name}
+              />
+            </motion.div>
+            
+            <motion.div 
+              className="space-y-6"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+            >
+              <h2 className="text-2xl font-semibold">Amenities</h2>
+              <AmenitiesGrid features={stringFeatures} />
+            </motion.div>
             
             <SimilarProperties 
               currentBuildingId={building.id}

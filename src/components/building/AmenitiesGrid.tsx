@@ -1,9 +1,11 @@
+
 import { 
   Car, Wifi, Dumbbell, Building2, Gamepad2, 
   Building, Trees, Home, Shield, Droplet, 
   ShoppingBag, Ghost, Sun, Video, Trees as Garden,
   Users, Footprints, Check, LucideIcon
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 // Map amenities to icons using available Lucide icons
 const amenityIconMap: Record<string, LucideIcon> = {
