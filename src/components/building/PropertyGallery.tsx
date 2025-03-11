@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, X, Image, Video, StreetView } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Image, Video, Map } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface PropertyGalleryProps {
@@ -56,7 +56,7 @@ export function PropertyGallery({ images, videoThumbnail, streetView, floorPlanI
                 )}
                 {streetView && (
                   <TabsTrigger value="streetView" className="flex items-center gap-1">
-                    <StreetView className="h-4 w-4" />
+                    <Map className="h-4 w-4" />
                     <span className="hidden sm:inline">Street View</span>
                   </TabsTrigger>
                 )}

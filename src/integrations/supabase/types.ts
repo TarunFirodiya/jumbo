@@ -107,6 +107,8 @@ export type Database = {
       }
       listings: {
         Row: {
+          "99acres_price": number | null
+          active_loan_flag: boolean | null
           agent_id: string | null
           availability: string | null
           balconies: number | null
@@ -117,18 +119,42 @@ export type Database = {
           built_up_area: number | null
           carpet_area: number | null
           created_at: string
+          e_khata_obtained_flag: boolean | null
+          estimated_furnishing_cost: number | null
           facing: string | null
           floor: number | null
           floor_plan_image: string | null
+          furnishing_age: number | null
           furnishing_status: string | null
+          housing_price: number | null
           id: string
           images: string[] | null
+          khata_type: Database["public"]["Enums"]["khata_type"] | null
+          listing_price: number | null
+          loan_bank: string | null
+          magicbricks_price: number | null
           maintenance: number | null
+          nobroker_price: number | null
+          occupancy_status:
+            | Database["public"]["Enums"]["occupancy_status"]
+            | null
           parking_spots: number | null
+          preferred_visit_days:
+            | Database["public"]["Enums"]["preferred_visit_days"][]
+            | null
+          preferred_visit_times:
+            | Database["public"]["Enums"]["preferred_visit_times"][]
+            | null
           price: number | null
+          price_psqft: number | null
+          reserve_price: number | null
           status: string | null
+          uds_area: number | null
+          visit_fulfiller: Database["public"]["Enums"]["visit_fulfiller"] | null
         }
         Insert: {
+          "99acres_price"?: number | null
+          active_loan_flag?: boolean | null
           agent_id?: string | null
           availability?: string | null
           balconies?: number | null
@@ -139,18 +165,44 @@ export type Database = {
           built_up_area?: number | null
           carpet_area?: number | null
           created_at?: string
+          e_khata_obtained_flag?: boolean | null
+          estimated_furnishing_cost?: number | null
           facing?: string | null
           floor?: number | null
           floor_plan_image?: string | null
+          furnishing_age?: number | null
           furnishing_status?: string | null
+          housing_price?: number | null
           id?: string
           images?: string[] | null
+          khata_type?: Database["public"]["Enums"]["khata_type"] | null
+          listing_price?: number | null
+          loan_bank?: string | null
+          magicbricks_price?: number | null
           maintenance?: number | null
+          nobroker_price?: number | null
+          occupancy_status?:
+            | Database["public"]["Enums"]["occupancy_status"]
+            | null
           parking_spots?: number | null
+          preferred_visit_days?:
+            | Database["public"]["Enums"]["preferred_visit_days"][]
+            | null
+          preferred_visit_times?:
+            | Database["public"]["Enums"]["preferred_visit_times"][]
+            | null
           price?: number | null
+          price_psqft?: number | null
+          reserve_price?: number | null
           status?: string | null
+          uds_area?: number | null
+          visit_fulfiller?:
+            | Database["public"]["Enums"]["visit_fulfiller"]
+            | null
         }
         Update: {
+          "99acres_price"?: number | null
+          active_loan_flag?: boolean | null
           agent_id?: string | null
           availability?: string | null
           balconies?: number | null
@@ -161,16 +213,40 @@ export type Database = {
           built_up_area?: number | null
           carpet_area?: number | null
           created_at?: string
+          e_khata_obtained_flag?: boolean | null
+          estimated_furnishing_cost?: number | null
           facing?: string | null
           floor?: number | null
           floor_plan_image?: string | null
+          furnishing_age?: number | null
           furnishing_status?: string | null
+          housing_price?: number | null
           id?: string
           images?: string[] | null
+          khata_type?: Database["public"]["Enums"]["khata_type"] | null
+          listing_price?: number | null
+          loan_bank?: string | null
+          magicbricks_price?: number | null
           maintenance?: number | null
+          nobroker_price?: number | null
+          occupancy_status?:
+            | Database["public"]["Enums"]["occupancy_status"]
+            | null
           parking_spots?: number | null
+          preferred_visit_days?:
+            | Database["public"]["Enums"]["preferred_visit_days"][]
+            | null
+          preferred_visit_times?:
+            | Database["public"]["Enums"]["preferred_visit_times"][]
+            | null
           price?: number | null
+          price_psqft?: number | null
+          reserve_price?: number | null
           status?: string | null
+          uds_area?: number | null
+          visit_fulfiller?:
+            | Database["public"]["Enums"]["visit_fulfiller"]
+            | null
         }
         Relationships: [
           {
@@ -555,6 +631,25 @@ export type Database = {
         | "Luxury Community"
         | "Spacious Layout"
         | "Vastu Compliant"
+      khata_type: "A" | "B"
+      occupancy_status:
+        | "Vacant"
+        | "Owner Occupied"
+        | "Tenant Occupied"
+        | "Builder Occupied"
+      preferred_visit_days:
+        | "Monday"
+        | "Tuesday"
+        | "Wednesday"
+        | "Thursday"
+        | "Friday"
+        | "Saturday"
+        | "Sunday"
+      preferred_visit_times:
+        | "Morning (8 am - 12 pm)"
+        | "Afternoon (12 pm - 4 pm)"
+        | "Evening (4 pm - 8 pm)"
+      visit_fulfiller: "Broker" | "Serai"
       visit_status: "to be confirmed" | "confirmed" | "completed" | "cancelled"
     }
     CompositeTypes: {
