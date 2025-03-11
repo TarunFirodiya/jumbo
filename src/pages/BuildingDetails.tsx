@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PropertyGallery } from "@/components/building/PropertyGallery";
@@ -53,6 +54,13 @@ export default function BuildingDetails() {
     }
     return building?.images || [];
   }, [selectedListing, listings, building?.images]);
+
+  const selectedListingData = useMemo(() => {
+    if (selectedListing && listings) {
+      return listings.find(l => l.id === selectedListing);
+    }
+    return null;
+  }, [selectedListing, listings]);
 
   const handleListingSelect = useCallback((id: string) => {
     setSelectedListing(id);
@@ -163,7 +171,12 @@ export default function BuildingDetails() {
         </div>
       </div>
 
-      <PropertyGallery images={displayImages} />
+      <PropertyGallery 
+        images={displayImages} 
+        videoThumbnail={building.video_thumbnail}
+        streetView={building.street_view}
+        floorPlanImage={selectedListingData?.floor_plan_image || null}
+      />
 
       <div className="container mx-auto px-4 py-8">
         <div className="md:hidden space-y-8 pb-24">
