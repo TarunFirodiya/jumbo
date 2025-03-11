@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 // Define a type that includes the features property
-type BuildingWithFeatures = {
+export type BuildingWithFeatures = {
   id: string;
   name: string;
   amenities?: string[] | null;
@@ -24,9 +24,12 @@ export function useBuildingData(id: string) {
       if (error) throw error;
       
       // Ensure backwards compatibility with code expecting 'features'
-      if (data && data.amenities) {
+      if (data) {
         const buildingWithFeatures = data as BuildingWithFeatures;
-        buildingWithFeatures.features = data.amenities;
+        // Only set features if it doesn't already exist
+        if (!buildingWithFeatures.features && buildingWithFeatures.amenities) {
+          buildingWithFeatures.features = buildingWithFeatures.amenities;
+        }
         return buildingWithFeatures;
       }
       

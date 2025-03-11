@@ -8,7 +8,7 @@ import { PropertyTabs } from "@/components/building/PropertyTabs";
 import { BreadcrumbNav } from "@/components/building/BreadcrumbNav";
 import { ListingVariants } from "@/components/building/ListingVariants";
 import { SimilarProperties } from "@/components/building/SimilarProperties";
-import { useBuildingData } from "@/components/building/hooks/useBuildingData";
+import { useBuildingData, BuildingWithFeatures } from "@/components/building/hooks/useBuildingData";
 import { useShortlist } from "@/components/building/hooks/useShortlist";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -107,9 +107,10 @@ export default function BuildingDetails() {
     );
   }
 
-  // Safely extract amenities data, ensuring we have an array of strings
+  // Safely extract amenities/features data, ensuring we have an array of strings
   const amenitiesArray = building.amenities || [];
-  const featuresArray = building.features || amenitiesArray;
+  // Use either existing features (from BuildingWithFeatures type) or fall back to amenities
+  const featuresArray = (building as BuildingWithFeatures).features || amenitiesArray;
   const stringFeatures = Array.isArray(featuresArray) ? featuresArray.map(f => String(f)) : [];
   const amenitiesText = stringFeatures.slice(0, 3).join(', ');
   
