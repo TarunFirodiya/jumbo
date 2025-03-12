@@ -2,9 +2,6 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -12,6 +9,8 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface VisitRequestModalProps {
   open: boolean;
@@ -35,13 +34,18 @@ export function VisitRequestModal({
   initialTime,
 }: VisitRequestModalProps) {
   const [date, setDate] = useState<Date>();
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [notes, setNotes] = useState("");
   const [timeSlot, setTimeSlot] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  // Get current user
+  const { data: user } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user;
+    }
+  });
 
   useEffect(() => {
     if (initialDay) {
@@ -71,10 +75,10 @@ export function VisitRequestModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !phone || !date || !timeSlot) {
+    if (!date || !timeSlot || !user) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields",
+        description: "Please select a date and time slot",
         variant: "destructive",
       });
       return;
@@ -82,24 +86,67 @@ export function VisitRequestModal({
     
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const { error } = await supabase
+        .from('visits')
+        .insert({
+          building_id: buildingId,
+          listing_id: listingId,
+          user_id: user.id,
+          visit_day: format(date, "dd-MM-yyyy"),
+          visit_time: timeSlot,
+          status: 'pending'
+        });
+
+      if (error) throw error;
+
       onOpenChange(false);
       toast({
         title: "Visit Scheduled",
-        description: `Your visit to ${buildingName} has been scheduled for ${date ? format(date, "PPP") : ""} at ${timeSlot}`,
+        description: `Your visit to ${buildingName} has been scheduled for ${format(date, "PPP")} at ${timeSlot}`,
       });
       
       // Reset form
-      setName("");
-      setPhone("");
-      setEmail("");
-      setNotes("");
       setDate(undefined);
       setTimeSlot("");
-    }, 1500);
+    } catch (error: any) {
+      console.error('Error scheduling visit:', error);
+      toast({
+        title: "Error",
+        description: "Failed to schedule visit. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  // If user is not logged in, show auth prompt
+  if (!user) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Sign in Required</DialogTitle>
+          </DialogHeader>
+          <div className="py-6 text-center">
+            <p className="text-muted-foreground mb-4">Please sign in to schedule a visit</p>
+            <Button 
+              onClick={() => {
+                onOpenChange(false);
+                // Trigger auth modal
+                document.dispatchEvent(new CustomEvent('triggerAuthModal', {
+                  detail: { action: 'visit' }
+                }));
+              }}
+            >
+              Sign in
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -110,41 +157,7 @@ export function VisitRequestModal({
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
-            <Input 
-              id="name" 
-              placeholder="Enter your full name" 
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number <span className="text-red-500">*</span></Label>
-            <Input 
-              id="phone" 
-              placeholder="Enter your contact number" 
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input 
-              id="email" 
-              placeholder="Enter your email address" 
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="date">Preferred Date <span className="text-red-500">*</span></Label>
+            <label className="block text-sm font-medium">Select Date</label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -171,7 +184,7 @@ export function VisitRequestModal({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="time">Preferred Time <span className="text-red-500">*</span></Label>
+            <label className="block text-sm font-medium">Select Time</label>
             <Select
               value={timeSlot}
               onValueChange={setTimeSlot}
@@ -187,17 +200,6 @@ export function VisitRequestModal({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="notes">Additional Notes</Label>
-            <Textarea 
-              id="notes" 
-              placeholder="Any specific requirements or questions?"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="min-h-[80px]"
-            />
           </div>
           
           <DialogFooter>
