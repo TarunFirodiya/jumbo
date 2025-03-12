@@ -12,6 +12,7 @@ import { CollectionsBar } from "@/components/buildings/CollectionsBar";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { SEO } from "@/components/SEO";
 import { cn } from "@/lib/utils";
+import { Filter } from "@/components/ui/filters";
 
 const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
 
@@ -113,6 +114,7 @@ export default function LocalityBuildings() {
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authAction, setAuthAction] = useState<"shortlist" | "visit" | "notify">("shortlist");
+  const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -146,7 +148,7 @@ export default function LocalityBuildings() {
   });
 
   const { data: buildings, isLoading: buildingsLoading } = useQuery({
-    queryKey: ['buildings', locality, selectedCollections],
+    queryKey: ['buildings', locality, selectedCollections, activeFilters],
     queryFn: async () => {
       let query = supabase
         .from('buildings')
@@ -171,12 +173,43 @@ export default function LocalityBuildings() {
     },
   });
 
-  const filteredBuildings = useMemo(() => 
-    buildings?.filter(building => 
+  const filteredBuildings = useMemo(() => {
+    let filtered = buildings?.filter(building => 
       building.name.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [], 
-    [buildings, searchTerm]
-  );
+    ) || [];
+    
+    if (activeFilters.length > 0) {
+      filtered = filtered.filter(building => {
+        return activeFilters.every(filter => {
+          switch (filter.type) {
+            case 'Locality':
+              return filter.value.includes(building.locality);
+            case 'BHK':
+              const bhkValues = filter.value.map(v => parseInt(v.split(' ')[0]));
+              return building.bhk_types?.some(bhk => bhkValues.includes(bhk));
+            case 'Budget':
+              const { min_price } = building;
+              return filter.value.some(range => {
+                const ranges = {
+                  "Under 50L": { min: 0, max: 5000000 },
+                  "50L - 1Cr": { min: 5000000, max: 10000000 },
+                  "1Cr - 1.5Cr": { min: 10000000, max: 15000000 },
+                  "1.5Cr - 2Cr": { min: 15000000, max: 20000000 },
+                  "2Cr - 3Cr": { min: 20000000, max: 30000000 },
+                  "Above 3Cr": { min: 30000000, max: Infinity },
+                };
+                const { min, max } = ranges[range];
+                return min_price >= min && min_price < max;
+              });
+            default:
+              return true;
+          }
+        });
+      });
+    }
+    
+    return filtered;
+  }, [buildings, searchTerm, activeFilters]);
 
   const handleShortlistToggle = useCallback(async (buildingId: string) => {
     if (!user) {
@@ -242,6 +275,10 @@ export default function LocalityBuildings() {
     return description;
   };
 
+  const handleFiltersChange = useCallback((filters: Filter[]) => {
+    setActiveFilters(filters);
+  }, []);
+
   if (buildingsLoading) {
     return (
       <>
@@ -287,6 +324,8 @@ export default function LocalityBuildings() {
         <CollectionsBar
           selectedCollections={selectedCollections}
           onCollectionToggle={handleCollectionToggle}
+          onFiltersChange={handleFiltersChange}
+          buildings={buildings || []}
         />
 
         <div className="flex items-center justify-between text-sm">
