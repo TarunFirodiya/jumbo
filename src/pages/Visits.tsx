@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -36,7 +35,6 @@ const Visits = () => {
   const queryClient = useQueryClient();
   const [isCancelling, setIsCancelling] = useState<string | null>(null);
 
-  // Check if user is authenticated
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['current-user'],
     queryFn: async () => {
@@ -46,7 +44,6 @@ const Visits = () => {
     }
   });
 
-  // Listen for auth modal trigger events
   useEffect(() => {
     const handleAuthTrigger = () => {
       setShowAuthModal(true);
@@ -94,7 +91,7 @@ const Visits = () => {
         created_at: visit.created_at,
       }));
     },
-    enabled: !!user, // Only run query if user is authenticated
+    enabled: !!user,
   });
 
   const cancelVisit = useMutation({
@@ -135,15 +132,12 @@ const Visits = () => {
 
   const handleScheduleVisit = () => {
     if (!user) {
-      // Trigger auth modal if not logged in
       document.dispatchEvent(new CustomEvent('triggerAuthModal', {
         detail: { action: 'visit' }
       }));
       return;
     }
     
-    // Navigate to buildings page for scheduling
-    // This is just a placeholder - you'd likely have a more specific flow
     window.location.href = '/buildings';
   };
 
@@ -163,7 +157,6 @@ const Visits = () => {
   }
 
   if (!user) {
-    // Show a simplified view for non-authenticated users
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold">Your Visits</h1>
@@ -231,7 +224,7 @@ const Visits = () => {
                     <TableCell>
                       <span className={`capitalize px-2 py-1 rounded-full text-xs ${
                         visit.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
-                        visit.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                        visit.status === 'to be confirmed' ? 'bg-yellow-100 text-yellow-800' : 
                         'bg-red-100 text-red-800'
                       }`}>
                         {visit.status}

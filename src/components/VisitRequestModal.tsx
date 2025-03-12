@@ -95,7 +95,7 @@ export function VisitRequestModal({
           user_id: user.id,
           visit_day: format(date, "dd-MM-yyyy"),
           visit_time: timeSlot,
-          status: 'pending'
+          status: 'to be confirmed'  // Changed from 'pending' to 'to be confirmed'
         });
 
       if (error) throw error;
@@ -203,7 +203,11 @@ export function VisitRequestModal({
           </div>
           
           <DialogFooter>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="bg-black text-white hover:bg-slate-800"
+            >
               {isSubmitting ? (visitId ? "Updating..." : "Scheduling...") : (visitId ? "Update Visit" : "Schedule Visit")}
             </Button>
           </DialogFooter>
