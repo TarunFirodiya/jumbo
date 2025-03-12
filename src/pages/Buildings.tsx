@@ -334,6 +334,9 @@ export default function Buildings() {
       <AnimatedHero 
         title="Find your dream home"
         subtitle="Choose from over 1000 ready to move homes in Bangalore. Visit multiple homes over a weekend. Buy with 100% legal safety."
+        localityActions={localityActions}
+        onSearch={handleSearch}
+        onLocalitySelect={handleLocalitySelect}
       />
       
       <div className="container mx-auto px-4 mt-8">
