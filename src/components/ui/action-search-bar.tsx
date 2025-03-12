@@ -6,12 +6,7 @@ import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Search,
-    Send,
-    MapPin,
-    Home,
-    Building,
-    Building2,
-    Bookmark,
+    MapPin
 } from "lucide-react";
 
 function useDebounce<T>(value: T, delay: number = 500): T {
@@ -187,10 +182,10 @@ function ActionSearchBar({
                             onBlur={() =>
                                 setTimeout(() => setIsFocused(false), 200)
                             }
-                            className="pl-10 pr-9 py-1.5 h-12 text-base rounded-lg focus-visible:ring-offset-0"
+                            className="pl-12 pr-4 py-3 h-14 text-base rounded-full focus-visible:ring-offset-0 focus-visible:ring-2 focus-visible:ring-primary/50 bg-white/90 backdrop-blur-sm border-transparent"
                         />
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5">
-                            <Search className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center">
+                            <Search className="w-5 h-5 text-gray-500" />
                         </div>
                         {query.length > 0 && (
                             <button 
@@ -198,7 +193,7 @@ function ActionSearchBar({
                                     setQuery("");
                                     onSearch("");
                                 }}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-gray-600"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300"
                             >
                                 <span className="sr-only">Clear search</span>
                                 ✕
@@ -211,26 +206,26 @@ function ActionSearchBar({
                     <AnimatePresence>
                         {isFocused && result && !selectedAction && result.actions.length > 0 && (
                             <motion.div
-                                className="w-full border rounded-md shadow-sm overflow-hidden dark:border-gray-800 bg-background mt-1 absolute z-20"
+                                className="w-full border rounded-xl shadow-lg overflow-hidden dark:border-gray-800 bg-white/95 backdrop-blur-sm mt-2 absolute z-20"
                                 variants={container}
                                 initial="hidden"
                                 animate="show"
                                 exit="exit"
                             >
-                                <motion.ul>
+                                <motion.ul className="py-2">
                                     {result.actions.map((action) => (
                                         <motion.li
                                             key={action.id}
-                                            className="px-3 py-2 flex items-center justify-between hover:bg-accent cursor-pointer rounded-md"
+                                            className="px-4 py-3 flex items-center justify-between hover:bg-gray-100 cursor-pointer"
                                             variants={item}
                                             layout
                                             onClick={() => handleActionClick(action)}
                                         >
-                                            <div className="flex items-center gap-2 justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-gray-500">
-                                                        {action.icon}
-                                                    </span>
+                                            <div className="flex items-center gap-3 justify-between">
+                                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
+                                                    {action.icon || <MapPin className="h-4 w-4 text-primary" />}
+                                                </div>
+                                                <div className="flex flex-col">
                                                     <span className="text-sm font-medium text-foreground">
                                                         {action.label}
                                                     </span>

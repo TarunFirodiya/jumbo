@@ -1,19 +1,18 @@
+
 import { useQuery } from "@tanstack/react-query";
-import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, Heart } from "lucide-react";
+import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useState, useCallback, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
-import { Input } from "@/components/ui/input";
 import { ListingCardCarousel } from "@/components/building/ListingCardCarousel";
 import { CollectionsBar } from "@/components/buildings/CollectionsBar";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { SEO } from "@/components/SEO";
-import { SparklesText } from "@/components/ui/sparkles-text";
-import { ActionSearchBar, Action } from "@/components/ui/action-search-bar";
 import { cn } from "@/lib/utils";
+import { HeroSection } from "@/components/buildings/HeroSection";
 
 const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
 
@@ -281,55 +280,41 @@ export default function Buildings() {
       "numberOfItems": filteredBuildings.length
     }} />
       
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-primary/10 to-primary/5 py-12 mb-8">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <SparklesText text="Zero Spam Home Buying" className="text-4xl md:text-5xl" colors={{
-              first: "#9E7AFF",
-              second: "#FE8BBB"
-            }} />
-            </div>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">Choose from over 1000 ready to move homes in Bangalore
-Visit multiple homes over a weekend
-Buy with 100% legal safety</p>
-          </div>
-          
-          <div className="relative max-w-2xl mx-auto">
-            <ActionSearchBar actions={localityActions} onSearch={handleSearch} onActionSelect={handleLocalitySelect} placeholderText="Search by property name or location..." labelText="" className="shadow-lg" />
-          </div>
-          
-          {localities.length > 0}
-        </div>
-      </div>
+      {/* Hero Section with Particles */}
+      <HeroSection 
+        localityActions={localityActions}
+        onSearch={handleSearch}
+        onLocalitySelect={handleLocalitySelect}
+      />
       
-      <div className="sticky top-0 z-10 bg-background py-4 space-y-4">
-        <CollectionsBar selectedCollections={selectedCollections} onCollectionToggle={handleCollectionToggle} />
+      <div className="container mx-auto px-4 -mt-20 relative z-10">
+        <div className="sticky top-0 z-10 bg-background py-4 space-y-4">
+          <CollectionsBar selectedCollections={selectedCollections} onCollectionToggle={handleCollectionToggle} />
 
-        <div className="flex items-center justify-between text-sm">
-          <p className="text-muted-foreground">
-            {filteredBuildings.length} {filteredBuildings.length === 1 ? 'home' : 'homes'} found
-          </p>
-        </div>
-      </div>
-
-      {!filteredBuildings?.length ? <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              No properties found matching your criteria.
+          <div className="flex items-center justify-between text-sm">
+            <p className="text-muted-foreground">
+              {filteredBuildings.length} {filteredBuildings.length === 1 ? 'home' : 'homes'} found
             </p>
-          </CardContent>
-        </Card> : isMapView ? <Suspense fallback={<div className="h-[60vh] flex items-center justify-center">
-          <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
-        </div>}>
-          <BuildingsMap buildings={filteredBuildings} />
-        </Suspense> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBuildings.map(building => {
-        const isShortlisted = buildingScores?.[building.id]?.shortlisted || false;
-        return <BuildingCard key={building.id} building={building} onNavigate={navigateToBuilding} onShortlist={handleShortlistToggle} isShortlisted={isShortlisted} />;
-      })}
-        </div>}
+          </div>
+        </div>
+
+        {!filteredBuildings?.length ? <Card>
+            <CardContent className="pt-6">
+              <p className="text-center text-muted-foreground">
+                No properties found matching your criteria.
+              </p>
+            </CardContent>
+          </Card> : isMapView ? <Suspense fallback={<div className="h-[60vh] flex items-center justify-center">
+            <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
+          </div>}>
+            <BuildingsMap buildings={filteredBuildings} />
+          </Suspense> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredBuildings.map(building => {
+              const isShortlisted = buildingScores?.[building.id]?.shortlisted || false;
+              return <BuildingCard key={building.id} building={building} onNavigate={navigateToBuilding} onShortlist={handleShortlistToggle} isShortlisted={isShortlisted} />;
+            })}
+          </div>}
+      </div>
 
       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20">
         <Button variant="default" onClick={() => setIsMapView(!isMapView)} className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2">
