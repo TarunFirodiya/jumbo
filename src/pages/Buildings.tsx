@@ -13,6 +13,7 @@ import { SEO } from "@/components/SEO";
 import { cn } from "@/lib/utils";
 import { HeroSection } from "@/components/buildings/HeroSection";
 import { Action } from "@/components/ui/action-search-bar";
+import { Filter, BUDGET_RANGES } from "@/components/ui/filters";
 
 const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
 
@@ -120,6 +121,8 @@ export default function Buildings() {
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authAction, setAuthAction] = useState<"shortlist" | "visit" | "notify">("shortlist");
+  const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
+
   const {
     data: user
   } = useQuery({
@@ -192,7 +195,53 @@ export default function Buildings() {
       value: locality
     }));
   }, [buildings]);
-  const filteredBuildings = useMemo(() => buildings?.filter(building => building.name.toLowerCase().includes(searchTerm.toLowerCase()) || building.locality && building.locality.toLowerCase().includes(searchTerm.toLowerCase())) || [], [buildings, searchTerm]);
+  const filteredBuildings = useMemo(() => {
+    let filtered = buildings || [];
+
+    if (searchTerm) {
+      filtered = filtered.filter(building => 
+        building.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (building.locality && building.locality.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    if (selectedCollections.length > 0) {
+      filtered = filtered.filter(building => 
+        selectedCollections.every(collection => 
+          building.collections?.includes(collection)
+        )
+      );
+    }
+
+    activeFilters.forEach(filter => {
+      switch (filter.type) {
+        case "Locality":
+          filtered = filtered.filter(building => 
+            filter.value.includes(building.locality)
+          );
+          break;
+        case "BHK":
+          filtered = filtered.filter(building => 
+            filter.value.some(bhk => 
+              building.bhk_types?.includes(parseInt(bhk))
+            )
+          );
+          break;
+        case "Budget":
+          filtered = filtered.filter(building => {
+            const price = building.min_price;
+            return filter.value.some(range => {
+              const { min, max } = BUDGET_RANGES[range];
+              return price >= min && price < max;
+            });
+          });
+          break;
+      }
+    });
+
+    return filtered;
+  }, [buildings, searchTerm, selectedCollections, activeFilters]);
+
   const handleShortlistToggle = useCallback(async (buildingId: string) => {
     if (!user) {
       setAuthAction("shortlist");
@@ -261,6 +310,7 @@ export default function Buildings() {
   const handleLocalityClick = useCallback((locality: string) => {
     navigate(`/buildings/locality/${encodeURIComponent(locality)}`);
   }, [navigate]);
+
   if (buildingsLoading) {
     return <>
         <SEO title="Loading Properties | Cozy Dwell Search" />
@@ -280,7 +330,6 @@ export default function Buildings() {
       "numberOfItems": filteredBuildings.length
     }} />
       
-      {/* Hero Section with Particles */}
       <HeroSection 
         localityActions={localityActions}
         onSearch={handleSearch}
@@ -288,9 +337,14 @@ export default function Buildings() {
       />
       
       <div className="container mx-auto px-4 -mt-20 relative z-10">
-        <div className="sticky top-0 z-10 bg-background py-4 space-y-4">
-          <CollectionsBar selectedCollections={selectedCollections} onCollectionToggle={handleCollectionToggle} />
+        <CollectionsBar 
+          selectedCollections={selectedCollections} 
+          onCollectionToggle={handleCollectionToggle}
+          onFiltersChange={setActiveFilters}
+          buildings={buildings || []}
+        />
 
+        <div className="sticky top-0 z-10 bg-background py-4 space-y-4">
           <div className="flex items-center justify-between text-sm">
             <p className="text-muted-foreground">
               {filteredBuildings.length} {filteredBuildings.length === 1 ? 'home' : 'homes'} found

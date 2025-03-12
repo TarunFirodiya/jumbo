@@ -1,4 +1,3 @@
-
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -8,6 +7,7 @@ import { useRef, useState, useEffect } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { motion } from "framer-motion";
 import { staggerContainer, itemFadeIn } from "@/components/ui/motion-animations";
+import BuildingFilters, { Filter, BUDGET_RANGES } from "@/components/ui/filters";
 
 interface Collection {
   id: string;
@@ -76,14 +76,29 @@ const collections: Collection[] = [
 interface CollectionsBarProps {
   selectedCollections: string[];
   onCollectionToggle: (collectionId: string) => void;
+  onFiltersChange: (filters: Filter[]) => void;
+  buildings: any[];
 }
 
-export function CollectionsBar({ selectedCollections, onCollectionToggle }: CollectionsBarProps) {
+export function CollectionsBar({ 
+  selectedCollections, 
+  onCollectionToggle,
+  onFiltersChange,
+  buildings
+}: CollectionsBarProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [filters, setFilters] = useState<Filter[]>([]);
+
+  const localities = Array.from(new Set(buildings.map(b => b.locality).filter(Boolean)));
+  const bhkTypes = Array.from(new Set(buildings.flatMap(b => b.bhk_types || []))).sort((a, b) => a - b);
+
+  useEffect(() => {
+    onFiltersChange(filters);
+  }, [filters, onFiltersChange]);
 
   useEffect(() => {
     const checkScroll = () => {
@@ -113,7 +128,6 @@ export function CollectionsBar({ selectedCollections, onCollectionToggle }: Coll
     setActiveFilter(collectionId);
     onCollectionToggle(collectionId);
     
-    // Reset active state after animation completes
     setTimeout(() => {
       setActiveFilter(null);
     }, 300);
@@ -126,77 +140,83 @@ export function CollectionsBar({ selectedCollections, onCollectionToggle }: Coll
       transition={{ duration: 0.3 }}
       className="border-b relative bg-white/80 backdrop-blur-sm sticky top-0 z-10 shadow-sm"
     >
-      <ScrollArea 
-        ref={scrollContainerRef}
-        className="w-full py-3"
-      >
-        <motion.div 
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-          className="flex space-x-2 px-4"
-        >
-          {collections.map((collection) => {
-            const isSelected = selectedCollections.includes(collection.id);
-            const isActive = activeFilter === collection.id;
-            
-            return (
-              <TooltipProvider key={collection.id} delayDuration={300}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <motion.div
-                      variants={itemFadeIn}
-                    >
-                      <Button
-                        variant="ghost"
-                        className={cn(
-                          "flex flex-col items-center justify-center h-auto px-3 py-3 space-y-2 rounded-lg",
-                          "transition-all duration-300 min-w-[80px] hover:bg-gray-100",
-                          isSelected && "bg-gray-100 ring-1 ring-gray-200 filter-selected",
-                          isActive && "filter-pulse"
-                        )}
-                        onClick={() => handleFilterClick(collection.id)}
+      <div className="flex items-center px-4">
+        <ScrollArea ref={scrollContainerRef} className="w-full py-3">
+          <motion.div 
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="flex space-x-2"
+          >
+            {collections.map((collection) => {
+              const isSelected = selectedCollections.includes(collection.id);
+              const isActive = activeFilter === collection.id;
+              
+              return (
+                <TooltipProvider key={collection.id} delayDuration={300}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <motion.div
+                        variants={itemFadeIn}
                       >
-                        <motion.div 
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.95 }}
+                        <Button
+                          variant="ghost"
                           className={cn(
-                            "transition-all duration-300 w-11 h-11 p-1.5 rounded-full",
-                            isSelected 
-                              ? "bg-white shadow-md" 
-                              : "opacity-80 hover:opacity-100"
+                            "flex flex-col items-center justify-center h-auto px-3 py-3 space-y-2 rounded-lg",
+                            "transition-all duration-300 min-w-[80px] hover:bg-gray-100",
+                            isSelected && "bg-gray-100 ring-1 ring-gray-200 filter-selected",
+                            isActive && "filter-pulse"
                           )}
+                          onClick={() => handleFilterClick(collection.id)}
                         >
-                          <img 
-                            src={collection.iconUrl} 
-                            alt={collection.name}
+                          <motion.div 
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.95 }}
                             className={cn(
-                              "w-full h-full object-contain transition-transform duration-300",
-                              isSelected && "scale-110"
+                              "transition-all duration-300 w-11 h-11 p-1.5 rounded-full",
+                              isSelected 
+                                ? "bg-white shadow-md" 
+                                : "opacity-80 hover:opacity-100"
                             )}
-                          />
-                        </motion.div>
-                        <span className={cn(
-                          "text-xs font-medium transition-colors duration-300",
-                          isSelected
-                            ? "text-foreground font-semibold"
-                            : "text-muted-foreground"
-                        )}>
-                          {collection.name}
-                        </span>
-                      </Button>
-                    </motion.div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="bg-gray-900 text-white border-none text-xs">
-                    {collection.description || collection.name}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            );
-          })}
-        </motion.div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+                          >
+                            <img 
+                              src={collection.iconUrl} 
+                              alt={collection.name}
+                              className={cn(
+                                "w-full h-full object-contain transition-transform duration-300",
+                                isSelected && "scale-110"
+                              )}
+                            />
+                          </motion.div>
+                          <span className={cn(
+                            "text-xs font-medium transition-colors duration-300",
+                            isSelected
+                              ? "text-foreground font-semibold"
+                              : "text-muted-foreground"
+                          )}>
+                            {collection.name}
+                          </span>
+                        </Button>
+                      </motion.div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="bg-gray-900 text-white border-none text-xs">
+                      {collection.description || collection.name}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })}
+          </motion.div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+
+        <BuildingFilters
+          filters={filters}
+          setFilters={setFilters}
+          localities={localities}
+          bhkTypes={bhkTypes}
+        />
+      </div>
 
       {isMobile && (
         <>
