@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { HeroSection } from "@/components/buildings/HeroSection";
 import { Action } from "@/components/ui/action-search-bar";
 import { Filter, BUDGET_RANGES } from "@/components/ui/filters";
+import { AnimatedHero } from "@/components/ui/animated-hero";
 
 const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
 
@@ -330,13 +331,12 @@ export default function Buildings() {
       "numberOfItems": filteredBuildings.length
     }} />
       
-      <HeroSection 
-        localityActions={localityActions}
-        onSearch={handleSearch}
-        onLocalitySelect={handleLocalitySelect}
+      <AnimatedHero 
+        title="Find your dream home"
+        subtitle="Choose from over 1000 ready to move homes in Bangalore. Visit multiple homes over a weekend. Buy with 100% legal safety."
       />
       
-      <div className="container mx-auto px-4 -mt-20 relative z-10">
+      <div className="container mx-auto px-4 mt-8">
         <CollectionsBar 
           selectedCollections={selectedCollections} 
           onCollectionToggle={handleCollectionToggle}
