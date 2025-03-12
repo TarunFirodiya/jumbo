@@ -4,7 +4,7 @@ import {
   ShoppingBag, Bot, Sun, Video, Trees as Garden,
   Users, Footprints, Check, LucideIcon, Bath,
   Sofa, Bike, CookingPot, Coffee, 
-  PalmTree, Key, Utensils, Baby, TreePine,
+  Palmtree, Key, Utensils, Baby, TreePine,
   HeartPulse, School, Bus, Bird, Scale,
   ShowerHead, Dumbbell as Gym
 } from "lucide-react";
@@ -12,7 +12,6 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
-// Enhanced amenity icon mapping with more specific icons
 const amenityIconMap: Record<string, LucideIcon> = {
   "Visitor Parking": Car,
   "Swimming Pool": Bath,
@@ -32,7 +31,7 @@ const amenityIconMap: Record<string, LucideIcon> = {
   "Cricket/Hockey Ground": Garden,
   "Maintenance Staff": Users,
   "Jogging Track": Footprints,
-  "Garden": PalmTree,
+  "Garden": Palmtree,
   "Park": TreePine,
   "Spa": Bath,
   "Cafe": Coffee,
