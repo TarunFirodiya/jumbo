@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +12,7 @@ import { AuthModal } from "@/components/auth/AuthModal";
 import { SEO } from "@/components/SEO";
 import { cn } from "@/lib/utils";
 import { HeroSection } from "@/components/buildings/HeroSection";
+import { Action } from "@/components/ui/action-search-bar";
 
 const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
 
