@@ -27,7 +27,7 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [routeDisplayed, setRouteDisplayed] = useState(false);
   const [travelInfo, setTravelInfo] = useState<{distance: string, duration: string} | null>(null);
-  const routeSource = useRef<string | null>(null);
+  const routeSourceId = useRef<string>('route');
   const searchMarker = useRef<mapboxgl.Marker | null>(null);
 
   useEffect(() => {
@@ -98,7 +98,7 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
           });
           
           // Add source for routes
-          mapInstance.addSource('route', {
+          mapInstance.addSource(routeSourceId.current, {
             'type': 'geojson',
             'data': {
               'type': 'Feature',
@@ -114,7 +114,7 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
           mapInstance.addLayer({
             'id': 'route',
             'type': 'line',
-            'source': 'route',
+            'source': routeSourceId.current,
             'layout': {
               'line-join': 'round',
               'line-cap': 'round'
@@ -125,8 +125,6 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
               'line-opacity': 0.8
             }
           });
-          
-          routeSource.current = 'route';
         });
 
       } catch (error) {
@@ -205,7 +203,7 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
   };
   
   const getDirections = async (destination: [number, number]) => {
-    if (!map.current || !mapboxToken || !routeSource.current) return;
+    if (!map.current || !mapboxToken) return;
     
     try {
       // Get directions from Mapbox Directions API
@@ -227,12 +225,14 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
         const routeGeometry = route.geometry;
         
         // Update the route on the map
-        const routeSource = map.current.getSource(routeSource.current) as mapboxgl.GeoJSONSource;
-        routeSource.setData({
-          'type': 'Feature',
-          'properties': {},
-          'geometry': routeGeometry
-        });
+        if (map.current && map.current.getSource(routeSourceId.current)) {
+          const source = map.current.getSource(routeSourceId.current) as mapboxgl.GeoJSONSource;
+          source.setData({
+            'type': 'Feature',
+            'properties': {},
+            'geometry': routeGeometry
+          });
+        }
         
         // Display travel info
         const distance = (route.distance / 1000).toFixed(2); // Convert to km
@@ -340,18 +340,20 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
   };
 
   const clearDirections = () => {
-    if (!map.current || !routeSource.current) return;
+    if (!map.current) return;
     
-    // Clear route
-    const routeSource = map.current.getSource(routeSource.current) as mapboxgl.GeoJSONSource;
-    routeSource.setData({
-      'type': 'Feature',
-      'properties': {},
-      'geometry': {
-        'type': 'LineString',
-        'coordinates': []
-      }
-    });
+    // Clear route if map and source exist
+    if (map.current.getSource(routeSourceId.current)) {
+      const source = map.current.getSource(routeSourceId.current) as mapboxgl.GeoJSONSource;
+      source.setData({
+        'type': 'Feature',
+        'properties': {},
+        'geometry': {
+          'type': 'LineString',
+          'coordinates': []
+        }
+      });
+    }
     
     // Clear search marker
     if (searchMarker.current) {
@@ -473,3 +475,4 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
 };
 
 export default LocationMap;
+
