@@ -153,58 +153,55 @@ export const ImageCarousel = memo(function ImageCarousel({ images, videoThumbnai
       <div className="w-full relative rounded-lg overflow-hidden bg-muted">
         {/* Overlay tabs on the left side */}
         <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
-          <TabsList className="bg-black/30 backdrop-blur-sm border border-white/20 flex flex-col h-auto">
-            <TabsTrigger 
-              value="photos" 
-              onClick={() => handleTabChange("photos")}
-              className={`text-white ${activeTab === "photos" ? "bg-white/20" : "bg-transparent hover:bg-white/10"}`}
-              title="Photos"
-            >
-              <ImageIcon className="h-5 w-5" />
-            </TabsTrigger>
-            
-            {videoThumbnail && (
+          <Tabs value={activeTab} onValueChange={handleTabChange} orientation="vertical">
+            <TabsList className="bg-black/30 backdrop-blur-sm border border-white/20 flex flex-col h-auto">
               <TabsTrigger 
-                value="video" 
-                onClick={() => handleTabChange("video")}
-                className={`text-white ${activeTab === "video" ? "bg-white/20" : "bg-transparent hover:bg-white/10"}`}
-                title="Video"
-              >
-                <Video className="h-5 w-5" />
-              </TabsTrigger>
-            )}
-            
-            {streetView && (
-              <TabsTrigger 
-                value="streetView" 
-                onClick={() => handleTabChange("streetView")}
-                className={`text-white ${activeTab === "streetView" ? "bg-white/20" : "bg-transparent hover:bg-white/10"}`}
-                title="Street View"
-              >
-                <Map className="h-5 w-5" />
-              </TabsTrigger>
-            )}
-            
-            {floorPlanImage && (
-              <TabsTrigger 
-                value="floorPlan" 
-                onClick={() => handleTabChange("floorPlan")}
-                className={`text-white ${activeTab === "floorPlan" ? "bg-white/20" : "bg-transparent hover:bg-white/10"}`}
-                title="Floor Plan"
+                value="photos" 
+                className={`text-white ${activeTab === "photos" ? "bg-white/20" : "bg-transparent hover:bg-white/10"}`}
+                title="Photos"
               >
                 <ImageIcon className="h-5 w-5" />
               </TabsTrigger>
-            )}
-            
-            <TabsTrigger 
-              value="imagine" 
-              onClick={() => handleTabChange("imagine")}
-              className={`text-white ${activeTab === "imagine" ? "bg-white/20" : "bg-transparent hover:bg-white/10"}`}
-              title="AI Staged Images"
-            >
-              <Sparkles className="h-5 w-5" />
-            </TabsTrigger>
-          </TabsList>
+              
+              {videoThumbnail && (
+                <TabsTrigger 
+                  value="video" 
+                  className={`text-white ${activeTab === "video" ? "bg-white/20" : "bg-transparent hover:bg-white/10"}`}
+                  title="Video"
+                >
+                  <Video className="h-5 w-5" />
+                </TabsTrigger>
+              )}
+              
+              {streetView && (
+                <TabsTrigger 
+                  value="streetView" 
+                  className={`text-white ${activeTab === "streetView" ? "bg-white/20" : "bg-transparent hover:bg-white/10"}`}
+                  title="Street View"
+                >
+                  <Map className="h-5 w-5" />
+                </TabsTrigger>
+              )}
+              
+              {floorPlanImage && (
+                <TabsTrigger 
+                  value="floorPlan" 
+                  className={`text-white ${activeTab === "floorPlan" ? "bg-white/20" : "bg-transparent hover:bg-white/10"}`}
+                  title="Floor Plan"
+                >
+                  <ImageIcon className="h-5 w-5" />
+                </TabsTrigger>
+              )}
+              
+              <TabsTrigger 
+                value="imagine" 
+                className={`text-white ${activeTab === "imagine" ? "bg-white/20" : "bg-transparent hover:bg-white/10"}`}
+                title="AI Staged Images"
+              >
+                <Sparkles className="h-5 w-5" />
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         {/* Main image display */}
@@ -344,51 +341,48 @@ export const ImageCarousel = memo(function ImageCarousel({ images, videoThumbnai
         <DialogContent className="max-w-screen-lg p-0 bg-black h-[90vh] flex flex-col">
           <div className="flex items-center justify-between p-4 text-white">
             <div className="flex items-center gap-2">
-              <div className="flex rounded-full bg-white/10 p-1">
-                <TabsList className="bg-transparent border-none">
-                  <TabsTrigger 
-                    value="photos" 
-                    onClick={() => handleTabChange("photos")}
-                    className={`text-white ${activeTab === "photos" ? "bg-white/20" : "bg-transparent"}`}
-                  >
-                    Photos
-                  </TabsTrigger>
-                  {videoThumbnail && (
+              <Tabs value={activeTab} onValueChange={handleTabChange}>
+                <div className="flex rounded-full bg-white/10 p-1">
+                  <TabsList className="bg-transparent border-none">
                     <TabsTrigger 
-                      value="video" 
-                      onClick={() => handleTabChange("video")}
-                      className={`text-white ${activeTab === "video" ? "bg-white/20" : "bg-transparent"}`}
+                      value="photos" 
+                      className={`text-white ${activeTab === "photos" ? "bg-white/20" : "bg-transparent"}`}
                     >
-                      Video
+                      Photos
                     </TabsTrigger>
-                  )}
-                  {streetView && (
+                    {videoThumbnail && (
+                      <TabsTrigger 
+                        value="video" 
+                        className={`text-white ${activeTab === "video" ? "bg-white/20" : "bg-transparent"}`}
+                      >
+                        Video
+                      </TabsTrigger>
+                    )}
+                    {streetView && (
+                      <TabsTrigger 
+                        value="streetView" 
+                        className={`text-white ${activeTab === "streetView" ? "bg-white/20" : "bg-transparent"}`}
+                      >
+                        Street View
+                      </TabsTrigger>
+                    )}
+                    {floorPlanImage && (
+                      <TabsTrigger 
+                        value="floorPlan" 
+                        className={`text-white ${activeTab === "floorPlan" ? "bg-white/20" : "bg-transparent"}`}
+                      >
+                        Floor Plan
+                      </TabsTrigger>
+                    )}
                     <TabsTrigger 
-                      value="streetView" 
-                      onClick={() => handleTabChange("streetView")}
-                      className={`text-white ${activeTab === "streetView" ? "bg-white/20" : "bg-transparent"}`}
+                      value="imagine" 
+                      className={`text-white ${activeTab === "imagine" ? "bg-white/20" : "bg-transparent"}`}
                     >
-                      Street View
+                      AI Staged
                     </TabsTrigger>
-                  )}
-                  {floorPlanImage && (
-                    <TabsTrigger 
-                      value="floorPlan" 
-                      onClick={() => handleTabChange("floorPlan")}
-                      className={`text-white ${activeTab === "floorPlan" ? "bg-white/20" : "bg-transparent"}`}
-                    >
-                      Floor Plan
-                    </TabsTrigger>
-                  )}
-                  <TabsTrigger 
-                    value="imagine" 
-                    onClick={() => handleTabChange("imagine")}
-                    className={`text-white ${activeTab === "imagine" ? "bg-white/20" : "bg-transparent"}`}
-                  >
-                    AI Staged
-                  </TabsTrigger>
-                </TabsList>
-              </div>
+                  </TabsList>
+                </div>
+              </Tabs>
               <p className="font-medium ml-2">
                 {(activeTab === "photos" || activeTab === "imagine") && displayImages.length > 0 && 
                   `${currentSlide + 1} / ${displayImages.length}`
