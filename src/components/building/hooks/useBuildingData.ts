@@ -82,28 +82,32 @@ export function useBuildingData(id: string) {
         
         // Process listing images if needed
         return data?.map(listing => {
-          if (typeof listing.images === 'string') {
+          // Create a safe copy of the listing to modify
+          const updatedListing = { ...listing };
+          
+          if (typeof updatedListing.images === 'string') {
             try {
               // Try to parse as JSON first
-              listing.images = JSON.parse(listing.images);
+              updatedListing.images = JSON.parse(updatedListing.images as string);
             } catch (e) {
               // If can't parse as JSON, try as comma-separated string
-              if (typeof listing.images === 'string' && listing.images.includes(',')) {
-                listing.images = listing.images.split(',').map((img: string) => img.trim());
-              } else if (typeof listing.images === 'string') {
+              const imagesStr = updatedListing.images as string;
+              if (imagesStr.includes(',')) {
+                updatedListing.images = imagesStr.split(',').map((img: string) => img.trim());
+              } else {
                 // If it's just a single string and not JSON or comma-separated
-                listing.images = [listing.images];
+                updatedListing.images = [imagesStr];
               }
             }
-          } else if (Array.isArray(listing.images)) {
+          } else if (Array.isArray(updatedListing.images)) {
             // It's already an array, no processing needed
-            listing.images = listing.images;
-          } else if (!listing.images) {
+            updatedListing.images = updatedListing.images;
+          } else if (!updatedListing.images) {
             // If images is null or undefined, set as empty array
-            listing.images = [];
+            updatedListing.images = [];
           }
           
-          return listing;
+          return updatedListing;
         });
       } catch (error) {
         console.error('Error fetching listings:', error);
