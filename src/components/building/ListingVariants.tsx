@@ -7,7 +7,6 @@ import { VisitRequestModal } from "@/components/VisitRequestModal";
 import { RainbowButton } from "@/components/ui/rainbow-button";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
 interface ListingVariantsProps {
   listings: Tables<'listings'>[] | null;
   buildingId: string;
@@ -16,7 +15,6 @@ interface ListingVariantsProps {
   onListingSelect?: (listingId: string) => void;
   selectedListingId?: string | null;
 }
-
 export function ListingVariants({
   listings,
   buildingId,
@@ -28,7 +26,6 @@ export function ListingVariants({
   const [selectedListing, setSelectedListing] = useState<Tables<'listings'> | null>(null);
   const [showVisitModal, setShowVisitModal] = useState(false);
   const [showFloorPlan, setShowFloorPlan] = useState(false);
-
   useEffect(() => {
     if (listings?.length && selectedListingId) {
       const listing = listings.find(l => l.id === selectedListingId);
@@ -40,9 +37,7 @@ export function ListingVariants({
       onListingSelect?.(listings[0].id);
     }
   }, [listings, selectedListingId, onListingSelect]);
-
   if (!listings?.length) return null;
-
   const calculateEMI = (price: number) => {
     const loanAmount = price * 0.8;
     const interestRate = 0.085;
@@ -51,12 +46,10 @@ export function ListingVariants({
     const emi = loanAmount * monthlyRate * Math.pow(1 + monthlyRate, tenure) / (Math.pow(1 + monthlyRate, tenure) - 1);
     return Math.round(emi);
   };
-
   const handleListingSelect = (listing: Tables<'listings'>) => {
     setSelectedListing(listing);
     onListingSelect?.(listing.id);
   };
-
   const formatAvailabilityDate = (date: string | Date | null) => {
     if (!date) return "Immediate";
     try {
@@ -65,30 +58,22 @@ export function ListingVariants({
       return "Immediate";
     }
   };
-
   const getFurnishingStatusText = (status: string | null) => {
     if (!status) return "";
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
-
   const ActionButtons = () => <div className="grid grid-cols-2 gap-3">
       <div>
-        <Button 
-          onClick={() => setShowVisitModal(true)} 
-          className="w-full bg-black text-white hover:bg-slate-800"
-        >
+        <Button onClick={() => setShowVisitModal(true)} className="w-full bg-black text-white hover:bg-slate-800">
           Request a Visit
         </Button>
         <p className="text-xs text-center text-muted-foreground mt-1">It's Free. Zero Spam</p>
       </div>
       <div>
-        <Button variant="outline" className="w-full">
-          Book Now
-        </Button>
+        <Button variant="outline" className="w-full">Submit an Offer</Button>
         <p className="text-xs text-center text-muted-foreground mt-1">100% refundable</p>
       </div>
     </div>;
-
   return <>
       <Card className="p-6 space-y-6 shadow-lg md:max-w-sm md:sticky md:top-28">
         <div className="space-y-4">
