@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -7,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Search, MapPin, Clock, Route } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { MultiSelectCombobox, BaseOption } from '@/components/ui/multi-select-combobox';
 
 interface LocationMapProps {
   latitude: number;
@@ -29,6 +29,7 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
   const [travelInfo, setTravelInfo] = useState<{distance: string, duration: string} | null>(null);
   const routeSourceId = useRef<string>('route');
   const searchMarker = useRef<mapboxgl.Marker | null>(null);
+  const searchDebounceTimeout = useRef<number | null>(null);
 
   useEffect(() => {
     const fetchMapboxToken = async () => {
@@ -146,13 +147,41 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
     };
   }, [latitude, longitude, buildingName, toast, mapboxToken]);
 
+  useEffect(() => {
+    if (!mapboxToken || searchQuery.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+
+    if (searchDebounceTimeout.current) {
+      window.clearTimeout(searchDebounceTimeout.current);
+    }
+
+    searchDebounceTimeout.current = window.setTimeout(() => {
+      searchPlaces();
+    }, 300);
+
+    return () => {
+      if (searchDebounceTimeout.current) {
+        window.clearTimeout(searchDebounceTimeout.current);
+      }
+    };
+  }, [searchQuery, mapboxToken]);
+
   const searchPlaces = async () => {
     if (!map.current || !mapboxToken || !searchQuery.trim()) return;
     
     try {
+      // Bangalore coordinates to restrict search to Bangalore area
+      const bangaloreCoords = '77.5946,12.9716'; // Longitude, Latitude
+      
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?` +
-        `proximity=${longitude},${latitude}&` +
+        `proximity=${bangaloreCoords}&` +
+        `bbox=77.4099,12.8260,77.7600,13.0947&` + // Bounding box for Bangalore
+        `country=in&` + // Restrict to India
+        `types=address,poi,place,neighborhood,locality&` +
+        `limit=5&` +
         `access_token=${mapboxToken}`
       );
       
@@ -200,6 +229,9 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
     
     // Clear search results
     setSearchResults([]);
+    
+    // Keep the search query
+    setSearchQuery(place.place_name || place.text);
   };
   
   const getDirections = async (destination: [number, number]) => {
@@ -374,64 +406,55 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
   return (
     <div className="space-y-4">
       <div className="space-y-2">
+        <h3 className="text-lg font-semibold">Location & Neighbourhood</h3>
         <p className="text-sm text-muted-foreground">
-          Search for a location to see travel time from this building
+          Check exact commute from your office / other landmarks by searching for them below
         </p>
+        
         <div className="relative">
-          <Input
-            type="text"
-            placeholder="Search for a location..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                searchPlaces();
-              }
-            }}
-            className="pl-10 pr-4"
-          />
-          <Search 
-            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" 
-          />
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute right-0 top-0 h-10 w-10" 
-            onClick={searchPlaces}
-          >
-            <Search className="h-4 w-4" />
-            <span className="sr-only">Search</span>
-          </Button>
+          <div className="relative w-full">
+            <Input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search for a location..."
+              className="pl-10 pr-4 w-full border border-gray-300 rounded-lg text-base"
+            />
+            <Search 
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" 
+              aria-hidden="true"
+            />
+          </div>
+          
+          {searchResults.length > 0 && (
+            <div className="absolute z-10 w-full bg-white border rounded-md shadow-lg max-h-[250px] overflow-y-auto mt-1">
+              <ul className="py-1">
+                {searchResults.map((place, index) => (
+                  <li 
+                    key={index} 
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-start gap-2 border-b border-gray-100 last:border-0"
+                    onClick={() => addSearchMarker(place)}
+                  >
+                    <MapPin className="h-5 w-5 mt-0.5 flex-shrink-0 text-gray-500" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 text-left">{place.text}</p>
+                      <p className="text-xs text-gray-500 truncate text-left">{place.place_name}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
         
-        {searchResults.length > 0 && (
-          <div className="absolute z-10 w-full bg-background border rounded-md shadow-md max-h-[200px] overflow-y-auto">
-            <ul className="p-1">
-              {searchResults.map((place, index) => (
-                <li 
-                  key={index} 
-                  className="p-2 hover:bg-muted cursor-pointer rounded-sm flex items-start gap-2"
-                  onClick={() => addSearchMarker(place)}
-                >
-                  <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">{place.text}</p>
-                    <p className="text-xs text-muted-foreground">{place.place_name}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        
         {travelInfo && (
-          <div className="flex items-center gap-4 p-2 border rounded-md bg-muted/50">
-            <div className="flex items-center gap-1">
-              <Route className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center gap-4 p-3 border rounded-md bg-gray-50 shadow-sm">
+            <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border">
+              <Route className="h-5 w-5 text-gray-700" />
               <span className="text-sm font-medium">{travelInfo.distance}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <Clock className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border">
+              <Clock className="h-5 w-5 text-gray-700" />
               <span className="text-sm font-medium">{travelInfo.duration}</span>
             </div>
             <Button 
@@ -475,4 +498,3 @@ const LocationMap: React.FC<LocationMapProps> = ({ latitude, longitude, building
 };
 
 export default LocationMap;
-
