@@ -14,7 +14,7 @@ export function LocationTab({ latitude, longitude, buildingName, nearbyPlaces }:
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
-        Check exact commute from your office / other landmarks by searching for them below
+        Check exact location of the property and nearby amenities
       </p>
       
       {latitude && longitude ? (
