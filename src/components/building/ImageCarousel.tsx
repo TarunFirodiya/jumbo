@@ -2,7 +2,7 @@
 import { useState, useEffect, memo, useCallback } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, Image as ImageIcon, Map, Video, Sparkles } from "lucide-react";
+import { X, Image as ImageIcon, Map, Video, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -153,7 +153,7 @@ export const ImageCarousel = memo(function ImageCarousel({ images, videoThumbnai
       <div className="w-full relative rounded-lg overflow-hidden bg-muted">
         {/* Overlay tabs on the left side */}
         <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
-          <TabsList orientation="vertical" className="bg-black/30 backdrop-blur-sm border border-white/20">
+          <TabsList className="bg-black/30 backdrop-blur-sm border border-white/20 flex flex-col h-auto">
             <TabsTrigger 
               value="photos" 
               onClick={() => handleTabChange("photos")}
