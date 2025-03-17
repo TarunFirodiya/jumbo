@@ -71,7 +71,7 @@ export function ListingVariants({
       </div>
       <div>
         <Button variant="outline" className="w-full">Submit an Offer</Button>
-        <p className="text-xs text-center text-muted-foreground mt-1">100% refundable</p>
+        <p className="text-xs text-center text-muted-foreground mt-1">At Zero Cost</p>
       </div>
     </div>;
   return <>
