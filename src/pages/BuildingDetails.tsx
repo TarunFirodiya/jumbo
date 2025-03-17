@@ -17,6 +17,7 @@ import { motion } from "framer-motion";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 import { AmenitiesGrid } from "@/components/building/AmenitiesGrid";
 import { LocationTab } from "@/components/building/tabs/LocationTab";
+
 export default function BuildingDetails() {
   const {
     id
@@ -29,6 +30,7 @@ export default function BuildingDetails() {
   const [selectedListing, setSelectedListing] = useState<string | null>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const isScrolled = useScrollAnimation();
+
   useEffect(() => {
     const handleScroll = () => {
       setShowBackToTop(window.scrollY > 500);
@@ -36,6 +38,7 @@ export default function BuildingDetails() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
   const {
     building,
     listings,
@@ -45,15 +48,18 @@ export default function BuildingDetails() {
     isShortlisted,
     toggleShortlist
   } = useShortlist(id!, building?.name || '');
+
   useEffect(() => {
     if (listings && listings.length > 0 && !selectedListing) {
       setSelectedListing(listings[0].id);
     }
   }, [listings, selectedListing]);
+
   const startingPrice = useMemo(() => {
     if (!listings?.length) return Number(building?.min_price || 0);
     return Math.min(...listings.map(l => Number(l.price || 0)));
   }, [listings, building?.min_price]);
+
   const displayImages = useMemo(() => {
     if (selectedListing && listings) {
       const selectedListingImages = listings.find(l => l.id === selectedListing)?.images;
@@ -61,15 +67,18 @@ export default function BuildingDetails() {
     }
     return building?.images || [];
   }, [selectedListing, listings, building?.images]);
+
   const selectedListingData = useMemo(() => {
     if (selectedListing && listings) {
       return listings.find(l => l.id === selectedListing);
     }
     return null;
   }, [selectedListing, listings]);
+
   const handleListingSelect = useCallback((id: string) => {
     setSelectedListing(id);
   }, []);
+
   const handleShare = useCallback(() => {
     if (navigator.share) {
       navigator.share({
@@ -85,12 +94,14 @@ export default function BuildingDetails() {
       });
     }
   }, [building?.name, toast]);
+
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
     });
   };
+
   if (isLoading) {
     return <>
         <SEO title="Loading Property Details | Cozy Dwell Search" />
@@ -99,6 +110,7 @@ export default function BuildingDetails() {
         </div>
       </>;
   }
+
   if (!building) {
     return <>
         <SEO title="Property Not Found | Cozy Dwell Search" />
@@ -106,12 +118,11 @@ export default function BuildingDetails() {
       </>;
   }
 
-  // Safely extract amenities/features data, ensuring we have an array of strings
   const amenitiesArray = building.amenities || [];
-  // Use either existing features (from BuildingWithFeatures type) or fall back to amenities
   const featuresArray = (building as BuildingWithFeatures).features || amenitiesArray;
   const stringFeatures = Array.isArray(featuresArray) ? featuresArray.map(f => String(f)) : [];
   const amenitiesText = stringFeatures.slice(0, 3).join(', ');
+
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Apartment",
@@ -143,6 +154,7 @@ export default function BuildingDetails() {
       "validFrom": new Date().toISOString()
     }
   };
+
   return <div className="min-h-screen flex flex-col relative">
       <SEO title={`${building.name} | ${building.bhk_types?.join(', ')} BHK in ${building.locality}`} description={`${building.bhk_types?.join(', ')} BHK apartments available in ${building.locality}. Starting at ₹${(startingPrice / 10000000).toFixed(1)} Cr. Features: ${amenitiesText}.`} canonical={`/buildings/${id}`} ogImage={building.images?.[0] || ''} type="article" structuredData={structuredData} />
 
@@ -176,7 +188,12 @@ export default function BuildingDetails() {
           delay: 0.1
         }}>
             <h2 className="text-2xl font-semibold">Location</h2>
-            <LocationTab latitude={building.latitude} longitude={building.longitude} buildingName={building.name} />
+            <LocationTab 
+              latitude={building.latitude} 
+              longitude={building.longitude} 
+              buildingName={building.name}
+              nearbyPlaces={building.nearby_places} 
+            />
           </motion.div>
           
           <motion.div className="space-y-6" initial={{
@@ -213,7 +230,12 @@ export default function BuildingDetails() {
             delay: 0.1
           }}>
               <h2 className="text-2xl font-semibold">Location</h2>
-              <LocationTab latitude={building.latitude} longitude={building.longitude} buildingName={building.name} />
+              <LocationTab 
+                latitude={building.latitude} 
+                longitude={building.longitude} 
+                buildingName={building.name}
+                nearbyPlaces={building.nearby_places}
+              />
             </motion.div>
             
             <motion.div className="space-y-6" initial={{

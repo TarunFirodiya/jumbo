@@ -30,6 +30,7 @@ export type Database = {
           max_price: number | null
           min_price: number | null
           name: string
+          nearby_places: Json | null
           price_psqft: number | null
           street_view: string | null
           sub_locality: string | null
@@ -61,6 +62,7 @@ export type Database = {
           max_price?: number | null
           min_price?: number | null
           name: string
+          nearby_places?: Json | null
           price_psqft?: number | null
           street_view?: string | null
           sub_locality?: string | null
@@ -92,6 +94,7 @@ export type Database = {
           max_price?: number | null
           min_price?: number | null
           name?: string
+          nearby_places?: Json | null
           price_psqft?: number | null
           street_view?: string | null
           sub_locality?: string | null

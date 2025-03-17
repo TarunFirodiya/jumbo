@@ -3,7 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Home, Clock, Route } from 'lucide-react';
+import { Search, Clock, Route } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -13,8 +13,6 @@ interface LocationMapProps {
   buildingName: string;
 }
 
-type PlaceType = 'hospital' | 'school' | 'restaurant';
-
 const LocationMap: React.FC<LocationMapProps> = ({
   latitude,
   longitude,
@@ -22,7 +20,6 @@ const LocationMap: React.FC<LocationMapProps> = ({
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [selectedTypes, setSelectedTypes] = useState<PlaceType[]>([]);
   const { toast } = useToast();
   const markers = useRef<mapboxgl.Marker[]>([]);
   const [mapboxToken, setMapboxToken] = useState<string>('');
@@ -292,78 +289,6 @@ const LocationMap: React.FC<LocationMapProps> = ({
     }
   };
 
-  const searchNearbyPlaces = async (type: PlaceType) => {
-    if (!map.current || !mapboxToken) return;
-    try {
-      // Clear existing markers
-      markers.current.forEach(marker => marker.remove());
-      markers.current = [];
-
-      // Define search radius (in meters)
-      const radius = 2000;
-
-      // Use Mapbox's geocoding API to find nearby places
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${type}.json?` +
-        `proximity=${longitude},${latitude}&` +
-        `radius=${radius}&` +
-        `limit=5&` +
-        `access_token=${mapboxToken}`
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      // Add markers for each place
-      data.features.forEach((place: any) => {
-        let color;
-        switch (type) {
-          case 'hospital':
-            color = '#E53935'; // Red for hospitals
-            break;
-          case 'school':
-            color = '#43A047'; // Green for schools
-            break;
-          case 'restaurant':
-            color = '#FB8C00'; // Orange for restaurants
-            break;
-          default:
-            color = '#3949AB'; // Blue for other
-        }
-
-        const marker = new mapboxgl.Marker({
-          color: color,
-          scale: 0.7
-        })
-          .setLngLat(place.center)
-          .setPopup(new mapboxgl.Popup().setHTML(`
-            <h4>${place.text}</h4>
-            <p class="text-sm text-gray-500">${place.properties?.address || place.place_name}</p>
-          `))
-          .addTo(map.current!);
-
-        markers.current.push(marker);
-      });
-    } catch (error) {
-      console.error('Error searching nearby places:', error);
-    }
-  };
-
-  const togglePlaceType = (type: PlaceType) => {
-    if (selectedTypes.includes(type)) {
-      setSelectedTypes(selectedTypes.filter(t => t !== type));
-      // Clear markers when deselecting
-      markers.current.forEach(marker => marker.remove());
-      markers.current = [];
-    } else {
-      setSelectedTypes([...selectedTypes, type]);
-      searchNearbyPlaces(type);
-    }
-  };
-
   const clearDirections = () => {
     if (!map.current) return;
 
@@ -430,34 +355,6 @@ const LocationMap: React.FC<LocationMapProps> = ({
             </div>
           )}
         </div>
-      </div>
-      
-      {/* Places filter buttons overlay */}
-      <div className="absolute top-20 left-4 z-10 flex flex-col gap-2">
-        <Button 
-          variant={selectedTypes.includes('hospital') ? 'default' : 'outline'} 
-          onClick={() => togglePlaceType('hospital')} 
-          size="sm"
-          className="bg-white hover:bg-gray-100 text-gray-800 shadow-sm border border-gray-300"
-        >
-          Hospitals
-        </Button>
-        <Button 
-          variant={selectedTypes.includes('school') ? 'default' : 'outline'} 
-          onClick={() => togglePlaceType('school')} 
-          size="sm"
-          className="bg-white hover:bg-gray-100 text-gray-800 shadow-sm border border-gray-300"
-        >
-          Schools
-        </Button>
-        <Button 
-          variant={selectedTypes.includes('restaurant') ? 'default' : 'outline'} 
-          onClick={() => togglePlaceType('restaurant')} 
-          size="sm"
-          className="bg-white hover:bg-gray-100 text-gray-800 shadow-sm border border-gray-300"
-        >
-          Restaurants
-        </Button>
       </div>
       
       {/* Travel info overlay */}

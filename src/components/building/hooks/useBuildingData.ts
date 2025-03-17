@@ -8,6 +8,7 @@ export type BuildingWithFeatures = {
   name: string;
   amenities?: string[] | null;
   features?: string[] | null;
+  nearby_places?: any | null;
   [key: string]: any;
 };
 
