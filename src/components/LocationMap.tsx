@@ -3,16 +3,18 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MapPin, Clock, Route } from 'lucide-react';
+import { Search, Home, Clock, Route } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { MultiSelectCombobox, BaseOption } from '@/components/ui/multi-select-combobox';
+
 interface LocationMapProps {
   latitude: number;
   longitude: number;
   buildingName: string;
 }
+
 type PlaceType = 'hospital' | 'school' | 'restaurant';
+
 const LocationMap: React.FC<LocationMapProps> = ({
   latitude,
   longitude,
@@ -21,9 +23,7 @@ const LocationMap: React.FC<LocationMapProps> = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [selectedTypes, setSelectedTypes] = useState<PlaceType[]>([]);
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const markers = useRef<mapboxgl.Marker[]>([]);
   const [mapboxToken, setMapboxToken] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,14 +35,13 @@ const LocationMap: React.FC<LocationMapProps> = ({
   } | null>(null);
   const routeSourceId = useRef<string>('route');
   const searchMarker = useRef<mapboxgl.Marker | null>(null);
-  const searchDebounceTimeout = useRef<number | null>(null);
+  const searchDebounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  const mainMarker = useRef<mapboxgl.Marker | null>(null);
+
   useEffect(() => {
     const fetchMapboxToken = async () => {
       try {
-        const {
-          data,
-          error
-        } = await supabase.functions.invoke('get-mapbox-token');
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
         if (error) throw error;
         if (data?.token) {
           setMapboxToken(data.token);
@@ -58,6 +57,7 @@ const LocationMap: React.FC<LocationMapProps> = ({
     };
     fetchMapboxToken();
   }, [toast]);
+
   useEffect(() => {
     if (!mapboxToken || !mapContainer.current) return;
     const initializeMap = async () => {
@@ -75,10 +75,22 @@ const LocationMap: React.FC<LocationMapProps> = ({
         // Add navigation controls
         mapInstance.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-        // Add building marker
-        new mapboxgl.Marker({
-          color: '#000000'
-        }).setLngLat([longitude, latitude]).setPopup(new mapboxgl.Popup().setHTML(`<h3>${buildingName}</h3>`)).addTo(mapInstance);
+        // Add building marker with home icon
+        const markerElement = document.createElement('div');
+        markerElement.className = 'home-marker';
+        markerElement.innerHTML = `
+          <div class="bg-black rounded-full p-2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9 22V12H15V22" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        `;
+        
+        mainMarker.current = new mapboxgl.Marker(markerElement)
+          .setLngLat([longitude, latitude])
+          .addTo(mapInstance);
+          
         map.current = mapInstance;
 
         // Add 3D building layer
@@ -143,37 +155,48 @@ const LocationMap: React.FC<LocationMapProps> = ({
       }
     };
   }, [latitude, longitude, buildingName, toast, mapboxToken]);
+
   useEffect(() => {
     if (!mapboxToken || searchQuery.length < 3) {
       setSearchResults([]);
       return;
     }
+
     if (searchDebounceTimeout.current) {
-      window.clearTimeout(searchDebounceTimeout.current);
+      clearTimeout(searchDebounceTimeout.current);
     }
-    searchDebounceTimeout.current = window.setTimeout(() => {
+
+    searchDebounceTimeout.current = setTimeout(() => {
       searchPlaces();
     }, 300);
+
     return () => {
       if (searchDebounceTimeout.current) {
-        window.clearTimeout(searchDebounceTimeout.current);
+        clearTimeout(searchDebounceTimeout.current);
       }
     };
   }, [searchQuery, mapboxToken]);
+
   const searchPlaces = async () => {
     if (!map.current || !mapboxToken || !searchQuery.trim()) return;
     try {
       // Bangalore coordinates to restrict search to Bangalore area
       const bangaloreCoords = '77.5946,12.9716'; // Longitude, Latitude
 
-      const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?` + `proximity=${bangaloreCoords}&` + `bbox=77.4099,12.8260,77.7600,13.0947&` +
-      // Bounding box for Bangalore
-      `country=in&` +
-      // Restrict to India
-      `types=address,poi,place,neighborhood,locality&` + `limit=5&` + `access_token=${mapboxToken}`);
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?` +
+        `proximity=${bangaloreCoords}&` +
+        `bbox=77.4099,12.8260,77.7600,13.0947&` + // Bounding box for Bangalore
+        `country=in&` + // Restrict to India
+        `types=address,poi,place,neighborhood,locality&` +
+        `limit=5&` +
+        `access_token=${mapboxToken}`
+      );
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+
       const data = await response.json();
       setSearchResults(data.features);
     } catch (error) {
@@ -185,6 +208,7 @@ const LocationMap: React.FC<LocationMapProps> = ({
       });
     }
   };
+
   const addSearchMarker = (place: any) => {
     if (!map.current) return;
 
@@ -196,7 +220,10 @@ const LocationMap: React.FC<LocationMapProps> = ({
     // Create new marker
     searchMarker.current = new mapboxgl.Marker({
       color: '#d03d3d'
-    }).setLngLat(place.center).setPopup(new mapboxgl.Popup().setHTML(`<h4>${place.text}</h4>`)).addTo(map.current);
+    })
+      .setLngLat(place.center)
+      .setPopup(new mapboxgl.Popup().setHTML(`<h4>${place.text}</h4>`))
+      .addTo(map.current);
 
     // Fly to the location
     map.current.flyTo({
@@ -214,14 +241,22 @@ const LocationMap: React.FC<LocationMapProps> = ({
     // Keep the search query
     setSearchQuery(place.place_name || place.text);
   };
+
   const getDirections = async (destination: [number, number]) => {
     if (!map.current || !mapboxToken) return;
     try {
       // Get directions from Mapbox Directions API
-      const response = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/` + `${longitude},${latitude};${destination[0]},${destination[1]}?` + `geometries=geojson&` + `access_token=${mapboxToken}`);
+      const response = await fetch(
+        `https://api.mapbox.com/directions/v5/mapbox/driving/` +
+        `${longitude},${latitude};${destination[0]},${destination[1]}?` +
+        `geometries=geojson&` +
+        `access_token=${mapboxToken}`
+      );
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+
       const data = await response.json();
       if (data.routes && data.routes.length > 0) {
         const route = data.routes[0];
@@ -256,10 +291,11 @@ const LocationMap: React.FC<LocationMapProps> = ({
       });
     }
   };
+
   const searchNearbyPlaces = async (type: PlaceType) => {
     if (!map.current || !mapboxToken) return;
     try {
-      // Clear existing markers of this type
+      // Clear existing markers
       markers.current.forEach(marker => marker.remove());
       markers.current = [];
 
@@ -267,10 +303,18 @@ const LocationMap: React.FC<LocationMapProps> = ({
       const radius = 2000;
 
       // Use Mapbox's geocoding API to find nearby places
-      const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${type}.json?` + `proximity=${longitude},${latitude}&` + `radius=${radius}&` + `limit=10&` + `access_token=${mapboxToken}`);
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${type}.json?` +
+        `proximity=${longitude},${latitude}&` +
+        `radius=${radius}&` +
+        `limit=5&` +
+        `access_token=${mapboxToken}`
+      );
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+
       const data = await response.json();
 
       // Add markers for each place
@@ -287,31 +331,27 @@ const LocationMap: React.FC<LocationMapProps> = ({
             color = '#FB8C00'; // Orange for restaurants
             break;
           default:
-            color = '#3949AB';
-          // Blue for other
+            color = '#3949AB'; // Blue for other
         }
+
         const marker = new mapboxgl.Marker({
           color: color,
           scale: 0.7
-        }).setLngLat(place.center).setPopup(new mapboxgl.Popup().setHTML(`
+        })
+          .setLngLat(place.center)
+          .setPopup(new mapboxgl.Popup().setHTML(`
             <h4>${place.text}</h4>
             <p class="text-sm text-gray-500">${place.properties?.address || place.place_name}</p>
-          `)).addTo(map.current!);
+          `))
+          .addTo(map.current!);
+
         markers.current.push(marker);
-      });
-      toast({
-        title: `Nearby ${type.charAt(0).toUpperCase() + type.slice(1)}s`,
-        description: `Found ${data.features.length} places near this location`
       });
     } catch (error) {
       console.error('Error searching nearby places:', error);
-      toast({
-        title: "Search Error",
-        description: `Failed to find nearby ${type}s`,
-        variant: "destructive"
-      });
     }
   };
+
   const togglePlaceType = (type: PlaceType) => {
     if (selectedTypes.includes(type)) {
       setSelectedTypes(selectedTypes.filter(t => t !== type));
@@ -323,6 +363,7 @@ const LocationMap: React.FC<LocationMapProps> = ({
       searchNearbyPlaces(type);
     }
   };
+
   const clearDirections = () => {
     if (!map.current) return;
 
@@ -350,60 +391,98 @@ const LocationMap: React.FC<LocationMapProps> = ({
     setTravelInfo(null);
     setSearchQuery('');
   };
+
   if (!mapboxToken) {
     return <div className="h-[400px] w-full rounded-lg bg-muted flex items-center justify-center">Loading map...</div>;
   }
-  return <div className="space-y-4">
-      <div className="space-y-2">
-        
-        <p className="text-sm text-muted-foreground">Check exact commute from your office / other landmarks by searching for them below</p>
-        
-        <div className="relative">
-          <div className="relative w-full">
-            <Input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search for a location..." className="pl-10 pr-4 w-full border border-gray-300 rounded-lg text-base" />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" aria-hidden="true" />
-          </div>
+
+  return (
+    <div className="relative h-full">
+      {/* Search input overlay */}
+      <div className="absolute top-4 left-4 right-4 z-10">
+        <div className="relative w-full bg-white rounded-lg shadow-lg">
+          <Input 
+            type="text" 
+            value={searchQuery} 
+            onChange={e => setSearchQuery(e.target.value)} 
+            placeholder="Search for a location..." 
+            className="pl-10 pr-4 w-full border border-gray-300 rounded-lg text-base shadow-sm" 
+          />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" aria-hidden="true" />
           
-          {searchResults.length > 0 && <div className="absolute z-10 w-full bg-white border rounded-md shadow-lg max-h-[250px] overflow-y-auto mt-1">
+          {searchResults.length > 0 && (
+            <div className="absolute z-10 w-full bg-white border rounded-md shadow-lg max-h-[250px] overflow-y-auto mt-1">
               <ul className="py-1">
-                {searchResults.map((place, index) => <li key={index} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-start gap-2 border-b border-gray-100 last:border-0" onClick={() => addSearchMarker(place)}>
-                    <MapPin className="h-5 w-5 mt-0.5 flex-shrink-0 text-gray-500" />
+                {searchResults.map((place, index) => (
+                  <li 
+                    key={index}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-start gap-2 border-b border-gray-100 last:border-0"
+                    onClick={() => addSearchMarker(place)}
+                  >
+                    <Search className="h-5 w-5 mt-0.5 flex-shrink-0 text-gray-500" />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 text-left">{place.text}</p>
                       <p className="text-xs text-gray-500 truncate text-left">{place.place_name}</p>
                     </div>
-                  </li>)}
+                  </li>
+                ))}
               </ul>
-            </div>}
+            </div>
+          )}
         </div>
-        
-        {travelInfo && <div className="flex items-center gap-4 p-3 border rounded-md bg-gray-50 shadow-sm">
-            <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border">
+      </div>
+      
+      {/* Places filter buttons overlay */}
+      <div className="absolute top-20 left-4 z-10 flex flex-col gap-2">
+        <Button 
+          variant={selectedTypes.includes('hospital') ? 'default' : 'outline'} 
+          onClick={() => togglePlaceType('hospital')} 
+          size="sm"
+          className="bg-white hover:bg-gray-100 text-gray-800 shadow-sm border border-gray-300"
+        >
+          Hospitals
+        </Button>
+        <Button 
+          variant={selectedTypes.includes('school') ? 'default' : 'outline'} 
+          onClick={() => togglePlaceType('school')} 
+          size="sm"
+          className="bg-white hover:bg-gray-100 text-gray-800 shadow-sm border border-gray-300"
+        >
+          Schools
+        </Button>
+        <Button 
+          variant={selectedTypes.includes('restaurant') ? 'default' : 'outline'} 
+          onClick={() => togglePlaceType('restaurant')} 
+          size="sm"
+          className="bg-white hover:bg-gray-100 text-gray-800 shadow-sm border border-gray-300"
+        >
+          Restaurants
+        </Button>
+      </div>
+      
+      {/* Travel info overlay */}
+      {travelInfo && (
+        <div className="absolute bottom-4 left-4 right-4 z-10">
+          <div className="flex items-center gap-4 p-3 rounded-md bg-white shadow-lg">
+            <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border">
               <Route className="h-5 w-5 text-gray-700" />
               <span className="text-sm font-medium">{travelInfo.distance}</span>
             </div>
-            <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border">
+            <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border">
               <Clock className="h-5 w-5 text-gray-700" />
               <span className="text-sm font-medium">{travelInfo.duration}</span>
             </div>
             <Button variant="outline" size="sm" className="ml-auto" onClick={clearDirections}>
               Clear
             </Button>
-          </div>}
-      </div>
+          </div>
+        </div>
+      )}
       
-      <div className="flex gap-2 flex-wrap">
-        <Button variant={selectedTypes.includes('hospital') ? 'default' : 'outline'} onClick={() => togglePlaceType('hospital')} size="sm">
-          Hospitals
-        </Button>
-        <Button variant={selectedTypes.includes('school') ? 'default' : 'outline'} onClick={() => togglePlaceType('school')} size="sm">
-          Schools
-        </Button>
-        <Button variant={selectedTypes.includes('restaurant') ? 'default' : 'outline'} onClick={() => togglePlaceType('restaurant')} size="sm">
-          Restaurants
-        </Button>
-      </div>
-      <div ref={mapContainer} className="h-[400px] w-full rounded-lg" />
-    </div>;
+      {/* Map container */}
+      <div ref={mapContainer} className="h-full w-full rounded-lg" />
+    </div>
+  );
 };
+
 export default LocationMap;
