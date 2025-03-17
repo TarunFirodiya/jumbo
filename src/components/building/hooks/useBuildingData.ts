@@ -84,17 +84,25 @@ export function useBuildingData(id: string) {
         return data?.map(listing => {
           if (typeof listing.images === 'string') {
             try {
+              // Try to parse as JSON first
               listing.images = JSON.parse(listing.images);
             } catch (e) {
               // If can't parse as JSON, try as comma-separated string
-              try {
+              if (typeof listing.images === 'string' && listing.images.includes(',')) {
                 listing.images = listing.images.split(',').map((img: string) => img.trim());
-              } catch (err) {
-                console.error('Error processing listing images:', err);
-                listing.images = listing.images ? [listing.images] : [];
+              } else if (typeof listing.images === 'string') {
+                // If it's just a single string and not JSON or comma-separated
+                listing.images = [listing.images];
               }
             }
+          } else if (Array.isArray(listing.images)) {
+            // It's already an array, no processing needed
+            listing.images = listing.images;
+          } else if (!listing.images) {
+            // If images is null or undefined, set as empty array
+            listing.images = [];
           }
+          
           return listing;
         });
       } catch (error) {
