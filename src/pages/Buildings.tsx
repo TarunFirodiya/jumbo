@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Heart } from "lucide-react";
+import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Heart, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -296,6 +296,10 @@ export default function Buildings() {
   const handleLocalityClick = useCallback((locality: string) => {
     navigate(`/buildings/locality/${encodeURIComponent(locality)}`);
   }, [navigate]);
+
+  const handleShowMore = useCallback(() => {
+    setVisibleCount(prev => prev + 20);
+  }, []);
 
   if (buildingsLoading) {
     return <>
