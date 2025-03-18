@@ -465,6 +465,22 @@ export type Database = {
             }
             Returns: unknown
           }
+      get_visit_details: {
+        Args: {
+          visit_id_param: string
+        }
+        Returns: {
+          visit_day: string
+          visit_time: string
+          bedrooms: number
+          name: string
+          locality: string
+          sub_locality: string
+          full_name: string
+          phone_number: string
+          status: string
+        }[]
+      }
       halfvec_avg: {
         Args: {
           "": number[]

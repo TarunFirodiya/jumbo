@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,9 +8,11 @@ import { Profile } from "@/types/profile";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Search, Home, Heart, Route, Settings, User2, LogOut, Menu, LayoutDashboard } from "lucide-react";
+import { Search, Heart, Route, Settings, User2, LogOut, Menu, LayoutDashboard, HelpCircle } from "lucide-react";
 import { Footerdemo } from "@/components/ui/footer-section";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 export default function MainLayout({
   children
@@ -26,6 +29,7 @@ export default function MainLayout({
   const isPreferencesPage = location.pathname === "/preferences";
   const [showLogo, setShowLogo] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [notifications, setNotifications] = useState(1); // Example notification count
   
   const { data: profile, isLoading: profileLoading, refetch: refetchProfile } = useQuery<Profile>({
     queryKey: ['profile'],
@@ -125,31 +129,50 @@ export default function MainLayout({
     setShowAuthModal(true);
   };
   
-  const menuItems = [...(profile && (profile.role === 'admin' || profile.role === 'agent') ? [{
-    name: "Dashboard",
-    icon: LayoutDashboard,
-    path: "/dashboard"
-  }] : []), {
-    name: "Home",
-    icon: Home,
-    path: "/buildings"
-  }, {
-    name: "Shortlist",
-    icon: Heart,
-    path: "/shortlist"
-  }, {
-    name: "Visits",
-    icon: Route,
-    path: "/visits"
-  }, {
-    name: "Settings",
-    icon: Settings,
-    path: "/settings"
-  }];
+  const menuItems = [
+    {
+      name: "Shortlist",
+      icon: Heart,
+      path: "/shortlist"
+    }, 
+    {
+      name: "Visits",
+      icon: Route,
+      path: "/visits"
+    }, 
+    {
+      name: "Account",
+      icon: Settings,
+      path: "/settings"
+    },
+    {
+      name: "Help",
+      icon: HelpCircle,
+      path: "https://intercom.help/serai-homes/en",
+      isExternal: true
+    }
+  ];
+  
+  // Only show Dashboard option for admin or agent roles
+  if (profile && (profile.role === 'admin' || profile.role === 'agent')) {
+    menuItems.unshift({
+      name: "Dashboard",
+      icon: LayoutDashboard,
+      path: "/dashboard"
+    });
+  }
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Search term:", searchTerm);
+  };
+
+  // Get initials for avatar fallback
+  const getInitials = () => {
+    if (!profile || !profile.full_name) return "U";
+    const names = profile.full_name.split(" ");
+    if (names.length === 1) return names[0].charAt(0).toUpperCase();
+    return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
   };
   
   return (
@@ -178,28 +201,43 @@ export default function MainLayout({
                   ) : profile ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full transition-colors hover:bg-secondary">
-                          <Menu className="h-5 w-5 md:hidden" />
-                          <User2 className="h-5 w-5 hidden md:block" />
+                        <Button 
+                          variant="outline" 
+                          className="rounded-full pl-2.5 pr-3.5 py-1.5 h-auto border-gray-300 hover:bg-gray-100 shadow-sm flex items-center gap-2" 
+                        >
+                          <Menu className="h-5 w-5" />
+                          <div className="relative">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={profile.avatar_url} />
+                              <AvatarFallback>{getInitials()}</AvatarFallback>
+                            </Avatar>
+                            {notifications > 0 && (
+                              <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                                {notifications}
+                              </div>
+                            )}
+                          </div>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-56 animate-scale-in">
-                        <div className="px-2 py-1.5 text-sm font-medium">
-                          {profile.email}
-                        </div>
-                        <DropdownMenuSeparator />
                         {menuItems.map(item => (
                           <DropdownMenuItem 
-                            key={item.path} 
-                            onClick={() => navigate(item.path)} 
-                            className="cursor-pointer flex items-center transition-colors hover:bg-secondary"
+                            key={item.name} 
+                            onClick={() => {
+                              if (item.isExternal) {
+                                window.open(item.path, "_blank");
+                              } else {
+                                navigate(item.path);
+                              }
+                            }} 
+                            className="cursor-pointer flex items-center transition-colors hover:bg-secondary py-2"
                           >
                             <item.icon className="mr-2 h-4 w-4 transition-transform group-hover:rotate-6" />
                             <span>{item.name}</span>
                           </DropdownMenuItem>
                         ))}
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
+                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive py-2">
                           <LogOut className="mr-2 h-4 w-4" />
                           <span>Log out</span>
                         </DropdownMenuItem>
@@ -207,11 +245,12 @@ export default function MainLayout({
                     </DropdownMenu>
                   ) : (
                     <Button 
-                      variant="ghost" 
+                      variant="outline" 
                       size="icon" 
                       onClick={() => openAuthModal("shortlist")} 
-                      className="rounded-full transition-colors hover:bg-secondary"
+                      className="rounded-full pl-2.5 pr-3.5 py-1.5 h-auto border-gray-300 hover:bg-gray-100 shadow-sm flex items-center gap-2"
                     >
+                      <Menu className="h-5 w-5" />
                       <User2 className="h-5 w-5" />
                     </Button>
                   )}
