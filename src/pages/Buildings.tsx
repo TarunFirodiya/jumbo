@@ -80,26 +80,6 @@ const BuildingCard = ({
             <MapPin className="h-4 w-4" />
             <span>{building.locality}</span>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            {building.age && (
-              <div className="flex items-center gap-1">
-                <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{building.age} years</span>
-              </div>
-            )}
-            {building.total_floors && (
-              <div className="flex items-center gap-1">
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{building.total_floors} floors</span>
-              </div>
-            )}
-            {building.bhk_types && (
-              <div className="flex items-center gap-1">
-                <Home className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{building.bhk_types.join(", ")} BHK</span>
-              </div>
-            )}
-          </div>
           <div className="flex items-baseline">
             <span className="text-xs text-muted-foreground mr-1">Starting at</span>
             <span className="text-lg font-semibold">
@@ -123,6 +103,7 @@ export default function Buildings() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authAction, setAuthAction] = useState<"shortlist" | "visit" | "notify">("shortlist");
   const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
+  const [visibleCount, setVisibleCount] = useState(20);
 
   const {
     data: user
@@ -242,6 +223,10 @@ export default function Buildings() {
 
     return filtered;
   }, [buildings, searchTerm, selectedCollections, activeFilters]);
+
+  const displayedBuildings = useMemo(() => {
+    return filteredBuildings.slice(0, visibleCount);
+  }, [filteredBuildings, visibleCount]);
 
   const handleShortlistToggle = useCallback(async (buildingId: string) => {
     if (!user) {
@@ -364,12 +349,36 @@ export default function Buildings() {
           </Card> : isMapView ? <Suspense fallback={<div className="h-[60vh] flex items-center justify-center">
             <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
           </div>}>
-            <BuildingsMap buildings={filteredBuildings} />
-          </Suspense> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredBuildings.map(building => {
-              const isShortlisted = buildingScores?.[building.id]?.shortlisted || false;
-              return <BuildingCard key={building.id} building={building} onNavigate={navigateToBuilding} onShortlist={handleShortlistToggle} isShortlisted={isShortlisted} />;
-            })}
+            <BuildingsMap buildings={displayedBuildings} />
+          </Suspense> : <div className="space-y-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {displayedBuildings.map(building => {
+                const isShortlisted = buildingScores?.[building.id]?.shortlisted || false;
+                return (
+                  <BuildingCard
+                    key={building.id}
+                    building={building}
+                    onNavigate={navigateToBuilding}
+                    onShortlist={handleShortlistToggle}
+                    isShortlisted={isShortlisted}
+                  />
+                );
+              })}
+            </div>
+
+            {visibleCount < filteredBuildings.length && (
+              <div className="flex justify-center mt-8">
+                <Button
+                  onClick={handleShowMore}
+                  variant="outline"
+                  size="lg"
+                  className="gap-2"
+                >
+                  Show More
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>}
       </div>
 
