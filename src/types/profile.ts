@@ -7,4 +7,5 @@ export interface Profile {
   phone_number: string | null;
   role: 'admin' | 'agent' | 'user';
   email: string | null;
+  avatar_url: string | null;
 }

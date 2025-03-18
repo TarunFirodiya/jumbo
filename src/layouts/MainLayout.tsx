@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,8 +28,8 @@ export default function MainLayout({
   const isPreferencesPage = location.pathname === "/preferences";
   const [showLogo, setShowLogo] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [notifications, setNotifications] = useState(1); // Example notification count
-  
+  const [notifications, setNotifications] = useState(1);
+
   const { data: profile, isLoading: profileLoading, refetch: refetchProfile } = useQuery<Profile>({
     queryKey: ['profile'],
     queryFn: async () => {
@@ -39,17 +38,14 @@ export default function MainLayout({
       const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       if (error) throw error;
 
-      // Cast the role to ensure it matches our Profile type
       return {
         ...data,
         role: data.role as 'admin' | 'agent' | 'user'
       } as Profile;
     }
   });
-  
-  // Listen for auth events and handle modals
+
   useEffect(() => {
-    // Listen for custom auth modal trigger events
     const handleAuthTriggerEvent = (e: CustomEvent<{action: "shortlist" | "visit" | "notify"}>) => {
       setAuthActionType(e.detail.action);
       setShowAuthModal(true);
@@ -61,7 +57,7 @@ export default function MainLayout({
       document.removeEventListener('triggerAuthModal', handleAuthTriggerEvent as EventListener);
     };
   }, []);
-  
+
   useEffect(() => {
     let lastScrollY = window.scrollY;
     const handleScroll = () => {
@@ -74,34 +70,24 @@ export default function MainLayout({
     });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-  
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
-        // Invalidate all auth-dependent queries
         queryClient.invalidateQueries({ queryKey: ['profile'] });
         queryClient.invalidateQueries({ queryKey: ['buildingScores'] });
         queryClient.invalidateQueries({ queryKey: ['shortlistedBuildings'] });
-        
-        // Navigate to buildings page instead of auth page when signing out
         navigate("/buildings");
         toast({
           title: "Signed out",
           description: "You have been signed out successfully"
         });
       } else if (event === "SIGNED_IN") {
-        // Invalidate all auth-dependent queries
         queryClient.invalidateQueries({ queryKey: ['profile'] });
         queryClient.invalidateQueries({ queryKey: ['buildingScores'] });
         queryClient.invalidateQueries({ queryKey: ['shortlistedBuildings'] });
-        
-        // Manually refetch profile
         refetchProfile();
-        
-        // Close the auth modal if it's open when a user signs in
         setShowAuthModal(false);
-        
-        // Dispatch a global event to notify other components
         window.dispatchEvent(new CustomEvent('supabase.auth.stateChange', { 
           detail: { event, session } 
         }));
@@ -109,11 +95,10 @@ export default function MainLayout({
     });
     return () => subscription.unsubscribe();
   }, [navigate, toast, queryClient, refetchProfile]);
-  
+
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      // Toast notification is handled by the onAuthStateChange listener
     } catch (error) {
       toast({
         title: "Error",
@@ -122,13 +107,12 @@ export default function MainLayout({
       });
     }
   };
-  
-  // Helper function to open auth modal with specific action type
+
   const openAuthModal = (actionType: "shortlist" | "visit" | "notify") => {
     setAuthActionType(actionType);
     setShowAuthModal(true);
   };
-  
+
   const menuItems = [
     {
       name: "Shortlist",
@@ -152,8 +136,7 @@ export default function MainLayout({
       isExternal: true
     }
   ];
-  
-  // Only show Dashboard option for admin or agent roles
+
   if (profile && (profile.role === 'admin' || profile.role === 'agent')) {
     menuItems.unshift({
       name: "Dashboard",
@@ -161,20 +144,19 @@ export default function MainLayout({
       path: "/dashboard"
     });
   }
-  
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Search term:", searchTerm);
   };
 
-  // Get initials for avatar fallback
   const getInitials = () => {
     if (!profile || !profile.full_name) return "U";
     const names = profile.full_name.split(" ");
     if (names.length === 1) return names[0].charAt(0).toUpperCase();
     return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
   };
-  
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <div className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b ${showLogo ? 'translate-y-0' : '-translate-y-full'}`}>
@@ -208,7 +190,7 @@ export default function MainLayout({
                           <Menu className="h-5 w-5" />
                           <div className="relative">
                             <Avatar className="h-8 w-8">
-                              <AvatarImage src={profile.avatar_url} />
+                              <AvatarImage src={profile.avatar_url || undefined} alt={profile.full_name || 'User'} />
                               <AvatarFallback>{getInitials()}</AvatarFallback>
                             </Avatar>
                             {notifications > 0 && (
@@ -267,7 +249,6 @@ export default function MainLayout({
       
       <Footerdemo />
       
-      {/* Auth Modal for handling login/signup */}
       <AuthModal 
         open={showAuthModal} 
         onOpenChange={setShowAuthModal} 
