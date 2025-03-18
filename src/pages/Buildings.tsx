@@ -341,12 +341,12 @@ export default function Buildings() {
     }} />
       
       <AnimatedHero 
-        title="Ready-to-move homes at the best prices"
+        title="Ready-to-move homes at lowest prices"
         subtitle="Find, visit & buy all in one-place. Zero spam. 100% secure."
         localityActions={localityActions}
         onSearch={handleSearch}
         onLocalitySelect={handleLocalitySelect}
-        imageUrl="/lovable-uploads/fa389e8e-879d-4eb9-b3dd-8148a7b06c73.png"
+        imageUrl="/lovable-uploads/d6734546-146b-4af0-9efa-4b94b8fc8bc6.png"
       />
       
       <div className="container mx-auto px-4 mt-8">

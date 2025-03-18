@@ -44,18 +44,21 @@ export function AnimatedHero({
   if (imageUrl) {
     return (
       <div className={cn(
-        "w-full bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200",
+        "w-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 relative overflow-hidden",
         className
       )}>
-        <div className="container mx-auto">
+        {/* Diagonal stripes overlay for Stripe-like effect */}
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.1)_25%,rgba(255,255,255,0.1)_50%,transparent_50%,transparent_75%,rgba(255,255,255,0.1)_75%)] bg-[length:100px_100px]"></div>
+        
+        <div className="container mx-auto relative z-10">
           <div className="grid md:grid-cols-2 gap-8 py-12 md:py-16 items-center">
             {/* Left Content */}
             <div className="flex flex-col gap-6 px-4 md:px-8 order-2 md:order-1">
-              <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl tracking-tight text-gray-900 font-semibold">
+              <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl tracking-tight text-white font-semibold">
                 {title}
               </h1>
               
-              <p className="text-base md:text-lg text-gray-600 max-w-lg">
+              <p className="text-base md:text-lg text-white/90 max-w-lg">
                 {subtitle}
               </p>
               
@@ -82,8 +85,8 @@ export function AnimatedHero({
             >
               <div className="rounded-2xl overflow-hidden shadow-2xl">
                 <img 
-                  src={imageUrl} 
-                  alt="Happy couple in their new home" 
+                  src="/lovable-uploads/d6734546-146b-4af0-9efa-4b94b8fc8bc6.png" 
+                  alt="Happy couple signing home documents" 
                   className="w-full h-auto object-cover"
                 />
               </div>
