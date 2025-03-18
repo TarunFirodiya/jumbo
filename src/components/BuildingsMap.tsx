@@ -6,7 +6,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Heart } from 'lucide-react';
+import { Heart, Building, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BuildingsMapProps {
@@ -120,26 +120,24 @@ const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: Buildings
       // Create marker element
       const el = document.createElement('div');
       el.className = 'price-marker';
-      el.style.position = 'relative';
-      el.style.whiteSpace = 'nowrap';
       
       // Format the price for display (in Cr)
       const price = building.min_price ? `₹${(building.min_price/10000000).toFixed(1)} Cr` : '';
       
-      // Style the marker like Airbnb price markers
+      // Style the marker like Airbnb price markers - making them smaller
       el.innerHTML = `
         <div class="price-bubble" style="
           background: white;
           color: #000;
-          padding: 6px 10px;
-          border-radius: 20px;
+          padding: 4px 8px;
+          border-radius: 16px;
           font-weight: 600;
-          font-size: 14px;
+          font-size: 12px;
           box-shadow: 0 2px 5px rgba(0,0,0,0.2);
           display: flex;
           align-items: center;
           justify-content: center;
-          min-width: 70px;
+          min-width: 60px;
           transform-origin: center;
           transition: transform 0.2s ease;
         ">
@@ -147,17 +145,26 @@ const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: Buildings
         </div>
       `;
       
-      el.addEventListener('mouseenter', () => {
-        el.style.zIndex = '10';
-        el.querySelector('.price-bubble')!.style.transform = 'scale(1.1)';
-      });
-      
-      el.addEventListener('mouseleave', () => {
-        if (activeMarker !== building.id) {
-          el.style.zIndex = '1';
-          el.querySelector('.price-bubble')!.style.transform = 'scale(1)';
+      const handleMouseEnter = () => {
+        const priceBubble = el.querySelector('.price-bubble') as HTMLElement;
+        if (priceBubble) {
+          el.setAttribute('style', 'z-index: 10;');
+          priceBubble.setAttribute('style', priceBubble.getAttribute('style') + '; transform: scale(1.1);');
         }
-      });
+      };
+      
+      const handleMouseLeave = () => {
+        if (activeMarker !== building.id) {
+          const priceBubble = el.querySelector('.price-bubble') as HTMLElement;
+          if (priceBubble) {
+            el.setAttribute('style', 'z-index: 1;');
+            priceBubble.setAttribute('style', priceBubble.getAttribute('style')?.replace('; transform: scale(1.1)', '') || '');
+          }
+        }
+      };
+      
+      el.addEventListener('mouseenter', handleMouseEnter);
+      el.addEventListener('mouseleave', handleMouseLeave);
 
       // Create a popup with the building card
       const isShortlisted = buildingScores[building.id]?.shortlisted || false;
@@ -168,7 +175,7 @@ const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: Buildings
         maxWidth: '320px'
       })
       .setHTML(`
-        <div class="building-popup" style="width: 100%; max-width: 300px;">
+        <div class="building-popup" style="width: 100%; max-width: 300px; cursor: pointer;" onclick="window.location.href='/buildings/${building.id}'">
           <div class="image-container" style="position: relative; height: 180px; overflow: hidden; border-radius: 8px;">
             <img 
               src="${building.images && building.images.length > 0 ? building.images[0] : '/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png'}"
@@ -203,25 +210,34 @@ const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: Buildings
             <h3 style="font-weight: 600; font-size: 16px; margin: 0 0 4px 0;">${building.name}</h3>
             <p style="margin: 0 0 8px 0; font-size: 14px; color: #666;">${building.locality || ''}</p>
             
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 16px; margin-bottom: 8px;">
+              ${building.total_floors ? `
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="4" width="16" height="16" rx="2"/>
+                    <path d="M9 12h6"/>
+                    <path d="M4 8h16"/>
+                    <path d="M12 4v16"/>
+                  </svg>
+                  <span style="font-size: 13px;">${building.total_floors} Floors</span>
+                </div>
+              ` : ''}
+              
+              ${building.age !== null ? `
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  <span style="font-size: 13px;">${building.age} Old</span>
+                </div>
+              ` : ''}
+            </div>
+            
+            <div>
               <p style="font-weight: 600; font-size: 16px; margin: 0;">
                 ₹${(building.min_price/10000000).toFixed(1)} Cr
               </p>
-              
-              <a 
-                href="/buildings/${building.id}"
-                style="
-                  background: #000;
-                  color: white;
-                  padding: 8px 16px;
-                  border-radius: 8px;
-                  text-decoration: none;
-                  font-size: 14px;
-                  font-weight: 500;
-                "
-              >
-                View Details
-              </a>
             </div>
           </div>
         </div>
@@ -242,15 +258,21 @@ const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: Buildings
           )?.getElement();
           
           if (prevMarkerEl) {
-            prevMarkerEl.style.zIndex = '1';
-            prevMarkerEl.querySelector('.price-bubble')!.style.transform = 'scale(1)';
+            prevMarkerEl.setAttribute('style', 'z-index: 1;');
+            const prevBubble = prevMarkerEl.querySelector('.price-bubble') as HTMLElement;
+            if (prevBubble) {
+              prevBubble.setAttribute('style', prevBubble.getAttribute('style')?.replace('; transform: scale(1.1)', '') || '');
+            }
           }
         }
         
         // Set new active marker
         setActiveMarker(building.id);
-        el.style.zIndex = '10';
-        el.querySelector('.price-bubble')!.style.transform = 'scale(1.1)';
+        el.setAttribute('style', 'z-index: 10;');
+        const bubble = el.querySelector('.price-bubble') as HTMLElement;
+        if (bubble) {
+          bubble.setAttribute('style', bubble.getAttribute('style') + '; transform: scale(1.1);');
+        }
       });
 
       // Set data attribute for identification
