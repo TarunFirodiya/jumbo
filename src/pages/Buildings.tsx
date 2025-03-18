@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Heart, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -342,11 +341,12 @@ export default function Buildings() {
     }} />
       
       <AnimatedHero 
-        title="Find your dream home"
-        subtitle="Choose from over 1000 ready to move homes in Bangalore. Visit multiple homes over a weekend. Buy with 100% legal safety."
+        title="Ready-to-move homes at the best prices"
+        subtitle="Find, visit & buy all in one-place. Zero spam. 100% secure."
         localityActions={localityActions}
         onSearch={handleSearch}
         onLocalitySelect={handleLocalitySelect}
+        imageUrl="/lovable-uploads/fa389e8e-879d-4eb9-b3dd-8148a7b06c73.png"
       />
       
       <div className="container mx-auto px-4 mt-8">

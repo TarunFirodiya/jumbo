@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import { useMemo, useState, useEffect } from "react";
 import { ActionSearchBar, Action } from "@/components/ui/action-search-bar";
+import { cn } from "@/lib/utils";
 
 interface AnimatedHeroProps {
   title: string;
@@ -9,6 +10,8 @@ interface AnimatedHeroProps {
   localityActions?: Action[];
   onSearch?: (query: string) => void;
   onLocalitySelect?: (action: Action) => void;
+  imageUrl?: string;
+  className?: string;
 }
 
 export function AnimatedHero({ 
@@ -16,7 +19,9 @@ export function AnimatedHero({
   subtitle, 
   localityActions = [], 
   onSearch, 
-  onLocalitySelect 
+  onLocalitySelect,
+  imageUrl,
+  className
 }: AnimatedHeroProps) {
   const [titleNumber, setTitleNumber] = useState(0);
   const titles = useMemo(
@@ -35,6 +40,61 @@ export function AnimatedHero({
     return () => clearTimeout(timeoutId);
   }, [titleNumber, titles]);
 
+  // If imageUrl is provided, use the simple layout
+  if (imageUrl) {
+    return (
+      <div className={cn(
+        "w-full bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200",
+        className
+      )}>
+        <div className="container mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 py-12 md:py-16 items-center">
+            {/* Left Content */}
+            <div className="flex flex-col gap-6 px-4 md:px-8 order-2 md:order-1">
+              <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl tracking-tight text-gray-900 font-semibold">
+                {title}
+              </h1>
+              
+              <p className="text-base md:text-lg text-gray-600 max-w-lg">
+                {subtitle}
+              </p>
+              
+              {onSearch && (
+                <div className="w-full max-w-md mt-2">
+                  <ActionSearchBar 
+                    actions={localityActions || []} 
+                    onSearch={onSearch} 
+                    onActionSelect={onLocalitySelect} 
+                    placeholderText="Search by property name or location..." 
+                    labelText="" 
+                    className="shadow-md" 
+                  />
+                </div>
+              )}
+            </div>
+            
+            {/* Right Image */}
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              className="order-1 md:order-2 px-4 md:px-0"
+            >
+              <div className="rounded-2xl overflow-hidden shadow-2xl">
+                <img 
+                  src={imageUrl} 
+                  alt="Happy couple in their new home" 
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Original animated hero if no image is provided
   return (
     <div className="w-full bg-gradient-to-b from-blue-50 to-white">
       <div className="container mx-auto">
