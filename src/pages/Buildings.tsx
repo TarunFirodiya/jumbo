@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Heart, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -353,7 +354,11 @@ export default function Buildings() {
           </Card> : isMapView ? <Suspense fallback={<div className="h-[60vh] flex items-center justify-center">
             <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
           </div>}>
-            <BuildingsMap buildings={displayedBuildings} />
+            <BuildingsMap 
+              buildings={displayedBuildings} 
+              onShortlist={handleShortlistToggle}
+              buildingScores={buildingScores}
+            />
           </Suspense> : <div className="space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {displayedBuildings.map(building => {

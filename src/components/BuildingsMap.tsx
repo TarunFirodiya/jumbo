@@ -6,18 +6,23 @@ import { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { Heart } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface BuildingsMapProps {
   buildings: Tables<'buildings'>[];
+  onShortlist?: (buildingId: string) => Promise<void>;
+  buildingScores?: Record<string, any>;
 }
 
-const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
+const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: BuildingsMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<mapboxgl.Marker[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [mapboxToken, setMapboxToken] = useState<string>('');
+  const [activeMarker, setActiveMarker] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMapboxToken = async () => {
@@ -79,6 +84,16 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
     }
   }, [mapboxToken, toast]);
 
+  // Function to handle shortlist
+  const handleShortlist = (e: Event, buildingId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (onShortlist) {
+      onShortlist(buildingId);
+    }
+  };
+
   // Function to add markers
   const addMarkers = () => {
     if (!map.current) {
@@ -104,80 +119,155 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
 
       // Create marker element
       const el = document.createElement('div');
-      el.className = 'marker';
+      el.className = 'price-marker';
+      el.style.position = 'relative';
+      el.style.whiteSpace = 'nowrap';
       
-      // Get match score from building data
-      const matchScore = (building as any).overall_match_score || 0.5; // Default to 0.5 if no score
+      // Format the price for display (in Cr)
+      const price = building.min_price ? `₹${(building.min_price/10000000).toFixed(1)} Cr` : '';
       
-      // Calculate color based on match score (green gradient)
-      const intensity = Math.floor(matchScore * 255);
-      el.style.backgroundColor = `rgba(0, ${intensity}, 0, 0.8)`;
-      el.style.width = '20px';
-      el.style.height = '20px';
-      el.style.borderRadius = '50%';
-      el.style.border = '2px solid white';
-      el.style.cursor = 'pointer';
-      el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+      // Style the marker like Airbnb price markers
+      el.innerHTML = `
+        <div class="price-bubble" style="
+          background: white;
+          color: #000;
+          padding: 6px 10px;
+          border-radius: 20px;
+          font-weight: 600;
+          font-size: 14px;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 70px;
+          transform-origin: center;
+          transition: transform 0.2s ease;
+        ">
+          ${price}
+        </div>
+      `;
+      
+      el.addEventListener('mouseenter', () => {
+        el.style.zIndex = '10';
+        el.querySelector('.price-bubble')!.style.transform = 'scale(1.1)';
+      });
+      
+      el.addEventListener('mouseleave', () => {
+        if (activeMarker !== building.id) {
+          el.style.zIndex = '1';
+          el.querySelector('.price-bubble')!.style.transform = 'scale(1)';
+        }
+      });
 
-      const popup = new mapboxgl.Popup({ offset: 25 })
-        .setHTML(`
-          <div class="p-4 max-w-sm bg-white rounded-lg shadow-lg">
-            <div class="flex items-center justify-between mb-2">
-              <h3 class="font-semibold text-lg">${building.name}</h3>
-              <div class="relative w-10 h-10">
-                <svg class="w-full h-full -rotate-90">
-                  <circle
-                    cx="20"
-                    cy="20"
-                    r="15"
-                    class="stroke-muted fill-none"
-                    stroke-width="4"
-                  />
-                  <circle
-                    cx="20"
-                    cy="20"
-                    r="15"
-                    class="stroke-primary fill-none"
-                    stroke-width="4"
-                    stroke-dasharray="${matchScore * 94.2} 94.2"
-                  />
-                </svg>
-                <div class="absolute inset-0 flex items-center justify-center text-xs font-medium">
-                  ${Math.round(matchScore * 100)}%
-                </div>
-              </div>
-            </div>
-            <p class="text-sm text-gray-600 mb-2">${building.locality || ''}</p>
-            ${building.min_price ? 
-              `<p class="text-sm font-medium">₹${(building.min_price/10000000).toFixed(1)} Cr${building.max_price ? 
-                ` - ₹${(building.max_price/10000000).toFixed(1)} Cr` : ''}` 
-              : ''}
-            <div class="mt-2 flex justify-between items-center">
-              <button 
-                class="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm"
-                onclick="window.location.href='/buildings/${building.id}'"
+      // Create a popup with the building card
+      const isShortlisted = buildingScores[building.id]?.shortlisted || false;
+      const popup = new mapboxgl.Popup({
+        offset: 25,
+        closeButton: true,
+        closeOnClick: false,
+        maxWidth: '320px'
+      })
+      .setHTML(`
+        <div class="building-popup" style="width: 100%; max-width: 300px;">
+          <div class="image-container" style="position: relative; height: 180px; overflow: hidden; border-radius: 8px;">
+            <img 
+              src="${building.images && building.images.length > 0 ? building.images[0] : '/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png'}"
+              style="width: 100%; height: 100%; object-fit: cover;"
+              alt="${building.name}"
+            />
+            <button 
+              id="shortlist-btn-${building.id}"
+              style="
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                background: rgba(255,255,255,0.8);
+                border: none;
+                border-radius: 50%;
+                width: 36px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                z-index: 10;
+              "
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="${isShortlisted ? '#ff4545' : 'none'}" stroke="${isShortlisted ? '#ff4545' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+            </button>
+          </div>
+          
+          <div style="padding: 12px 0;">
+            <h3 style="font-weight: 600; font-size: 16px; margin: 0 0 4px 0;">${building.name}</h3>
+            <p style="margin: 0 0 8px 0; font-size: 14px; color: #666;">${building.locality || ''}</p>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <p style="font-weight: 600; font-size: 16px; margin: 0;">
+                ₹${(building.min_price/10000000).toFixed(1)} Cr
+              </p>
+              
+              <a 
+                href="/buildings/${building.id}"
+                style="
+                  background: #000;
+                  color: white;
+                  padding: 8px 16px;
+                  border-radius: 8px;
+                  text-decoration: none;
+                  font-size: 14px;
+                  font-weight: 500;
+                "
               >
                 View Details
-              </button>
-              <button 
-                class="p-2 rounded-full hover:bg-gray-100"
-                onclick="event.stopPropagation();"
-              >
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                </svg>
-              </button>
+              </a>
             </div>
           </div>
-        `);
+        </div>
+      `);
 
+      // Create the marker
       const marker = new mapboxgl.Marker(el)
         .setLngLat([building.longitude, building.latitude])
         .setPopup(popup)
         .addTo(map.current);
 
+      // Handle marker click to set active state
+      el.addEventListener('click', () => {
+        // Reset previous active marker
+        if (activeMarker && activeMarker !== building.id) {
+          const prevMarkerEl = markers.current.find(m => 
+            m.getElement().getAttribute('data-building-id') === activeMarker
+          )?.getElement();
+          
+          if (prevMarkerEl) {
+            prevMarkerEl.style.zIndex = '1';
+            prevMarkerEl.querySelector('.price-bubble')!.style.transform = 'scale(1)';
+          }
+        }
+        
+        // Set new active marker
+        setActiveMarker(building.id);
+        el.style.zIndex = '10';
+        el.querySelector('.price-bubble')!.style.transform = 'scale(1.1)';
+      });
+
+      // Set data attribute for identification
+      el.setAttribute('data-building-id', building.id);
+      
       markers.current.push(marker);
       bounds.extend([building.longitude, building.latitude]);
+      
+      // Add event listener for the shortlist button after popup is open
+      marker.getPopup().on('open', () => {
+        setTimeout(() => {
+          const shortlistBtn = document.getElementById(`shortlist-btn-${building.id}`);
+          if (shortlistBtn) {
+            shortlistBtn.addEventListener('click', (e) => handleShortlist(e, building.id));
+          }
+        }, 100);
+      });
     });
 
     // Fit map to markers if there are any
@@ -194,7 +284,7 @@ const BuildingsMap = ({ buildings }: BuildingsMapProps) => {
     if (map.current) {
       addMarkers();
     }
-  }, [buildings]);
+  }, [buildings, buildingScores]);
 
   if (!mapboxToken) {
     return (
