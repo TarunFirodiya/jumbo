@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -92,7 +93,8 @@ export function useBuildingData(id: string) {
               // If can't parse as JSON, try as comma-separated string
               const imagesStr = updatedListing.images as string;
               if (imagesStr.includes(',')) {
-                updatedListing.images = imagesStr.split(',').map((img: string) => img.trim());
+                // Fix: Explicitly type this as any to avoid type error when assigning string[] to a property that could be a string
+                (updatedListing.images as any) = imagesStr.split(',').map((img: string) => img.trim());
               } else {
                 // If it's just a single string and not JSON or comma-separated
                 updatedListing.images = [imagesStr];
