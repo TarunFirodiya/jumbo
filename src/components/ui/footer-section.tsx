@@ -46,7 +46,7 @@ function Footerdemo() {
             <h3 className="mb-4 text-lg font-semibold">Contact Us</h3>
             <address className="space-y-2 text-sm not-italic">
               <p>761 Urban Vault</p>
-              <p>Tech City, TC 12345</p>
+              <p>Sector 3, HSR Layout</p>
               <p>Phone: (123) 456-7890</p>
               <p>Email: hello@example.com</p>
             </address>
