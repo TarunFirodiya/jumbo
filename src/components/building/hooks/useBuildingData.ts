@@ -101,7 +101,7 @@ export function useBuildingData(id: string) {
             }
           } else if (Array.isArray(updatedListing.images)) {
             // It's already an array, no processing needed
-            updatedListing.images = updatedListing.images;
+            // No need to reassign to itself
           } else if (!updatedListing.images) {
             // If images is null or undefined, set as empty array
             updatedListing.images = [];
