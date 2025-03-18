@@ -1,6 +1,8 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Tables } from "@/integrations/supabase/types";
 
 // Define a type that includes the features property
 export type BuildingWithFeatures = {
@@ -12,11 +14,10 @@ export type BuildingWithFeatures = {
   [key: string]: any;
 };
 
-// Define a type for listings with properly typed images
-type ListingWithProcessedImages = {
+// Define a type for listings with properly typed images that extends the base listing type
+export type ListingWithProcessedImages = Tables<"listings"> & {
   images: string[] | null;
-  [key: string]: any;
-}
+};
 
 export function useBuildingData(id: string) {
   const { toast } = useToast();
@@ -88,7 +89,7 @@ export function useBuildingData(id: string) {
         // Process listing images if needed
         return data?.map(listing => {
           // Create a safe copy of the listing to modify with properly typed images field
-          const updatedListing: ListingWithProcessedImages = { ...listing, images: null };
+          const updatedListing = { ...listing } as ListingWithProcessedImages;
           
           if (typeof listing.images === 'string') {
             try {
