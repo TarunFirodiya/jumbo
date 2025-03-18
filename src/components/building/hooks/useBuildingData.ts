@@ -101,7 +101,7 @@ export function useBuildingData(id: string) {
             }
           } else if (Array.isArray(updatedListing.images)) {
             // It's already an array, no processing needed
-            // No need to reassign to itself
+            // Removed the unnecessary self-assignment that was causing the type error
           } else if (!updatedListing.images) {
             // If images is null or undefined, set as empty array
             updatedListing.images = [];
