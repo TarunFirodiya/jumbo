@@ -47,7 +47,7 @@ function Footerdemo() {
             <address className="space-y-2 text-sm not-italic">
               <p>761 Urban Vault</p>
               <p>Sector 3, HSR Layout</p>
-              <p>Phone: (123) 456-7890</p>
+              <p>Bengaluru, India</p>
               <p>Email: hello@example.com</p>
             </address>
           </div>
