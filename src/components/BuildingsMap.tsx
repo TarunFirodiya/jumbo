@@ -132,24 +132,30 @@ const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: Buildings
           padding: 4px 8px;
           border-radius: 16px;
           font-weight: 600;
-          font-size: 12px;
+          font-size: 11px;
           box-shadow: 0 2px 5px rgba(0,0,0,0.2);
           display: flex;
           align-items: center;
           justify-content: center;
-          min-width: 60px;
+          min-width: 50px;
           transform-origin: center;
           transition: transform 0.2s ease;
+          white-space: nowrap;
         ">
           ${price}
         </div>
       `;
       
+      // Add permanent z-index to ensure pins are always visible
+      el.style.zIndex = "5";
+      
       const handleMouseEnter = () => {
         const priceBubble = el.querySelector('.price-bubble') as HTMLElement;
         if (priceBubble) {
-          el.setAttribute('style', 'z-index: 10;');
-          priceBubble.setAttribute('style', priceBubble.getAttribute('style') + '; transform: scale(1.1);');
+          el.style.zIndex = "10";
+          priceBubble.style.transform = "scale(1.1)";
+          priceBubble.style.backgroundColor = "#f8f8f8";
+          priceBubble.style.boxShadow = "0 3px 7px rgba(0,0,0,0.25)";
         }
       };
       
@@ -157,8 +163,10 @@ const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: Buildings
         if (activeMarker !== building.id) {
           const priceBubble = el.querySelector('.price-bubble') as HTMLElement;
           if (priceBubble) {
-            el.setAttribute('style', 'z-index: 1;');
-            priceBubble.setAttribute('style', priceBubble.getAttribute('style')?.replace('; transform: scale(1.1)', '') || '');
+            el.style.zIndex = "5";
+            priceBubble.style.transform = "";
+            priceBubble.style.backgroundColor = "white";
+            priceBubble.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
           }
         }
       };
@@ -244,7 +252,10 @@ const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: Buildings
       `);
 
       // Create the marker
-      const marker = new mapboxgl.Marker(el)
+      const marker = new mapboxgl.Marker({
+        element: el,
+        anchor: 'bottom',  // Ensures the bottom of the marker is at the coordinate point
+      })
         .setLngLat([building.longitude, building.latitude])
         .setPopup(popup)
         .addTo(map.current);
@@ -258,20 +269,24 @@ const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: Buildings
           )?.getElement();
           
           if (prevMarkerEl) {
-            prevMarkerEl.setAttribute('style', 'z-index: 1;');
             const prevBubble = prevMarkerEl.querySelector('.price-bubble') as HTMLElement;
             if (prevBubble) {
-              prevBubble.setAttribute('style', prevBubble.getAttribute('style')?.replace('; transform: scale(1.1)', '') || '');
+              prevMarkerEl.style.zIndex = "5";
+              prevBubble.style.transform = "";
+              prevBubble.style.backgroundColor = "white";
+              prevBubble.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
             }
           }
         }
         
         // Set new active marker
         setActiveMarker(building.id);
-        el.setAttribute('style', 'z-index: 10;');
         const bubble = el.querySelector('.price-bubble') as HTMLElement;
         if (bubble) {
-          bubble.setAttribute('style', bubble.getAttribute('style') + '; transform: scale(1.1);');
+          el.style.zIndex = "10";
+          bubble.style.transform = "scale(1.1)";
+          bubble.style.backgroundColor = "#f8f8f8";
+          bubble.style.boxShadow = "0 3px 7px rgba(0,0,0,0.25)";
         }
       });
 
