@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +18,7 @@ export function AgentManagement() {
   const [editingAgent, setEditingAgent] = useState<Profile | null>(null);
 
   // Fetch agents
-  const { data: agents } = useQuery<Profile[]>({
+  const { data: agents } = useQuery({
     queryKey: ['agents'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -27,11 +28,17 @@ export function AgentManagement() {
 
       if (error) throw error;
       
-      // Cast the data to ensure role matches our Profile type
-      return data.map(agent => ({
-        ...agent,
-        role: agent.role as 'admin' | 'agent' | 'user'
-      }));
+      // Map the data to ensure it includes all fields expected in the Profile type
+      return data.map((agent: any) => ({
+        id: agent.id,
+        created_at: agent.created_at,
+        updated_at: agent.updated_at,
+        full_name: agent.full_name,
+        phone_number: agent.phone_number,
+        role: agent.role as 'admin' | 'agent' | 'user',
+        email: agent.email,
+        avatar_url: agent.avatar_url
+      })) as Profile[];
     }
   });
 
