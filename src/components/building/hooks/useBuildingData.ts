@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -93,17 +92,17 @@ export function useBuildingData(id: string) {
               // If can't parse as JSON, try as comma-separated string
               const imagesStr = updatedListing.images as string;
               if (imagesStr.includes(',')) {
-                // Fix: Create a new typed variable to hold the array
+                // Create a typed array first, then use type assertion for assignment
                 const imageArray = imagesStr.split(',').map((img: string) => img.trim());
-                updatedListing.images = imageArray;
+                updatedListing.images = imageArray as unknown as typeof updatedListing.images;
               } else {
                 // If it's just a single string and not JSON or comma-separated
-                updatedListing.images = [imagesStr];
+                updatedListing.images = [imagesStr] as unknown as typeof updatedListing.images;
               }
             }
           } else if (!updatedListing.images) {
             // If images is null or undefined, set as empty array
-            updatedListing.images = [];
+            updatedListing.images = [] as unknown as typeof updatedListing.images;
           }
           // No else case needed - if it's already an array, we keep it as is
           
