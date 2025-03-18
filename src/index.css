@@ -1,5 +1,6 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+@import 'geist/font.css';
 
 @tailwind base;
 @tailwind components;
@@ -53,7 +54,7 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground font-geist;
   }
 
   h1, h2, h3, h4, h5 {
@@ -70,6 +71,10 @@
 
   h3 {
     @apply text-xl md:text-2xl;
+  }
+
+  code, pre, kbd {
+    @apply font-geist-mono;
   }
 }
 
