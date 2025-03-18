@@ -12,6 +12,12 @@ export type BuildingWithFeatures = {
   [key: string]: any;
 };
 
+// Define a type for listings with properly typed images
+type ListingWithProcessedImages = {
+  images: string[] | null;
+  [key: string]: any;
+}
+
 export function useBuildingData(id: string) {
   const { toast } = useToast();
   
@@ -81,30 +87,30 @@ export function useBuildingData(id: string) {
         
         // Process listing images if needed
         return data?.map(listing => {
-          // Create a safe copy of the listing to modify
-          const updatedListing = { ...listing };
+          // Create a safe copy of the listing to modify with properly typed images field
+          const updatedListing: ListingWithProcessedImages = { ...listing, images: null };
           
-          if (typeof updatedListing.images === 'string') {
+          if (typeof listing.images === 'string') {
             try {
               // Try to parse as JSON first
-              updatedListing.images = JSON.parse(updatedListing.images as string);
+              updatedListing.images = JSON.parse(listing.images);
             } catch (e) {
               // If can't parse as JSON, try as comma-separated string
-              const imagesStr = updatedListing.images as string;
+              const imagesStr = listing.images as string;
               if (imagesStr.includes(',')) {
-                const imageArray = imagesStr.split(',').map(img => img.trim());
-                updatedListing.images = imageArray;
+                updatedListing.images = imagesStr.split(',').map(img => img.trim());
               } else {
                 // If it's just a single string and not JSON or comma-separated
-                const imageArray = [imagesStr];
-                updatedListing.images = imageArray;
+                updatedListing.images = [imagesStr];
               }
             }
-          } else if (!updatedListing.images) {
+          } else if (Array.isArray(listing.images)) {
+            // If it's already an array, keep it
+            updatedListing.images = listing.images;
+          } else {
             // If images is null or undefined, set as empty array
             updatedListing.images = [];
           }
-          // No else case needed - if it's already an array, we keep it as is
           
           return updatedListing;
         });
