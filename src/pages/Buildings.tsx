@@ -66,10 +66,10 @@ const BuildingCard = ({
           />
         </button>
       </div>
-      <CardHeader className="p-4 group-hover:bg-slate-50 transition-colors duration-300">
+      <CardContent className="p-4 group-hover:bg-slate-50 transition-colors duration-300">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">{building.name}</CardTitle>
+            <h3 className="text-lg font-semibold">{building.name}</h3>
             {building.google_rating && (
               <div className="flex items-center gap-1 text-sm">
                 <Star className="h-4 w-4 fill-yellow-400 stroke-yellow-400" />
@@ -81,6 +81,26 @@ const BuildingCard = ({
             <MapPin className="h-4 w-4" />
             <span>{building.locality}</span>
           </div>
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            {building.age && (
+              <div className="flex items-center gap-1">
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{building.age} years</span>
+              </div>
+            )}
+            {building.total_floors && (
+              <div className="flex items-center gap-1">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{building.total_floors} floors</span>
+              </div>
+            )}
+            {building.bhk_types && (
+              <div className="flex items-center gap-1">
+                <Home className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{building.bhk_types.join(", ")} BHK</span>
+              </div>
+            )}
+          </div>
           <div className="flex items-baseline">
             <span className="text-xs text-muted-foreground mr-1">Starting at</span>
             <span className="text-lg font-semibold">
@@ -88,7 +108,7 @@ const BuildingCard = ({
             </span>
           </div>
         </div>
-      </CardHeader>
+      </CardContent>
     </Card>
   );
 };
