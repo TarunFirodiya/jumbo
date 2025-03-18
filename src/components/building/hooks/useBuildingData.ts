@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -99,13 +98,11 @@ export function useBuildingData(id: string) {
                 updatedListing.images = [imagesStr];
               }
             }
-          } else if (Array.isArray(updatedListing.images)) {
-            // It's already an array, no processing needed
-            // Removed the unnecessary self-assignment that was causing the type error
           } else if (!updatedListing.images) {
             // If images is null or undefined, set as empty array
             updatedListing.images = [];
           }
+          // No else case needed - if it's already an array, we keep it as is
           
           return updatedListing;
         });
