@@ -12,9 +12,7 @@ function Footerdemo() {
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
           <div className="relative">
             <h2 className="mb-4 text-3xl font-bold tracking-tight">Stay Connected</h2>
-            <p className="mb-6 text-muted-foreground">
-              Join our newsletter for the latest updates and exclusive offers.
-            </p>
+            <p className="mb-6 text-muted-foreground">Get priority access to home listings</p>
             <form className="relative">
               <Input type="email" placeholder="Enter your email" className="pr-12 backdrop-blur-sm" />
               <Button type="submit" size="icon" className="absolute right-1 top-1 h-8 w-8 rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105">
