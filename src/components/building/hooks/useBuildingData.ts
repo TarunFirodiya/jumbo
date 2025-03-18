@@ -92,17 +92,16 @@ export function useBuildingData(id: string) {
               // If can't parse as JSON, try as comma-separated string
               const imagesStr = updatedListing.images as string;
               if (imagesStr.includes(',')) {
-                // Create a typed array first, then use type assertion for assignment
-                const imageArray = imagesStr.split(',').map((img: string) => img.trim());
-                updatedListing.images = imageArray as unknown as typeof updatedListing.images;
+                // Here we need to ensure the type compatibility
+                updatedListing.images = imagesStr.split(',').map(img => img.trim()) as any;
               } else {
                 // If it's just a single string and not JSON or comma-separated
-                updatedListing.images = [imagesStr] as unknown as typeof updatedListing.images;
+                updatedListing.images = [imagesStr] as any;
               }
             }
           } else if (!updatedListing.images) {
             // If images is null or undefined, set as empty array
-            updatedListing.images = [] as unknown as typeof updatedListing.images;
+            updatedListing.images = [] as any;
           }
           // No else case needed - if it's already an array, we keep it as is
           
