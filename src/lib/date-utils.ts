@@ -70,6 +70,7 @@ export const parseDateString = (dateString: string): Date | null => {
 export const formatDateForStorage = (date: Date): string => {
   if (!date) return '';
   try {
+    // Make sure to use the correct format the database expects: dd-MM-yyyy
     return format(date, 'dd-MM-yyyy');
   } catch (error) {
     console.error('Error formatting date for storage:', error);

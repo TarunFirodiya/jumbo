@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -104,6 +104,8 @@ export function VisitRequestModal({
       // Format date as string for storage (dd-MM-yyyy)
       const formattedDate = formatDateForStorage(date);
       
+      console.log("Submitting visit with formatted date:", formattedDate);
+      
       // Create or update visit
       if (visitId) {
         // Update existing visit
@@ -134,7 +136,10 @@ export function VisitRequestModal({
             visit_status: 'confirmed'  // Set default status to confirmed
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Visit insert error:", error);
+          throw error;
+        }
 
         toast({
           title: "Visit Scheduled",
@@ -184,6 +189,9 @@ export function VisitRequestModal({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{visitId ? "Update Visit" : "Schedule a Visit"}</DialogTitle>
+          <DialogDescription>
+            Select a date and time for your property visit
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -202,7 +210,7 @@ export function VisitRequestModal({
                   {date ? format(date, "PPP") : "Select a date"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
+              <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={date}
