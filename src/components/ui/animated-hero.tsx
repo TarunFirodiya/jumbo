@@ -1,12 +1,13 @@
 
-import { motion } from "framer-motion";
+import { motion, LayoutGroup } from "framer-motion";
 import { useMemo, useState, useEffect } from "react";
 import { ActionSearchBar, Action } from "@/components/ui/action-search-bar";
 import { cn } from "@/lib/utils";
+import { TextRotate } from "@/components/ui/text-rotate";
 
 interface AnimatedHeroProps {
-  title: string;
-  subtitle: string;
+  title?: string;
+  subtitle?: string;
   localityActions?: Action[];
   onSearch?: (query: string) => void;
   onLocalitySelect?: (action: Action) => void;
@@ -16,30 +17,13 @@ interface AnimatedHeroProps {
 
 export function AnimatedHero({ 
   title, 
-  subtitle, 
+  subtitle = "Search, visit & buy ready-to-move homes at fixed prices", 
   localityActions = [], 
   onSearch, 
   onLocalitySelect,
   imageUrl,
   className
 }: AnimatedHeroProps) {
-  const [titleNumber, setTitleNumber] = useState(0);
-  const titles = useMemo(
-    () => ["luxurious", "peaceful", "spacious", "modern", "perfect"],
-    []
-  );
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (titleNumber === titles.length - 1) {
-        setTitleNumber(0);
-      } else {
-        setTitleNumber(titleNumber + 1);
-      }
-    }, 2000);
-    return () => clearTimeout(timeoutId);
-  }, [titleNumber, titles]);
-
   // If imageUrl is provided, use the simple layout
   if (imageUrl) {
     return (
@@ -55,7 +39,23 @@ export function AnimatedHero({
             {/* Left Content */}
             <div className="flex flex-col gap-6 px-4 md:px-8 order-2 md:order-1">
               <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl tracking-tight text-white font-semibold">
-                {title}
+                <span>Home Buying Made </span>
+                <LayoutGroup>
+                  <motion.span layout className="flex whitespace-pre">
+                    <TextRotate
+                      texts={[
+                        "Simple",
+                        "Safe",
+                        "Affordable"
+                      ]}
+                      mainClassName="overflow-hidden text-white font-bold"
+                      staggerDuration={0.03}
+                      staggerFrom="last"
+                      rotationInterval={2000}
+                      transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                    />
+                  </motion.span>
+                </LayoutGroup>
               </h1>
               
               <p className="text-base md:text-lg text-white/90 max-w-lg">
@@ -104,31 +104,23 @@ export function AnimatedHero({
         <div className="flex gap-8 py-16 md:py-24 items-center justify-center flex-col">
           <div className="flex gap-4 flex-col px-4 md:px-0">
             <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl max-w-3xl tracking-tight text-center">
-              <span className="text-gray-800">Find your</span>
-              <span className="relative flex w-full justify-center overflow-hidden text-center md:pb-4 md:pt-1">
-                &nbsp;
-                {titles.map((title, index) => (
-                  <motion.span
-                    key={index}
-                    className="absolute font-semibold text-primary"
-                    initial={{ opacity: 0, y: -20 }}
-                    transition={{ type: "spring", stiffness: 50 }}
-                    animate={
-                      titleNumber === index
-                        ? {
-                            y: 0,
-                            opacity: 1,
-                          }
-                        : {
-                            y: titleNumber > index ? -30 : 30,
-                            opacity: 0,
-                          }
-                    }
-                  >
-                    {title}
-                  </motion.span>
-                ))}
-              </span>
+              <span>Home Buying Made </span>
+              <LayoutGroup>
+                <motion.span layout className="flex whitespace-pre">
+                  <TextRotate
+                    texts={[
+                      "Simple",
+                      "Safe",
+                      "Affordable"
+                    ]}
+                    mainClassName="overflow-hidden text-primary font-bold"
+                    staggerDuration={0.03}
+                    staggerFrom="last"
+                    rotationInterval={2000}
+                    transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                  />
+                </motion.span>
+              </LayoutGroup>
             </h1>
 
             <p className="text-lg md:text-xl leading-relaxed tracking-tight text-gray-600 max-w-2xl text-center">

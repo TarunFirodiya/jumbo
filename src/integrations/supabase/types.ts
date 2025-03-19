@@ -386,10 +386,10 @@ export type Database = {
           created_at: string
           id: string
           listing_id: string
-          status: Database["public"]["Enums"]["visit_status"]
           updated_at: string
           user_id: string
           visit_day: string
+          visit_status: Database["public"]["Enums"]["visit_status"] | null
           visit_time: string
         }
         Insert: {
@@ -398,10 +398,10 @@ export type Database = {
           created_at?: string
           id?: string
           listing_id: string
-          status?: Database["public"]["Enums"]["visit_status"]
           updated_at?: string
           user_id: string
           visit_day: string
+          visit_status?: Database["public"]["Enums"]["visit_status"] | null
           visit_time: string
         }
         Update: {
@@ -410,10 +410,10 @@ export type Database = {
           created_at?: string
           id?: string
           listing_id?: string
-          status?: Database["public"]["Enums"]["visit_status"]
           updated_at?: string
           user_id?: string
           visit_day?: string
+          visit_status?: Database["public"]["Enums"]["visit_status"] | null
           visit_time?: string
         }
         Relationships: [
@@ -478,7 +478,11 @@ export type Database = {
           sub_locality: string
           full_name: string
           phone_number: string
-          status: string
+          visit_status: string
+          map_link: string
+          agent_name: string
+          property_type: string
+          agent_phone: string
         }[]
       }
       halfvec_avg: {
@@ -651,6 +655,7 @@ export type Database = {
         | "Spacious Layout"
         | "Vastu Compliant"
       khata_type: "A" | "B"
+      listing_status: "Available" | "Draft" | "Booked" | "Sold" | "Churned"
       occupancy_status:
         | "Vacant"
         | "Owner Occupied"
@@ -669,7 +674,7 @@ export type Database = {
         | "Afternoon (12 pm - 4 pm)"
         | "Evening (4 pm - 8 pm)"
       visit_fulfiller: "Broker" | "Serai"
-      visit_status: "to be confirmed" | "confirmed" | "completed" | "cancelled"
+      visit_status: "confirmed" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
