@@ -1,39 +1,69 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { Calendar, Clock, MapPin, User, Check, X, Edit } from "lucide-react";
 import { formatDate, formatTime } from "@/lib/date-utils";
-import { Building, MapPin, Calendar, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function VisitManagement({ visits, isLoading, refetch }) {
+export default function VisitManagement({ visits, isLoading, refetch }) {
   const { toast } = useToast();
+  const [selectedVisit, setSelectedVisit] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [formState, setFormState] = useState({
+    visit_status: "",
+    notes: "",
+  });
 
-  const handleStatusChange = async (visitId: string, newStatus: "confirmed" | "completed" | "cancelled") => {
+  const statusColors = {
+    confirmed: "bg-green-100 text-green-800 border-green-300",
+    completed: "bg-blue-100 text-blue-800 border-blue-300",
+    cancelled: "bg-red-100 text-red-800 border-red-300",
+    pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
+  };
+
+  const openUpdateDialog = (visit) => {
+    setSelectedVisit(visit);
+    setFormState({
+      visit_status: visit.visit_status || "pending",
+      notes: visit.notes || "",
+    });
+    setDialogOpen(true);
+  };
+
+  const updateVisitStatus = async () => {
+    if (!selectedVisit) return;
+    
+    setUpdatingStatus(true);
     try {
-      setUpdatingStatus(true);
       const { error } = await supabase
-        .from('visits')
-        .update({ visit_status: newStatus })
-        .eq('id', visitId);
-      
+        .from("visits")
+        .update({
+          visit_status: formState.visit_status,
+          notes: formState.notes,
+        })
+        .eq("id", selectedVisit.id);
+
       if (error) throw error;
       
       toast({
-        title: "Visit status updated",
-        description: `The visit has been marked as ${newStatus}`,
+        title: "Visit updated",
+        description: `Visit status updated to ${formState.visit_status}`,
       });
       
-      await refetch();
+      setDialogOpen(false);
+      refetch();
     } catch (error) {
-      console.error('Error updating visit status:', error);
+      console.error("Error updating visit:", error);
       toast({
-        title: "Error updating status",
-        description: "There was a problem updating the visit status. Please try again.",
+        title: "Update failed",
+        description: "There was an error updating the visit status.",
         variant: "destructive",
       });
     } finally {
@@ -41,204 +71,158 @@ export function VisitManagement({ visits, isLoading, refetch }) {
     }
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
-      case 'confirmed':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Confirmed</Badge>;
-      case 'completed':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Completed</Badge>;
-      case 'cancelled':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Cancelled</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
-    }
-  };
-
-  const pendingVisits = visits?.filter(visit => visit.status === 'pending') || [];
-  const confirmedVisits = visits?.filter(visit => visit.status === 'confirmed') || [];
-  const completedVisits = visits?.filter(visit => visit.status === 'completed') || [];
-  const cancelledVisits = visits?.filter(visit => visit.status === 'cancelled') || [];
-
   if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-[200px] w-full" />
-        <Skeleton className="h-[200px] w-full" />
-      </div>
-    );
+    return <div className="flex justify-center items-center h-48">
+      <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+    </div>;
   }
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="pending" className="w-full">
-        <TabsList className="grid grid-cols-4 mb-4">
-          <TabsTrigger value="pending">
-            Pending ({pendingVisits.length})
-          </TabsTrigger>
-          <TabsTrigger value="confirmed">
-            Confirmed ({confirmedVisits.length})
-          </TabsTrigger>
-          <TabsTrigger value="completed">
-            Completed ({completedVisits.length})
-          </TabsTrigger>
-          <TabsTrigger value="cancelled">
-            Cancelled ({cancelledVisits.length})
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="pending" className="space-y-4">
-          {pendingVisits.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-center text-muted-foreground">No pending visits</p>
-              </CardContent>
-            </Card>
-          ) : (
-            pendingVisits.map(visit => (
-              <VisitCard 
-                key={visit.id} 
-                visit={visit} 
-                onStatusChange={handleStatusChange}
-                updatingStatus={updatingStatus}
-                showActions={true}
-                actionButtons={[
-                  { label: "Confirm", status: "confirmed", variant: "default", icon: <CheckCircle className="h-4 w-4 mr-2" /> },
-                  { label: "Cancel", status: "cancelled", variant: "outline", icon: <XCircle className="h-4 w-4 mr-2" /> }
-                ]}
-              />
-            ))
-          )}
-        </TabsContent>
-        
-        <TabsContent value="confirmed" className="space-y-4">
-          {confirmedVisits.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-center text-muted-foreground">No confirmed visits</p>
-              </CardContent>
-            </Card>
-          ) : (
-            confirmedVisits.map(visit => (
-              <VisitCard 
-                key={visit.id} 
-                visit={visit} 
-                onStatusChange={handleStatusChange}
-                updatingStatus={updatingStatus}
-                showActions={true}
-                actionButtons={[
-                  { label: "Mark Completed", status: "completed", variant: "default", icon: <CheckCircle className="h-4 w-4 mr-2" /> },
-                  { label: "Cancel", status: "cancelled", variant: "outline", icon: <XCircle className="h-4 w-4 mr-2" /> }
-                ]}
-              />
-            ))
-          )}
-        </TabsContent>
-        
-        <TabsContent value="completed" className="space-y-4">
-          {completedVisits.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-center text-muted-foreground">No completed visits</p>
-              </CardContent>
-            </Card>
-          ) : (
-            completedVisits.map(visit => (
-              <VisitCard 
-                key={visit.id} 
-                visit={visit} 
-                onStatusChange={handleStatusChange}
-                updatingStatus={updatingStatus}
-                showActions={false}
-              />
-            ))
-          )}
-        </TabsContent>
-        
-        <TabsContent value="cancelled" className="space-y-4">
-          {cancelledVisits.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-center text-muted-foreground">No cancelled visits</p>
-              </CardContent>
-            </Card>
-          ) : (
-            cancelledVisits.map(visit => (
-              <VisitCard 
-                key={visit.id} 
-                visit={visit} 
-                onStatusChange={handleStatusChange}
-                updatingStatus={updatingStatus}
-                showActions={false}
-              />
-            ))
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-}
+      <h2 className="text-2xl font-bold">Manage Visit Requests</h2>
+      
+      {visits && visits.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {visits.map((visit) => {
+            // Transform the visit data
+            const visitData = {
+              id: visit.id,
+              building_id: visit.building_id,
+              agent_id: visit.agent_id,
+              status: visit.visit_status || "pending", // Use visit_status from DB
+              visit_day: visit.visit_day,
+              visit_time: visit.visit_time,
+              buildings: visit.buildings,
+              client: visit.client,
+              clientPhone: visit.client?.phone,
+            };
 
-function VisitCard({ visit, onStatusChange, updatingStatus, showActions = true, actionButtons = [] }) {
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle>{visit.building?.name || "Unknown Building"}</CardTitle>
-            <CardDescription className="flex items-center mt-1">
-              <MapPin className="h-4 w-4 mr-1" />
-              {visit.building?.locality || "Unknown Location"}
-            </CardDescription>
-          </div>
-          {getStatusBadge(visit.status)}
+            return (
+              <Card key={visitData.id} className="overflow-hidden">
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle>{visitData.buildings?.name || "Property Visit"}</CardTitle>
+                      <CardDescription>
+                        <div className="flex items-center mt-1">
+                          <MapPin className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                          <span>{visitData.buildings?.locality || "Location unavailable"}</span>
+                        </div>
+                      </CardDescription>
+                    </div>
+                    <div className={`px-2 py-1 text-xs font-medium rounded border ${statusColors[visitData.status] || statusColors.pending}`}>
+                      {visitData.status.charAt(0).toUpperCase() + visitData.status.slice(1)}
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="pb-2">
+                  <div className="space-y-2">
+                    <div className="flex items-center text-sm">
+                      <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{visitData.client?.full_name || "Client name unavailable"}</span>
+                    </div>
+                    
+                    {visitData.clientPhone && (
+                      <div className="flex items-center text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                        <span>{visitData.clientPhone}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center text-sm">
+                      <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{formatDate(visitData.visit_day)}</span>
+                    </div>
+                    
+                    <div className="flex items-center text-sm">
+                      <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{formatTime(visitData.visit_time)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+                
+                <CardFooter className="pt-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => openUpdateDialog(visit)}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Update Status
+                  </Button>
+                </CardFooter>
+              </Card>
+            );
+          })}
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center">
-            <Calendar className="h-5 w-5 mr-2 text-muted-foreground" />
-            <span>{formatDate(visit.visit_day)}</span>
-          </div>
-          <div className="flex items-center">
-            <Clock className="h-5 w-5 mr-2 text-muted-foreground" />
-            <span>{formatTime(visit.visit_time)}</span>
-          </div>
+      ) : (
+        <div className="bg-muted/50 rounded-lg p-8 text-center">
+          <p className="text-muted-foreground">No visit requests found.</p>
         </div>
-      </CardContent>
-      {showActions && (
-        <CardFooter className="flex justify-end gap-2">
-          {actionButtons.map((button, index) => (
-            <Button
-              key={index}
-              variant={button.variant}
-              size="sm"
-              onClick={() => onStatusChange(visit.id, button.status)}
+      )}
+      
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Visit Status</DialogTitle>
+            <DialogDescription>
+              Update the status of this visit request.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="status" className="text-sm font-medium">Status</label>
+              <Select 
+                value={formState.visit_status} 
+                onValueChange={(value) => setFormState(prev => ({ ...prev, visit_status: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="notes" className="text-sm font-medium">Notes</label>
+              <Textarea
+                id="notes"
+                placeholder="Add visit notes here..."
+                value={formState.notes}
+                onChange={(e) => setFormState(prev => ({ ...prev, notes: e.target.value }))}
+                rows={4}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={updateVisitStatus} 
               disabled={updatingStatus}
             >
-              {button.icon}
-              {button.label}
+              {updatingStatus ? (
+                <>
+                  <div className="h-4 w-4 mr-2 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                  Updating...
+                </>
+              ) : (
+                "Update Visit"
+              )}
             </Button>
-          ))}
-        </CardFooter>
-      )}
-    </Card>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
-}
-
-function getStatusBadge(status) {
-  switch (status) {
-    case 'pending':
-      return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
-    case 'confirmed':
-      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Confirmed</Badge>;
-    case 'completed':
-      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Completed</Badge>;
-    case 'cancelled':
-      return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Cancelled</Badge>;
-    default:
-      return <Badge variant="outline">Unknown</Badge>;
-  }
 }
