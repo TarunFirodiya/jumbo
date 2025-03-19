@@ -45,9 +45,9 @@ export default function VisitManagement({ visits, isLoading, refetch }: VisitMan
     
     // Define a safe way to handle the incoming status
     const status = visit.visit_status || "pending";
-    const safeStatus: VisitStatus = ["pending", "confirmed", "completed", "cancelled"].includes(status) 
+    const safeStatus: VisitStatus = (["pending", "confirmed", "completed", "cancelled"].includes(status) 
       ? status as VisitStatus 
-      : "pending";
+      : "pending");
     
     setFormState({
       visit_status: safeStatus,
@@ -129,7 +129,7 @@ export default function VisitManagement({ visits, isLoading, refetch }: VisitMan
                         </div>
                       </CardDescription>
                     </div>
-                    <div className={`px-2 py-1 text-xs font-medium rounded border ${statusColors[visitData.status] || statusColors.pending}`}>
+                    <div className={`px-2 py-1 text-xs font-medium rounded border ${statusColors[visitData.status as keyof typeof statusColors] || statusColors.pending}`}>
                       {visitData.status.charAt(0).toUpperCase() + visitData.status.slice(1)}
                     </div>
                   </div>
@@ -153,12 +153,12 @@ export default function VisitManagement({ visits, isLoading, refetch }: VisitMan
                     
                     <div className="flex items-center text-sm">
                       <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>{formatDate(visitData.visit_day)}</span>
+                      <span>{visitData.visit_day}</span>
                     </div>
                     
                     <div className="flex items-center text-sm">
                       <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>{formatTime(visitData.visit_time)}</span>
+                      <span>{visitData.visit_time}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -198,7 +198,12 @@ export default function VisitManagement({ visits, isLoading, refetch }: VisitMan
               <label htmlFor="status" className="text-sm font-medium">Status</label>
               <Select 
                 value={formState.visit_status} 
-                onValueChange={(value: VisitStatus) => setFormState(prev => ({ ...prev, visit_status: value }))}
+                onValueChange={(value: string) => {
+                  const validStatus: VisitStatus = (["pending", "confirmed", "completed", "cancelled"].includes(value)
+                    ? value as VisitStatus
+                    : "pending");
+                  setFormState(prev => ({ ...prev, visit_status: validStatus }));
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />

@@ -33,7 +33,7 @@ export function VisitRequestModal({
   initialDay,
   initialTime,
 }: VisitRequestModalProps) {
-  const [date, setDate] = useState<Date>();
+  const [date, setDate] = useState<Date | undefined>(undefined);
   const [timeSlot, setTimeSlot] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -49,9 +49,15 @@ export function VisitRequestModal({
 
   useEffect(() => {
     if (initialDay) {
-      const [day, month, year] = initialDay.split('-').map(Number);
-      if (day && month && year) {
-        setDate(new Date(year, month - 1, day));
+      try {
+        // Try to parse initial day if provided
+        // Assume initialDay is in format dd-MM-yyyy
+        const [day, month, year] = initialDay.split('-').map(Number);
+        if (day && month && year) {
+          setDate(new Date(year, month - 1, day));
+        }
+      } catch (error) {
+        console.error("Error parsing initial date:", error);
       }
     }
     
@@ -87,33 +93,57 @@ export function VisitRequestModal({
     setIsSubmitting(true);
     
     try {
-      const { error } = await supabase
-        .from('visits')
-        .insert({
-          building_id: buildingId,
-          listing_id: listingId,
-          user_id: user.id,
-          visit_day: format(date, "dd-MM-yyyy"),
-          visit_time: timeSlot,
-          status: 'to be confirmed'  // Changed from 'pending' to 'to be confirmed'
+      // Format date as string for storage (dd-MM-yyyy)
+      const formattedDate = format(date, "dd-MM-yyyy");
+      
+      // Create or update visit
+      if (visitId) {
+        // Update existing visit
+        const { error } = await supabase
+          .from('visits')
+          .update({
+            visit_day: formattedDate,
+            visit_time: timeSlot,
+          })
+          .eq('id', visitId);
+          
+        if (error) throw error;
+        
+        toast({
+          title: "Visit Updated",
+          description: `Your visit to ${buildingName} has been updated for ${format(date, "PPP")} at ${timeSlot}`,
         });
+      } else {
+        // Create new visit
+        const { error } = await supabase
+          .from('visits')
+          .insert({
+            building_id: buildingId,
+            listing_id: listingId,
+            user_id: user.id,
+            visit_day: formattedDate,
+            visit_time: timeSlot,
+            visit_status: 'pending'  // Ensure this matches the enum type in database
+          });
 
-      if (error) throw error;
+        if (error) throw error;
 
+        toast({
+          title: "Visit Scheduled",
+          description: `Your visit to ${buildingName} has been scheduled for ${format(date, "PPP")} at ${timeSlot}`,
+        });
+      }
+      
       onOpenChange(false);
-      toast({
-        title: "Visit Scheduled",
-        description: `Your visit to ${buildingName} has been scheduled for ${format(date, "PPP")} at ${timeSlot}`,
-      });
       
       // Reset form
       setDate(undefined);
       setTimeSlot("");
     } catch (error: any) {
-      console.error('Error scheduling visit:', error);
+      console.error('Error with visit:', error);
       toast({
         title: "Error",
-        description: "Failed to schedule visit. Please try again.",
+        description: error.message || "Failed to process visit request. Please try again.",
         variant: "destructive",
       });
     } finally {
