@@ -8,6 +8,7 @@ interface SEOProps {
   ogImage?: string;
   type?: 'website' | 'article';
   structuredData?: Record<string, any>;
+  noindex?: boolean; // Added the noindex prop
 }
 
 export function SEO({
@@ -17,6 +18,7 @@ export function SEO({
   ogImage = '/og-image.png',
   type = 'website',
   structuredData,
+  noindex = false, // Default to false (index the page)
 }: SEOProps) {
   const siteUrl = 'https://www.cozydwellsearch.com';
   
@@ -25,6 +27,9 @@ export function SEO({
       <title>{title}</title>
       <meta name="description" content={description} />
       {canonical && <link rel="canonical" href={`${siteUrl}${canonical}`} />}
+      
+      {/* Robots meta tag for noindex */}
+      {noindex && <meta name="robots" content="noindex" />}
       
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={type} />

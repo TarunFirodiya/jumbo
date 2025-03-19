@@ -11,13 +11,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
+// Define the allowed visit status types
+type VisitStatus = "pending" | "confirmed" | "completed" | "cancelled";
+
 export default function VisitManagement({ visits, isLoading, refetch }) {
   const { toast } = useToast();
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [formState, setFormState] = useState({
-    visit_status: "",
+    visit_status: "pending" as VisitStatus,
     notes: "",
   });
 
@@ -31,7 +34,7 @@ export default function VisitManagement({ visits, isLoading, refetch }) {
   const openUpdateDialog = (visit) => {
     setSelectedVisit(visit);
     setFormState({
-      visit_status: visit.visit_status || "pending",
+      visit_status: (visit.visit_status as VisitStatus) || "pending",
       notes: visit.notes || "",
     });
     setDialogOpen(true);

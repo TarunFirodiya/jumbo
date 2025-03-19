@@ -7,9 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { SEO } from "@/components/SEO";
-import AgentManagement from "@/components/dashboard/AgentManagement";
-import BuildingManagement from "@/components/dashboard/BuildingManagement";
-import ListingManagement from "@/components/dashboard/ListingManagement";
+import { AgentManagement } from "@/components/dashboard/AgentManagement";
+import { BuildingManagement } from "@/components/dashboard/BuildingManagement";
+import { ListingManagement } from "@/components/dashboard/ListingManagement";
 import VisitManagement from "@/components/dashboard/VisitManagement";
 import { Profile } from "@/types/profile";
 
@@ -93,7 +93,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <SEO title="Admin Dashboard | Cozy Dwell Search" noindex />
+      <SEO title="Admin Dashboard | Cozy Dwell Search" />
       
       <div className="container mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
@@ -129,14 +129,14 @@ export default function Dashboard() {
             
             <TabsContent value="buildings" className="p-6">
               <BuildingManagement 
-                visits={visits} 
-                isLoading={visitsLoading} 
-                refetch={refetchVisits} 
+                currentUser={profile}
               />
             </TabsContent>
             
             <TabsContent value="listings" className="p-6">
-              <ListingManagement />
+              <ListingManagement 
+                currentUser={profile}
+              />
             </TabsContent>
             
             <TabsContent value="agents" className="p-6">
