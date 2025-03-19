@@ -1,18 +1,18 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin, User, Check, X, Edit } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Edit } from "lucide-react";
 import { formatDate, formatTime } from "@/lib/date-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { format, parse } from "date-fns";
 
 // Define the allowed visit status types
-type VisitStatus = "pending" | "confirmed" | "completed" | "cancelled";
+type VisitStatus = "confirmed" | "completed" | "cancelled";
 
 interface VisitManagementProps {
   visits: any[];
@@ -29,7 +29,7 @@ export default function VisitManagement({ visits, isLoading, refetch }: VisitMan
     visit_status: VisitStatus;
     notes: string;
   }>({
-    visit_status: "pending",
+    visit_status: "confirmed",
     notes: "",
   });
 
@@ -37,17 +37,16 @@ export default function VisitManagement({ visits, isLoading, refetch }: VisitMan
     confirmed: "bg-green-100 text-green-800 border-green-300",
     completed: "bg-blue-100 text-blue-800 border-blue-300",
     cancelled: "bg-red-100 text-red-800 border-red-300",
-    pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
   };
 
   const openUpdateDialog = (visit: any) => {
     setSelectedVisit(visit);
     
     // Define a safe way to handle the incoming status
-    const status = visit.visit_status || "pending";
-    const safeStatus: VisitStatus = (["pending", "confirmed", "completed", "cancelled"].includes(status) 
+    const status = visit.visit_status || "confirmed";
+    const safeStatus: VisitStatus = (["confirmed", "completed", "cancelled"].includes(status) 
       ? status as VisitStatus 
-      : "pending");
+      : "confirmed");
     
     setFormState({
       visit_status: safeStatus,
@@ -90,6 +89,24 @@ export default function VisitManagement({ visits, isLoading, refetch }: VisitMan
     }
   };
 
+  // Format the date from dd-MM-yyyy to a more readable format
+  const displayDate = (dateString: string) => {
+    try {
+      if (!dateString) return "Date unavailable";
+      
+      // Try to parse as dd-MM-yyyy format
+      const parsedDate = parse(dateString, "dd-MM-yyyy", new Date());
+      if (!isNaN(parsedDate.getTime())) {
+        return format(parsedDate, "MMMM d, yyyy");
+      }
+      
+      return dateString; // Return original if parsing fails
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return dateString;
+    }
+  };
+
   if (isLoading) {
     return <div className="flex justify-center items-center h-48">
       <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
@@ -108,12 +125,13 @@ export default function VisitManagement({ visits, isLoading, refetch }: VisitMan
               id: visit.id,
               building_id: visit.building_id,
               agent_id: visit.agent_id,
-              status: visit.visit_status || "pending", // Use visit_status from DB
+              status: visit.visit_status || "confirmed", // Use visit_status from DB
               visit_day: visit.visit_day,
               visit_time: visit.visit_time,
               buildings: visit.buildings,
               client: visit.client,
-              clientPhone: visit.client?.phone,
+              clientPhone: visit.client?.phone_number,
+              notes: visit.notes,
             };
 
             return (
@@ -129,7 +147,7 @@ export default function VisitManagement({ visits, isLoading, refetch }: VisitMan
                         </div>
                       </CardDescription>
                     </div>
-                    <div className={`px-2 py-1 text-xs font-medium rounded border ${statusColors[visitData.status as keyof typeof statusColors] || statusColors.pending}`}>
+                    <div className={`px-2 py-1 text-xs font-medium rounded border ${statusColors[visitData.status as keyof typeof statusColors] || statusColors.confirmed}`}>
                       {visitData.status.charAt(0).toUpperCase() + visitData.status.slice(1)}
                     </div>
                   </div>
@@ -153,13 +171,20 @@ export default function VisitManagement({ visits, isLoading, refetch }: VisitMan
                     
                     <div className="flex items-center text-sm">
                       <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>{visitData.visit_day}</span>
+                      <span>{displayDate(visitData.visit_day)}</span>
                     </div>
                     
                     <div className="flex items-center text-sm">
                       <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
                       <span>{visitData.visit_time}</span>
                     </div>
+                    
+                    {visitData.notes && (
+                      <div className="mt-2 p-2 bg-muted rounded-md text-sm">
+                        <p className="font-medium mb-1">Notes</p>
+                        <p className="text-muted-foreground">{visitData.notes}</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
                 
@@ -199,9 +224,9 @@ export default function VisitManagement({ visits, isLoading, refetch }: VisitMan
               <Select 
                 value={formState.visit_status} 
                 onValueChange={(value: string) => {
-                  const validStatus: VisitStatus = (["pending", "confirmed", "completed", "cancelled"].includes(value)
+                  const validStatus: VisitStatus = (["confirmed", "completed", "cancelled"].includes(value)
                     ? value as VisitStatus
-                    : "pending");
+                    : "confirmed");
                   setFormState(prev => ({ ...prev, visit_status: validStatus }));
                 }}
               >
@@ -209,7 +234,6 @@ export default function VisitManagement({ visits, isLoading, refetch }: VisitMan
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="confirmed">Confirmed</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>

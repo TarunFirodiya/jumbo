@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -50,11 +50,10 @@ export function VisitRequestModal({
   useEffect(() => {
     if (initialDay) {
       try {
-        // Try to parse initial day if provided
-        // Assume initialDay is in format dd-MM-yyyy
-        const [day, month, year] = initialDay.split('-').map(Number);
-        if (day && month && year) {
-          setDate(new Date(year, month - 1, day));
+        // Parse initial day if provided (format dd-MM-yyyy)
+        const parsedDate = parse(initialDay, "dd-MM-yyyy", new Date());
+        if (!isNaN(parsedDate.getTime())) {
+          setDate(parsedDate);
         }
       } catch (error) {
         console.error("Error parsing initial date:", error);
@@ -114,7 +113,7 @@ export function VisitRequestModal({
           description: `Your visit to ${buildingName} has been updated for ${format(date, "PPP")} at ${timeSlot}`,
         });
       } else {
-        // Create new visit
+        // Create new visit with confirmed status
         const { error } = await supabase
           .from('visits')
           .insert({
@@ -123,7 +122,7 @@ export function VisitRequestModal({
             user_id: user.id,
             visit_day: formattedDate,
             visit_time: timeSlot,
-            visit_status: 'pending'  // Ensure this matches the enum type in database
+            visit_status: 'confirmed'  // Set default status to confirmed
           });
 
         if (error) throw error;

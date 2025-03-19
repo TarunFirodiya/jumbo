@@ -1,12 +1,12 @@
 
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, parse } from 'date-fns';
 
 export const formatDate = (dateString: string) => {
   if (!dateString) return '';
   
   try {
     // Check if the dateString is in ISO format
-    if (dateString.includes('T') || dateString.includes('-')) {
+    if (dateString.includes('T') || (dateString.includes('-') && dateString.split('-')[0].length === 4)) {
       return format(parseISO(dateString), 'MMM d, yyyy');
     }
     
@@ -47,5 +47,32 @@ export const formatTime = (timeString: string) => {
   } catch (error) {
     console.error('Error formatting time:', error);
     return timeString;
+  }
+};
+
+// Parse a date string in dd-MM-yyyy format to a Date object
+export const parseDateString = (dateString: string): Date | null => {
+  if (!dateString) return null;
+  
+  try {
+    const [day, month, year] = dateString.split('-').map(Number);
+    if (day && month && year) {
+      return new Date(year, month - 1, day);
+    }
+    return null;
+  } catch (error) {
+    console.error('Error parsing date string:', error);
+    return null;
+  }
+};
+
+// Format a Date object to dd-MM-yyyy string format for database storage
+export const formatDateForStorage = (date: Date): string => {
+  if (!date) return '';
+  try {
+    return format(date, 'dd-MM-yyyy');
+  } catch (error) {
+    console.error('Error formatting date for storage:', error);
+    return '';
   }
 };
