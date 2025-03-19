@@ -1,3 +1,4 @@
+
 "use client"
 
 import {
@@ -50,6 +51,7 @@ interface WordObject {
   needsSpace: boolean
 }
 
+// Add proper type declaration for Intl.Segmenter
 declare global {
   interface Intl {
     Segmenter?: {

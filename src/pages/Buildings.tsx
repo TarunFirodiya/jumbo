@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Heart, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useState, useCallback, useMemo, lazy, Suspense } from "react";
@@ -11,9 +11,8 @@ import { CollectionsBar } from "@/components/buildings/CollectionsBar";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { SEO } from "@/components/SEO";
 import { cn } from "@/lib/utils";
-import { HeroSection } from "@/components/buildings/HeroSection";
 import { Action } from "@/components/ui/action-search-bar";
-import { Filter, BUDGET_RANGES } from "@/components/ui/filters";
+import { BUDGET_RANGES } from "@/components/ui/filters";
 import { AnimatedHero } from "@/components/ui/animated-hero";
 
 const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
@@ -341,12 +340,10 @@ export default function Buildings() {
     }} />
       
       <AnimatedHero 
-        title="Ready-to-move homes at lowest prices"
-        subtitle="Find, visit & buy all in one-place. Zero spam. 100% secure."
+        subtitle="Search, visit & buy ready-to-move homes at fixed prices"
         localityActions={localityActions}
         onSearch={handleSearch}
         onLocalitySelect={handleLocalitySelect}
-        imageUrl="/lovable-uploads/d6734546-146b-4af0-9efa-4b94b8fc8bc6.png"
       />
       
       <div className="container mx-auto px-4 mt-8">
