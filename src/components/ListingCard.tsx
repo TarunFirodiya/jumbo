@@ -1,10 +1,11 @@
-
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BadgeIndianRupee, Bed, Square, Compass, Layers } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { useState } from "react";
 import { VisitRequestModal } from "./VisitRequestModal";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 type ListingCardProps = {
   listing: Tables<"listings">;
@@ -12,6 +13,28 @@ type ListingCardProps = {
 
 export default function ListingCard({ listing }: ListingCardProps) {
   const [showVisitModal, setShowVisitModal] = useState(false);
+  
+  // Get current user
+  const { data: user } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user;
+    }
+  });
+
+  const handleVisitRequest = () => {
+    // If user is not logged in, trigger auth modal directly
+    if (!user) {
+      document.dispatchEvent(new CustomEvent('triggerAuthModal', {
+        detail: { action: 'visit' }
+      }));
+      return;
+    }
+    
+    // Otherwise show the visit modal
+    setShowVisitModal(true);
+  };
 
   return (
     <Card className="overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow">
@@ -46,19 +69,22 @@ export default function ListingCard({ listing }: ListingCardProps) {
         </div>
 
         <Button 
-          onClick={() => setShowVisitModal(true)} 
+          onClick={handleVisitRequest} 
           className="w-full"
         >
           Request a Visit
         </Button>
 
-        <VisitRequestModal
-          open={showVisitModal}
-          onOpenChange={setShowVisitModal}
-          buildingId={listing.building_id || ""}
-          buildingName={listing.building_name || ""}
-          listingId={listing.id}
-        />
+        {/* Only render the modal if user is authenticated */}
+        {user && (
+          <VisitRequestModal
+            open={showVisitModal}
+            onOpenChange={setShowVisitModal}
+            buildingId={listing.building_id || ""}
+            buildingName={listing.building_name || ""}
+            listingId={listing.id}
+          />
+        )}
       </div>
     </Card>
   );

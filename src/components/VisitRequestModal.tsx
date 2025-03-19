@@ -4,13 +4,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format, parse } from "date-fns";
+import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { formatDateForStorage, parseDateString } from "@/lib/date-utils";
 
 interface VisitRequestModalProps {
   open: boolean;
@@ -39,7 +40,7 @@ export function VisitRequestModal({
   const { toast } = useToast();
 
   // Get current user
-  const { data: user } = useQuery({
+  const { data: user, isLoading: isUserLoading } = useQuery({
     queryKey: ['current-user'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -49,14 +50,9 @@ export function VisitRequestModal({
 
   useEffect(() => {
     if (initialDay) {
-      try {
-        // Parse initial day if provided (format dd-MM-yyyy)
-        const parsedDate = parse(initialDay, "dd-MM-yyyy", new Date());
-        if (!isNaN(parsedDate.getTime())) {
-          setDate(parsedDate);
-        }
-      } catch (error) {
-        console.error("Error parsing initial date:", error);
+      const parsedDate = parseDateString(initialDay);
+      if (parsedDate) {
+        setDate(parsedDate);
       }
     }
     
@@ -64,6 +60,19 @@ export function VisitRequestModal({
       setTimeSlot(initialTime);
     }
   }, [initialDay, initialTime]);
+
+  // If user is not logged in, trigger auth modal and close this modal
+  useEffect(() => {
+    if (open && !isUserLoading && !user) {
+      // Close the current modal
+      onOpenChange(false);
+      
+      // Trigger auth modal
+      document.dispatchEvent(new CustomEvent('triggerAuthModal', {
+        detail: { action: 'visit' }
+      }));
+    }
+  }, [open, user, isUserLoading, onOpenChange]);
 
   const timeSlots = [
     "09:00 AM - 10:00 AM", 
@@ -93,7 +102,7 @@ export function VisitRequestModal({
     
     try {
       // Format date as string for storage (dd-MM-yyyy)
-      const formattedDate = format(date, "dd-MM-yyyy");
+      const formattedDate = formatDateForStorage(date);
       
       // Create or update visit
       if (visitId) {
@@ -150,32 +159,25 @@ export function VisitRequestModal({
     }
   };
 
-  // If user is not logged in, show auth prompt
-  if (!user) {
+  // If still loading user data, show loading state
+  if (isUserLoading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Sign in Required</DialogTitle>
+            <DialogTitle>Loading</DialogTitle>
           </DialogHeader>
-          <div className="py-6 text-center">
-            <p className="text-muted-foreground mb-4">Please sign in to schedule a visit</p>
-            <Button 
-              onClick={() => {
-                onOpenChange(false);
-                // Trigger auth modal
-                document.dispatchEvent(new CustomEvent('triggerAuthModal', {
-                  detail: { action: 'visit' }
-                }));
-              }}
-            >
-              Sign in
-            </Button>
+          <div className="py-6 flex justify-center">
+            <div className="h-6 w-6 rounded-full border-2 border-t-primary animate-spin"></div>
           </div>
         </DialogContent>
       </Dialog>
     );
   }
+
+  // If user is not logged in, this component should not render anything
+  // The useEffect above will handle redirecting to auth modal
+  if (!user) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
