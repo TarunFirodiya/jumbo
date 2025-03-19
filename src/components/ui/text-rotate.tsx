@@ -19,6 +19,23 @@ import {
 
 import { cn } from "@/lib/utils"
 
+// Add proper type declaration for Intl.Segmenter
+declare global {
+  interface Intl {
+    Segmenter?: {
+      new (locale: string, options: { granularity: string }): {
+        segment: (text: string) => {
+          [Symbol.iterator](): Iterator<{
+            segment: string;
+            index: number;
+            input: string;
+          }>;
+        };
+      };
+    };
+  }
+}
+
 interface TextRotateProps {
   texts: string[]
   rotationInterval?: number
@@ -49,23 +66,6 @@ export interface TextRotateRef {
 interface WordObject {
   characters: string[]
   needsSpace: boolean
-}
-
-// Add proper type declaration for Intl.Segmenter
-declare global {
-  interface Intl {
-    Segmenter?: {
-      new (locale: string, options: { granularity: string }): {
-        segment: (text: string) => {
-          [Symbol.iterator](): Iterator<{
-            segment: string;
-            index: number;
-            input: string;
-          }>;
-        };
-      };
-    };
-  }
 }
 
 const TextRotate = forwardRef<TextRotateRef, TextRotateProps>(
@@ -180,6 +180,7 @@ const TextRotate = forwardRef<TextRotateRef, TextRotateProps>(
       jumpTo,
       reset,
     }), [next, previous, jumpTo, reset])
+
 
     useEffect(() => {
       if (!auto) return

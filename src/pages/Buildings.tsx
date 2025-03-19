@@ -15,6 +15,11 @@ import { Action } from "@/components/ui/action-search-bar";
 import { BUDGET_RANGES } from "@/components/ui/filters";
 import { AnimatedHero } from "@/components/ui/animated-hero";
 
+interface Filter {
+  type: string;
+  value: string[];
+}
+
 const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
 
 const BuildingCard = ({
