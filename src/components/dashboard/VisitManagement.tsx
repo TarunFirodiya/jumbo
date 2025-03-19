@@ -30,7 +30,7 @@ interface Visit {
   id: string;
   building_id: string;
   agent_id: string | null;
-  status: VisitStatus;
+  visit_status: VisitStatus;
   visit_day: string;
   visit_time: string;
   building_name: string;
@@ -56,7 +56,7 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
           id,
           building_id,
           agent_id,
-          status,
+          visit_status,
           visit_day,
           visit_time,
           buildings!inner (name),
@@ -82,7 +82,7 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
         id: item.id,
         building_id: item.building_id,
         agent_id: item.agent_id,
-        status: item.status as VisitStatus,
+        visit_status: item.visit_status as VisitStatus,
         visit_day: item.visit_day,
         visit_time: item.visit_time,
         building_name: item.buildings?.name || '',
@@ -98,7 +98,7 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
       
       const { error } = await supabase
         .from('visits')
-        .update({ status })
+        .update({ visit_status: status })
         .eq('id', visitId);
 
       if (error) {
@@ -183,10 +183,10 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
                     <TableCell>{visit.client_phone}</TableCell>
                     <TableCell>{visit.visit_day}</TableCell>
                     <TableCell>{visit.visit_time}</TableCell>
-                    <TableCell>{getStatusBadge(visit.status)}</TableCell>
+                    <TableCell>{getStatusBadge(visit.visit_status)}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        {visit.status === 'to be confirmed' && (
+                        {visit.visit_status === 'to be confirmed' && (
                           <>
                             <Button
                               variant="outline"
@@ -224,7 +224,7 @@ export function VisitManagement({ currentUser }: VisitManagementProps) {
                             </Button>
                           </>
                         )}
-                        {visit.status === 'confirmed' && (
+                        {visit.visit_status === 'confirmed' && (
                           <Button
                             variant="outline"
                             size="sm"

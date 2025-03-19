@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -24,7 +25,7 @@ interface Visit {
   listing_id: string;
   visit_day: string;
   visit_time: string;
-  status: string;
+  visit_status: string;
   created_at: string;
 }
 
@@ -69,7 +70,7 @@ const Visits = () => {
           listing_id,
           visit_day,
           visit_time,
-          status,
+          visit_status,
           created_at,
           buildings!inner(name)
         `)
@@ -87,7 +88,7 @@ const Visits = () => {
         listing_id: visit.listing_id,
         visit_day: visit.visit_day,
         visit_time: visit.visit_time,
-        status: visit.status,
+        visit_status: visit.visit_status,
         created_at: visit.created_at,
       }));
     },
@@ -100,7 +101,7 @@ const Visits = () => {
       
       const { error } = await supabase
         .from('visits')
-        .update({ status: 'cancelled' })
+        .update({ visit_status: 'cancelled' })
         .eq('id', visitId);
 
       if (error) throw error;
@@ -223,11 +224,11 @@ const Visits = () => {
                     <TableCell>{visit.visit_time}</TableCell>
                     <TableCell>
                       <span className={`capitalize px-2 py-1 rounded-full text-xs ${
-                        visit.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
-                        visit.status === 'to be confirmed' ? 'bg-yellow-100 text-yellow-800' : 
+                        visit.visit_status === 'confirmed' ? 'bg-green-100 text-green-800' : 
+                        visit.visit_status === 'to be confirmed' ? 'bg-yellow-100 text-yellow-800' : 
                         'bg-red-100 text-red-800'
                       }`}>
-                        {visit.status}
+                        {visit.visit_status}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -239,7 +240,7 @@ const Visits = () => {
                           variant="secondary"
                           size="sm"
                           onClick={() => setSelectedVisit(visit)}
-                          disabled={visit.status === 'cancelled'}
+                          disabled={visit.visit_status === 'cancelled'}
                         >
                           <RefreshCw className="h-4 w-4 mr-1" />
                           Reschedule
@@ -248,7 +249,7 @@ const Visits = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleCancel(visit.id)}
-                          disabled={visit.status === 'cancelled' || isCancelling === visit.id}
+                          disabled={visit.visit_status === 'cancelled' || isCancelling === visit.id}
                           className="text-destructive hover:text-destructive"
                         >
                           {isCancelling === visit.id ? (

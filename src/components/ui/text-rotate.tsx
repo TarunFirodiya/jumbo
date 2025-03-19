@@ -1,4 +1,3 @@
-
 "use client"
 
 import {
@@ -51,6 +50,22 @@ interface WordObject {
   needsSpace: boolean
 }
 
+declare global {
+  interface Intl {
+    Segmenter?: {
+      new (locale: string, options: { granularity: string }): {
+        segment: (text: string) => {
+          [Symbol.iterator](): Iterator<{
+            segment: string;
+            index: number;
+            input: string;
+          }>;
+        };
+      };
+    };
+  }
+}
+
 const TextRotate = forwardRef<TextRotateRef, TextRotateProps>(
   (
     {
@@ -77,13 +92,11 @@ const TextRotate = forwardRef<TextRotateRef, TextRotateProps>(
   ) => {
     const [currentTextIndex, setCurrentTextIndex] = useState(0)
 
-    // handy function to split text into characters with support for unicode and emojis
     const splitIntoCharacters = (text: string): string[] => {
-      if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
+      if (typeof Intl !== "undefined" && Intl.Segmenter) {
         const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" })
         return Array.from(segmenter.segment(text), ({ segment }) => segment)
       }
-      // Fallback for browsers that don't support Intl.Segmenter
       return Array.from(text)
     }
 
@@ -121,7 +134,6 @@ const TextRotate = forwardRef<TextRotateRef, TextRotateProps>(
       [staggerFrom, staggerDuration]
     )
 
-    // Helper function to handle index changes and trigger callback
     const handleIndexChange = useCallback((newIndex: number) => {
       setCurrentTextIndex(newIndex)
       onNext?.(newIndex)
@@ -160,14 +172,12 @@ const TextRotate = forwardRef<TextRotateRef, TextRotateProps>(
       }
     }, [currentTextIndex, handleIndexChange])
 
-    // Expose all navigation functions via ref
     useImperativeHandle(ref, () => ({
       next,
       previous,
       jumpTo,
       reset,
     }), [next, previous, jumpTo, reset])
-
 
     useEffect(() => {
       if (!auto) return
