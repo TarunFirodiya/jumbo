@@ -93,7 +93,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <SEO title="Admin Dashboard | Cozy Dwell Search" />
+      <SEO title="Admin Dashboard | Cozy Dwell Search" noindex={true} />
       
       <div className="container mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
@@ -121,7 +121,7 @@ export default function Dashboard() {
           <div className="bg-card border rounded-lg shadow-sm">
             <TabsContent value="visits" className="p-6">
               <VisitManagement 
-                visits={visits} 
+                visits={visits || []} 
                 isLoading={visitsLoading} 
                 refetch={refetchVisits} 
               />

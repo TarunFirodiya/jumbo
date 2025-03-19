@@ -14,13 +14,22 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 // Define the allowed visit status types
 type VisitStatus = "pending" | "confirmed" | "completed" | "cancelled";
 
-export default function VisitManagement({ visits, isLoading, refetch }) {
+interface VisitManagementProps {
+  visits: any[];
+  isLoading: boolean;
+  refetch: () => void;
+}
+
+export default function VisitManagement({ visits, isLoading, refetch }: VisitManagementProps) {
   const { toast } = useToast();
-  const [selectedVisit, setSelectedVisit] = useState(null);
+  const [selectedVisit, setSelectedVisit] = useState<any>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
-  const [formState, setFormState] = useState({
-    visit_status: "pending" as VisitStatus,
+  const [formState, setFormState] = useState<{
+    visit_status: VisitStatus;
+    notes: string;
+  }>({
+    visit_status: "pending",
     notes: "",
   });
 
@@ -31,10 +40,17 @@ export default function VisitManagement({ visits, isLoading, refetch }) {
     pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
   };
 
-  const openUpdateDialog = (visit) => {
+  const openUpdateDialog = (visit: any) => {
     setSelectedVisit(visit);
+    
+    // Define a safe way to handle the incoming status
+    const status = visit.visit_status || "pending";
+    const safeStatus: VisitStatus = ["pending", "confirmed", "completed", "cancelled"].includes(status) 
+      ? status as VisitStatus 
+      : "pending";
+    
     setFormState({
-      visit_status: (visit.visit_status as VisitStatus) || "pending",
+      visit_status: safeStatus,
       notes: visit.notes || "",
     });
     setDialogOpen(true);
@@ -182,7 +198,7 @@ export default function VisitManagement({ visits, isLoading, refetch }) {
               <label htmlFor="status" className="text-sm font-medium">Status</label>
               <Select 
                 value={formState.visit_status} 
-                onValueChange={(value) => setFormState(prev => ({ ...prev, visit_status: value }))}
+                onValueChange={(value: VisitStatus) => setFormState(prev => ({ ...prev, visit_status: value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
