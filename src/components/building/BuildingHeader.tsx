@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { MapPin, Heart, Star, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -68,7 +69,7 @@ export function BuildingHeader({
     >
       <div className="space-y-1">
         <h1 className={cn(
-          "font-serif font-semibold tracking-tight transition-all duration-300",
+          "font-geist font-semibold tracking-tight transition-all duration-300",
           isScrolled ? "text-xl" : "text-2xl md:text-3xl"
         )}>
           {name}
