@@ -41,7 +41,7 @@ export default function Visits() {
           visit_time,
           visit_status,
           buildings(id, name, locality, images),
-          listings(id, bedrooms, area_sqft, price)
+          listings(id, bhk, area_sqft, price)
         `)
         .eq('user_id', user.id)
         .order('visit_day', { ascending: true });
@@ -222,7 +222,7 @@ export default function Visits() {
                   
                   {visit.listings && (
                     <div className="mt-2 font-medium">
-                      {visit.listings.bedrooms} BHK · {visit.listings.area_sqft} sq.ft · 
+                      {visit.listings.bhk} BHK · {visit.listings.area_sqft} sq.ft · 
                       ₹{(visit.listings.price / 10000000).toFixed(2)} Cr
                     </div>
                   )}
