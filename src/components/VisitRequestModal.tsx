@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { parseTimeString } from "@/lib/date-utils";
+import { formatDateForStorage, parseTimeString } from "@/lib/date-utils";
 
 interface VisitRequestModalProps {
   open: boolean;
@@ -98,14 +98,11 @@ export function VisitRequestModal({
     setIsSubmitting(true);
     
     try {
-      // Parse the time from the timeSlot
-      const timeObject = parseTimeString(timeSlot);
+      // Format date and parse time for database storage
+      const formattedDate = formatDateForStorage(date);
+      const formattedTime = parseTimeString(timeSlot);
       
-      if (!timeObject) {
-        throw new Error("Invalid time format");
-      }
-      
-      console.log("Submitting visit with date:", date, "time:", timeObject);
+      console.log("Submitting visit with formatted date:", formattedDate, "formatted time:", formattedTime);
       
       // Create or update visit
       if (visitId) {
@@ -113,8 +110,8 @@ export function VisitRequestModal({
         const { error } = await supabase
           .from('visits')
           .update({
-            visit_day: date,
-            visit_time: timeObject,
+            visit_day: formattedDate,
+            visit_time: formattedTime,
           })
           .eq('id', visitId);
           
@@ -132,8 +129,8 @@ export function VisitRequestModal({
             building_id: buildingId,
             listing_id: listingId,
             user_id: user.id,
-            visit_day: date,
-            visit_time: timeObject,
+            visit_day: formattedDate,
+            visit_time: formattedTime,
             visit_status: 'confirmed'  // Set default status to confirmed
           });
 
@@ -211,7 +208,7 @@ export function VisitRequestModal({
                   {date ? format(date, "PPP") : "Select a date"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
                 <Calendar
                   mode="single"
                   selected={date}

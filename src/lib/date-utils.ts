@@ -82,35 +82,25 @@ export const parseDateString = (dateString: string): Date | null => {
   }
 };
 
-// Format a Date object for database storage - now returning a proper Date object
-export const formatDateForStorage = (date: Date): Date => {
-  if (!date) return new Date();
-  return date;
+// Format a Date object for database storage as PostgreSQL date format (YYYY-MM-DD)
+export const formatDateForStorage = (date: Date): string => {
+  if (!date) return '';
+  return format(date, 'yyyy-MM-dd');
 };
 
-// Parse a time string to a Date object with only time component
-export const parseTimeString = (timeString: string): Date | null => {
-  if (!timeString) return null;
+// Parse a time string to a PostgreSQL time format (HH:MM:SS)
+export const parseTimeString = (timeString: string): string => {
+  if (!timeString) return '';
   
   // Handle time ranges like "09:00 AM - 10:00 AM" by taking the first part
   const timePart = timeString.split(' - ')[0];
   
   try {
-    // Create a base date and set the time
-    const baseDate = new Date();
-    const [hourMinute, period] = timePart.split(' ');
-    const [hour, minute] = hourMinute.split(':').map(Number);
-    
-    baseDate.setHours(
-      period.toLowerCase() === 'pm' && hour !== 12 ? hour + 12 : (period.toLowerCase() === 'am' && hour === 12 ? 0 : hour),
-      minute,
-      0,
-      0
-    );
-    
-    return baseDate;
+    // Parse time part and format for PostgreSQL
+    const timeDate = parse(timePart, 'h:mm a', new Date());
+    return format(timeDate, 'HH:mm:ss');
   } catch (error) {
     console.error('Error parsing time string:', error);
-    return null;
+    return '';
   }
 };
