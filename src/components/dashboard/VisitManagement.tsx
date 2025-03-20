@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { format, parse } from "date-fns";
+import { format } from "date-fns";
 
 // Define the allowed visit status types
 type VisitStatus = "confirmed" | "completed" | "cancelled";
@@ -89,21 +89,25 @@ export default function VisitManagement({ visits, isLoading, refetch }: VisitMan
     }
   };
 
-  // Format the date from dd-MM-yyyy to a more readable format
-  const displayDate = (dateString: string) => {
+  // Format the date for display
+  const displayDate = (dateValue: string | Date) => {
     try {
-      if (!dateString) return "Date unavailable";
+      if (!dateValue) return "Date unavailable";
       
-      // Try to parse as dd-MM-yyyy format
-      const parsedDate = parse(dateString, "dd-MM-yyyy", new Date());
-      if (!isNaN(parsedDate.getTime())) {
-        return format(parsedDate, "MMMM d, yyyy");
+      // Handle Date objects
+      if (dateValue instanceof Date) {
+        return format(dateValue, "MMMM d, yyyy");
       }
       
-      return dateString; // Return original if parsing fails
+      // Handle ISO strings
+      if (typeof dateValue === 'string' && dateValue.includes('T')) {
+        return format(new Date(dateValue), "MMMM d, yyyy");
+      }
+      
+      return String(dateValue); // Return as string for unknown formats
     } catch (error) {
       console.error("Error formatting date:", error);
-      return dateString;
+      return String(dateValue);
     }
   };
 
@@ -176,7 +180,7 @@ export default function VisitManagement({ visits, isLoading, refetch }: VisitMan
                     
                     <div className="flex items-center text-sm">
                       <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>{visitData.visit_time}</span>
+                      <span>{formatTime(visitData.visit_time)}</span>
                     </div>
                     
                     {visitData.notes && (

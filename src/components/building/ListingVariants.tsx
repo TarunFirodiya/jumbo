@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { IndianRupee, Building2, Compass, Car, Armchair, CalendarClock, Ruler, Image } from "lucide-react";
 import { VisitRequestModal } from "@/components/VisitRequestModal";
-import { RainbowButton } from "@/components/ui/rainbow-button";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
 interface ListingVariantsProps {
   listings: Tables<'listings'>[] | null;
   buildingId: string;
@@ -15,6 +15,7 @@ interface ListingVariantsProps {
   onListingSelect?: (listingId: string) => void;
   selectedListingId?: string | null;
 }
+
 export function ListingVariants({
   listings,
   buildingId,
@@ -26,6 +27,7 @@ export function ListingVariants({
   const [selectedListing, setSelectedListing] = useState<Tables<'listings'> | null>(null);
   const [showVisitModal, setShowVisitModal] = useState(false);
   const [showFloorPlan, setShowFloorPlan] = useState(false);
+
   useEffect(() => {
     if (listings?.length && selectedListingId) {
       const listing = listings.find(l => l.id === selectedListingId);
@@ -37,7 +39,9 @@ export function ListingVariants({
       onListingSelect?.(listings[0].id);
     }
   }, [listings, selectedListingId, onListingSelect]);
+
   if (!listings?.length) return null;
+
   const calculateEMI = (price: number) => {
     const loanAmount = price * 0.8;
     const interestRate = 0.085;
@@ -46,10 +50,12 @@ export function ListingVariants({
     const emi = loanAmount * monthlyRate * Math.pow(1 + monthlyRate, tenure) / (Math.pow(1 + monthlyRate, tenure) - 1);
     return Math.round(emi);
   };
+
   const handleListingSelect = (listing: Tables<'listings'>) => {
     setSelectedListing(listing);
     onListingSelect?.(listing.id);
   };
+
   const formatAvailabilityDate = (date: string | Date | null) => {
     if (!date) return "Immediate";
     try {
@@ -58,11 +64,14 @@ export function ListingVariants({
       return "Immediate";
     }
   };
+
   const getFurnishingStatusText = (status: string | null) => {
     if (!status) return "";
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
-  const ActionButtons = () => <div className="grid grid-cols-2 gap-3">
+
+  const ActionButtons = () => (
+    <div className="grid grid-cols-2 gap-3">
       <div>
         <Button onClick={() => setShowVisitModal(true)} className="w-full bg-black text-white hover:bg-slate-800">
           Request a Visit
@@ -73,17 +82,28 @@ export function ListingVariants({
         <Button variant="outline" className="w-full">Submit an Offer</Button>
         <p className="text-xs text-center text-muted-foreground mt-1">At Zero Cost</p>
       </div>
-    </div>;
-  return <>
+    </div>
+  );
+
+  return (
+    <>
       <Card className="p-6 space-y-6 shadow-lg md:max-w-sm md:sticky md:top-28">
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
-            {listings.map(listing => <Button key={listing.id} variant={selectedListing?.id === listing.id ? "default" : "outline"} onClick={() => handleListingSelect(listing)} className="text-sm">
+            {listings.map(listing => (
+              <Button 
+                key={listing.id} 
+                variant={selectedListing?.id === listing.id ? "default" : "outline"} 
+                onClick={() => handleListingSelect(listing)} 
+                className="text-sm"
+              >
                 {listing.bedrooms}BHK - Floor {listing.floor}
-              </Button>)}
+              </Button>
+            ))}
           </div>
 
-          {selectedListing && <div className="space-y-4">
+          {selectedListing && (
+            <div className="space-y-4">
               <div>
                 <div className="flex items-center gap-2">
                   <IndianRupee className="h-6 w-6 text-muted-foreground" />
@@ -137,31 +157,53 @@ export function ListingVariants({
                   </div>}
               </div>
               
-              {selectedListing.floor_plan_image && <Button variant="outline" className="w-full flex items-center gap-2" onClick={() => setShowFloorPlan(true)}>
+              {selectedListing.floor_plan_image && (
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center gap-2" 
+                  onClick={() => setShowFloorPlan(true)}
+                >
                   <Image className="h-4 w-4" />
                   View Floor Plan
-                </Button>}
+                </Button>
+              )}
 
               {!isMobile && <ActionButtons />}
-            </div>}
+            </div>
+          )}
         </div>
       </Card>
 
-      {isMobile && selectedListing && <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg z-40">
+      {isMobile && selectedListing && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg z-40">
           <ActionButtons />
-        </div>}
+        </div>
+      )}
 
-      <VisitRequestModal open={showVisitModal} onOpenChange={setShowVisitModal} buildingId={buildingId} buildingName={buildingName} listingId={selectedListing?.id || ""} />
+      <VisitRequestModal 
+        open={showVisitModal} 
+        onOpenChange={setShowVisitModal} 
+        buildingId={buildingId} 
+        buildingName={buildingName} 
+        listingId={selectedListing?.id || ""} 
+      />
       
-      {selectedListing && selectedListing.floor_plan_image && <Dialog open={showFloorPlan} onOpenChange={setShowFloorPlan}>
+      {selectedListing && selectedListing.floor_plan_image && (
+        <Dialog open={showFloorPlan} onOpenChange={setShowFloorPlan}>
           <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
               <DialogTitle>{selectedListing.bedrooms} BHK Floor Plan</DialogTitle>
             </DialogHeader>
             <div className="flex justify-center">
-              <img src={selectedListing.floor_plan_image} alt="Floor Plan" className="max-h-[70vh] object-contain" />
+              <img 
+                src={selectedListing.floor_plan_image} 
+                alt="Floor Plan" 
+                className="max-h-[70vh] object-contain" 
+              />
             </div>
           </DialogContent>
-        </Dialog>}
-    </>;
+        </Dialog>
+      )}
+    </>
+  );
 }

@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { formatDateForStorage, parseDateString } from "@/lib/date-utils";
+import { parseTimeString } from "@/lib/date-utils";
 
 interface VisitRequestModalProps {
   open: boolean;
@@ -20,7 +20,7 @@ interface VisitRequestModalProps {
   buildingName: string;
   listingId: string;
   visitId?: string;
-  initialDay?: string;
+  initialDay?: Date;
   initialTime?: string;
 }
 
@@ -50,10 +50,7 @@ export function VisitRequestModal({
 
   useEffect(() => {
     if (initialDay) {
-      const parsedDate = parseDateString(initialDay);
-      if (parsedDate) {
-        setDate(parsedDate);
-      }
+      setDate(initialDay instanceof Date ? initialDay : new Date(initialDay));
     }
     
     if (initialTime) {
@@ -101,10 +98,14 @@ export function VisitRequestModal({
     setIsSubmitting(true);
     
     try {
-      // Format date as string for storage (dd-MM-yyyy)
-      const formattedDate = formatDateForStorage(date);
+      // Parse the time from the timeSlot
+      const timeObject = parseTimeString(timeSlot);
       
-      console.log("Submitting visit with formatted date:", formattedDate);
+      if (!timeObject) {
+        throw new Error("Invalid time format");
+      }
+      
+      console.log("Submitting visit with date:", date, "time:", timeObject);
       
       // Create or update visit
       if (visitId) {
@@ -112,8 +113,8 @@ export function VisitRequestModal({
         const { error } = await supabase
           .from('visits')
           .update({
-            visit_day: formattedDate,
-            visit_time: timeSlot,
+            visit_day: date,
+            visit_time: timeObject,
           })
           .eq('id', visitId);
           
@@ -131,8 +132,8 @@ export function VisitRequestModal({
             building_id: buildingId,
             listing_id: listingId,
             user_id: user.id,
-            visit_day: formattedDate,
-            visit_time: timeSlot,
+            visit_day: date,
+            visit_time: timeObject,
             visit_status: 'confirmed'  // Set default status to confirmed
           });
 
