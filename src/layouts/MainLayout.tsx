@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,8 +8,7 @@ import { Profile } from "@/types/profile";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Search, Heart, Route, Settings, User2, LogOut, Menu, LayoutDashboard, HelpCircle } from "lucide-react";
-import { Footerdemo } from "@/components/ui/footer-section";
+import { Search, Heart, Route, Settings, User2, LogOut, Menu, LayoutDashboard, HelpCircle, Home } from "lucide-react";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -247,7 +247,32 @@ export default function MainLayout({
         {children}
       </main>
       
-      <Footerdemo />
+      <div className="fixed bottom-0 left-0 w-full z-50 bg-white border-t p-2 flex justify-around items-center">
+        <Button 
+          variant="ghost" 
+          className={`flex flex-col items-center ${location.pathname === '/buildings' ? 'text-primary' : 'text-muted-foreground'}`} 
+          onClick={() => navigate('/buildings')}
+        >
+          <Home className="h-5 w-5" />
+          <span className="text-xs mt-1">Home</span>
+        </Button>
+        <Button 
+          variant="ghost" 
+          className={`flex flex-col items-center ${location.pathname === '/shortlist' ? 'text-primary' : 'text-muted-foreground'}`} 
+          onClick={() => profile ? navigate('/shortlist') : openAuthModal('shortlist')}
+        >
+          <Heart className="h-5 w-5" />
+          <span className="text-xs mt-1">Shortlist</span>
+        </Button>
+        <Button 
+          variant="ghost" 
+          className={`flex flex-col items-center ${location.pathname === '/visits' ? 'text-primary' : 'text-muted-foreground'}`} 
+          onClick={() => profile ? navigate('/visits') : openAuthModal('visit')}
+        >
+          <Route className="h-5 w-5" />
+          <span className="text-xs mt-1">Visits</span>
+        </Button>
+      </div>
       
       <AuthModal 
         open={showAuthModal} 
