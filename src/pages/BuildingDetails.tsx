@@ -119,8 +119,7 @@ export default function BuildingDetails() {
   }
 
   const amenitiesArray = building.amenities || [];
-  const featuresArray = (building as BuildingWithFeatures).features || amenitiesArray;
-  const stringFeatures = Array.isArray(featuresArray) ? featuresArray.map(f => String(f)) : [];
+  const stringFeatures = Array.isArray(amenitiesArray) ? amenitiesArray.map(f => String(f)) : [];
   const amenitiesText = stringFeatures.slice(0, 3).join(', ');
 
   const structuredData = {

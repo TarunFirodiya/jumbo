@@ -33,7 +33,7 @@ export function useBuildingData(id: string) {
           if (typeof buildingWithFeatures.images === 'string') {
             try {
               // Some images might be stored as comma-separated strings
-              const imageStr = buildingWithFeatures.images as string;
+              const imageStr = buildingWithFeatures.images as unknown as string;
               if (imageStr.includes(',')) {
                 buildingWithFeatures.images = imageStr.split(',').map(img => img.trim());
               } else {
@@ -41,7 +41,7 @@ export function useBuildingData(id: string) {
               }
             } catch (e) {
               console.error('Error processing building images:', e);
-              buildingWithFeatures.images = buildingWithFeatures.images ? [buildingWithFeatures.images as string] : [];
+              buildingWithFeatures.images = buildingWithFeatures.images ? [buildingWithFeatures.images as unknown as string] : [];
             }
           }
           
@@ -81,10 +81,10 @@ export function useBuildingData(id: string) {
           if (typeof listing.images === 'string') {
             try {
               // Try to parse as JSON first
-              updatedListing.images = JSON.parse(listing.images);
+              updatedListing.images = JSON.parse(listing.images as unknown as string);
             } catch (e) {
               // If can't parse as JSON, try as comma-separated string
-              const imagesStr = listing.images as string;
+              const imagesStr = listing.images as unknown as string;
               if (imagesStr.includes(',')) {
                 updatedListing.images = imagesStr.split(',').map(img => img.trim());
               } else {
