@@ -3,13 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tables } from "@/integrations/supabase/types";
 
-// Define a type that includes the features property
-export type BuildingWithFeatures = {
-  id: string;
-  name: string;
-  amenities?: string[] | null;
-  [key: string]: any;
-};
+// Define a type that includes the proper properties
+export type BuildingWithFeatures = Tables<"buildings">;
 
 // Define a type for listings with properly typed images that extends the base listing type
 export type ListingWithProcessedImages = Tables<"listings"> & {

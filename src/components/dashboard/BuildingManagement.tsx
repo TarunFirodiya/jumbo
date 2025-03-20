@@ -275,7 +275,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
   const updateBuilding = useMutation({
     mutationFn: async (formData: FormData) => {
       const buildingId = formData.get('buildingId')?.toString();
-      if (!buildingId) throw new Error('Building ID is required');
+      if (!buildingId || !editingBuilding) throw new Error('Building ID is required');
       
       let imageUrls: string[] | null = editingBuilding?.images || null;
       
@@ -287,31 +287,31 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
       const amenitiesList = prepareAmenities();
       
       const buildingData = {
-        name: formData.get('name')?.toString() || '',
-        city: formData.get('city')?.toString() || 'Bengaluru',
-        locality: formData.get('locality')?.toString() || '',
-        sub_locality: formData.get('sub_locality')?.toString() || null,
-        latitude: formData.get('latitude') ? Number(formData.get('latitude')) : null,
-        longitude: formData.get('longitude') ? Number(formData.get('longitude')) : null,
-        type: formData.get('type')?.toString() || null,
-        age: formData.get('age') ? Number(formData.get('age')) : null,
-        total_floors: formData.get('total_floors') ? Number(formData.get('total_floors')) : null,
-        min_price: formData.get('min_price') ? Number(formData.get('min_price')) : null,
-        max_price: formData.get('max_price') ? Number(formData.get('max_price')) : null,
-        price_psqft: formData.get('price_psqft') ? Number(formData.get('price_psqft')) : null,
-        bhk_types: selectedBHKTypes.length ? selectedBHKTypes : null,
-        lifestyle_cohort: formData.get('lifestyle_cohort') ? Number(formData.get('lifestyle_cohort')) : null,
-        collections: selectedCollections.length ? selectedCollections : null,
-        amenities: amenitiesList.length ? amenitiesList : null,
-        google_rating: formData.get('google_rating') ? Number(formData.get('google_rating')) : null,
-        bank: selectedBanks.length ? selectedBanks : null,
-        water: selectedWaterSources.length ? selectedWaterSources : null,
-        map_link: formData.get('map_link')?.toString() || null,
-        street_view: formData.get('street_view')?.toString() || null,
-        video_thumbnail: formData.get('video_thumbnail')?.toString() || null,
-        data_source: formData.get('data_source')?.toString() || null,
+        name: formData.get('name')?.toString() || editingBuilding.name,
+        city: formData.get('city')?.toString() || editingBuilding.city,
+        locality: formData.get('locality')?.toString() || editingBuilding.locality,
+        sub_locality: formData.get('sub_locality')?.toString() || editingBuilding.sub_locality,
+        latitude: formData.get('latitude') ? Number(formData.get('latitude')) : editingBuilding.latitude,
+        longitude: formData.get('longitude') ? Number(formData.get('longitude')) : editingBuilding.longitude,
+        type: formData.get('type')?.toString() || editingBuilding.type,
+        age: formData.get('age') ? Number(formData.get('age')) : editingBuilding.age,
+        total_floors: formData.get('total_floors') ? Number(formData.get('total_floors')) : editingBuilding.total_floors,
+        min_price: formData.get('min_price') ? Number(formData.get('min_price')) : editingBuilding.min_price,
+        max_price: formData.get('max_price') ? Number(formData.get('max_price')) : editingBuilding.max_price,
+        price_psqft: formData.get('price_psqft') ? Number(formData.get('price_psqft')) : editingBuilding.price_psqft,
+        bhk_types: selectedBHKTypes.length ? selectedBHKTypes : editingBuilding.bhk_types,
+        lifestyle_cohort: formData.get('lifestyle_cohort') ? Number(formData.get('lifestyle_cohort')) : editingBuilding.lifestyle_cohort,
+        collections: selectedCollections.length ? selectedCollections : editingBuilding.collections,
+        amenities: amenitiesList.length ? amenitiesList : editingBuilding.amenities,
+        google_rating: formData.get('google_rating') ? Number(formData.get('google_rating')) : editingBuilding.google_rating,
+        bank: selectedBanks.length ? selectedBanks : editingBuilding.bank,
+        water: selectedWaterSources.length ? selectedWaterSources : editingBuilding.water,
+        map_link: formData.get('map_link')?.toString() || editingBuilding.map_link,
+        street_view: formData.get('street_view')?.toString() || editingBuilding.street_view,
+        video_thumbnail: formData.get('video_thumbnail')?.toString() || editingBuilding.video_thumbnail,
+        data_source: formData.get('data_source')?.toString() || editingBuilding.data_source,
         images: imageUrls,
-        total_units: formData.get('total_units') ? Number(formData.get('total_units')) : null
+        total_units: formData.get('total_units') ? Number(formData.get('total_units')) : editingBuilding.total_units
       };
 
       const { error } = await supabase
@@ -1011,3 +1011,4 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     </div>
   );
 }
+
