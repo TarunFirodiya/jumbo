@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -9,8 +8,6 @@ export type BuildingWithFeatures = {
   id: string;
   name: string;
   amenities?: string[] | null;
-  features?: string[] | null;
-  nearby_places?: any | null;
   [key: string]: any;
 };
 
@@ -34,15 +31,10 @@ export function useBuildingData(id: string) {
 
         if (error) throw error;
         
-        // Ensure backwards compatibility with code expecting 'features'
+        // Process images to ensure they're an array
         if (data) {
           const buildingWithFeatures = data as BuildingWithFeatures;
-          // Only set features if it doesn't already exist
-          if (!buildingWithFeatures.features && buildingWithFeatures.amenities) {
-            buildingWithFeatures.features = buildingWithFeatures.amenities;
-          }
           
-          // Process images to ensure they're an array
           if (typeof buildingWithFeatures.images === 'string') {
             try {
               // Some images might be stored as comma-separated strings
