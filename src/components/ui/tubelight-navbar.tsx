@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useEffect, useState } from "react"
@@ -25,7 +26,7 @@ export function NavBar({ items, className }: NavBarProps) {
 
   useEffect(() => {
     const currentPath = location.pathname;
-    const currentItem = items.find(item => item.url === currentPath);
+    const currentItem = items.find(item => currentPath.startsWith(item.url));
     if (currentItem) {
       setActiveTab(currentItem.name);
     }
