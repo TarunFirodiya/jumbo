@@ -45,7 +45,6 @@ interface Building {
   lifestyle_cohort: number | null;
   collections: string[] | null;
   amenities: string[] | null;
-  features?: any | null;
   google_rating: number | null;
   bank: string[] | null;
   water: string[] | null;
@@ -118,29 +117,20 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         throw error;
       }
       
-      return data?.map(building => ({
-        ...building,
-        features: building.amenities
-      })) || [];
+      return data || [];
     },
     enabled: !!currentSession?.user?.id
   });
 
   useEffect(() => {
     if (editingBuilding) {
-      const features = editingBuilding.features || {};
       const featureState: {[key: string]: boolean} = {};
       
-      Object.values(featureCategories).flat().forEach(feature => {
-        const category = Object.keys(featureCategories).find(cat => 
-          featureCategories[cat as keyof typeof featureCategories].includes(feature)
-        );
-        if (category && features[category]) {
-          featureState[feature] = features[category].includes(feature);
-        } else {
-          featureState[feature] = false;
-        }
-      });
+      if (editingBuilding.amenities) {
+        Object.values(featureCategories).flat().forEach(feature => {
+          featureState[feature] = editingBuilding.amenities?.includes(feature) || false;
+        });
+      }
       
       setSelectedFeatures(featureState);
       setSelectedBHKTypes(editingBuilding.bhk_types || []);
@@ -205,25 +195,10 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     }
   };
 
-  const prepareFeatures = () => {
-    const features: { [key: string]: string[] } = {};
-    
-    Object.entries(selectedFeatures).forEach(([feature, isSelected]) => {
-      if (isSelected) {
-        const category = Object.keys(featureCategories).find(cat => 
-          featureCategories[cat as keyof typeof featureCategories].includes(feature)
-        );
-        
-        if (category) {
-          if (!features[category]) {
-            features[category] = [];
-          }
-          features[category].push(feature);
-        }
-      }
-    });
-    
-    return features;
+  const prepareAmenities = () => {
+    return Object.entries(selectedFeatures)
+      .filter(([_, isSelected]) => isSelected)
+      .map(([feature]) => feature);
   };
 
   const createBuilding = useMutation({
@@ -234,7 +209,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
       
       const uploadedUrls = await uploadImages(uploadedImages);
       
-      const features = prepareFeatures();
+      const amenitiesList = prepareAmenities();
       
       const buildingData = {
         name: formData.get('name')?.toString() || '',
@@ -252,8 +227,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         bhk_types: selectedBHKTypes.length ? selectedBHKTypes : null,
         lifestyle_cohort: formData.get('lifestyle_cohort') ? Number(formData.get('lifestyle_cohort')) : null,
         collections: selectedCollections.length ? selectedCollections : null,
-        amenities: Object.values(features).flat().length ? Object.values(features).flat() : null,
-        features: Object.keys(features).length ? features : null,
+        amenities: amenitiesList.length ? amenitiesList : null,
         google_rating: formData.get('google_rating') ? Number(formData.get('google_rating')) : null,
         bank: selectedBanks.length ? selectedBanks : null,
         water: selectedWaterSources.length ? selectedWaterSources : null,
@@ -310,7 +284,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         imageUrls = editingBuilding?.images ? [...editingBuilding.images, ...newUrls] : newUrls;
       }
       
-      const features = prepareFeatures();
+      const amenitiesList = prepareAmenities();
       
       const buildingData = {
         name: formData.get('name')?.toString() || '',
@@ -328,8 +302,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         bhk_types: selectedBHKTypes.length ? selectedBHKTypes : null,
         lifestyle_cohort: formData.get('lifestyle_cohort') ? Number(formData.get('lifestyle_cohort')) : null,
         collections: selectedCollections.length ? selectedCollections : null,
-        amenities: Object.values(features).flat().length ? Object.values(features).flat() : null,
-        features: Object.keys(features).length ? features : null,
+        amenities: amenitiesList.length ? amenitiesList : null,
         google_rating: formData.get('google_rating') ? Number(formData.get('google_rating')) : null,
         bank: selectedBanks.length ? selectedBanks : null,
         water: selectedWaterSources.length ? selectedWaterSources : null,
