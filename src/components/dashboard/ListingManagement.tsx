@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { PencilIcon, Home, ImageIcon, X, Video } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
+import { ListingWithProcessedImages } from "@/components/building/hooks/useBuildingData";
 
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -28,7 +29,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingListing, setEditingListing] = useState<Listing | null>(null);
+  const [editingListing, setEditingListing] = useState<ListingWithProcessedImages | null>(null);
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [uploadedAIStagedPhotos, setUploadedAIStagedPhotos] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -178,6 +179,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         bedrooms: Number(formData.get('bedrooms')),
         bathrooms: Number(formData.get('bathrooms')),
         built_up_area: Number(formData.get('built_up_area')),
+        carpet_area: formData.get('carpet_area') ? Number(formData.get('carpet_area')) : null,
         floor: Number(formData.get('floor')),
         price: Number(formData.get('price')),
         maintenance: Number(formData.get('maintenance')),
@@ -397,7 +399,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     }
   };
 
-  const ListingForm = ({ listing }: { listing?: Listing }) => {
+  const ListingForm = ({ listing }: { listing?: ListingWithProcessedImages }) => {
     useEffect(() => {
       if (listing?.availability) {
         try {
