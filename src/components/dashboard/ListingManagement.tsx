@@ -58,12 +58,42 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
       if (currentUser.role === 'agent') {
         const { data, error } = await query.eq('agent_id', currentUser.id);
         if (error) throw error;
-        return data;
+        
+        return data.map(listing => {
+          const processedListing = { ...listing } as ListingWithProcessedImages;
+          
+          if (!Array.isArray(processedListing.images)) {
+            processedListing.images = processedListing.images ? [processedListing.images as unknown as string] : [];
+          }
+          
+          if (!processedListing.ai_staged_photos) {
+            processedListing.ai_staged_photos = [];
+          } else if (!Array.isArray(processedListing.ai_staged_photos)) {
+            processedListing.ai_staged_photos = [processedListing.ai_staged_photos as unknown as string];
+          }
+          
+          return processedListing;
+        });
       }
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      
+      return data.map(listing => {
+        const processedListing = { ...listing } as ListingWithProcessedImages;
+        
+        if (!Array.isArray(processedListing.images)) {
+          processedListing.images = processedListing.images ? [processedListing.images as unknown as string] : [];
+        }
+        
+        if (!processedListing.ai_staged_photos) {
+          processedListing.ai_staged_photos = [];
+        } else if (!Array.isArray(processedListing.ai_staged_photos)) {
+          processedListing.ai_staged_photos = [processedListing.ai_staged_photos as unknown as string];
+        }
+        
+        return processedListing;
+      });
     }
   });
 
@@ -977,3 +1007,4 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     </div>
   );
 }
+
