@@ -10,7 +10,7 @@ export type BuildingWithFeatures = Tables<"buildings">;
 // Define a type for listings with properly typed images that extends the base listing type
 export type ListingWithProcessedImages = Tables<"listings"> & {
   images: string[] | null;
-  ai_staged_photos?: string[] | null;
+  ai_staged_photos: string[] | null;
 };
 
 export function useBuildingData(id: string) {
@@ -104,19 +104,22 @@ export function useBuildingData(id: string) {
           }
           
           // Process AI staged photos if they exist
-          if (typeof listing.ai_staged_photos === 'string') {
+          // First, check if the property exists in the database response
+          const aiPhotos = (listing as any).ai_staged_photos;
+          
+          if (typeof aiPhotos === 'string') {
             try {
-              updatedListing.ai_staged_photos = JSON.parse(listing.ai_staged_photos as unknown as string);
+              updatedListing.ai_staged_photos = JSON.parse(aiPhotos);
             } catch (e) {
-              const photosStr = listing.ai_staged_photos as unknown as string;
+              const photosStr = aiPhotos;
               if (photosStr.includes(',')) {
                 updatedListing.ai_staged_photos = photosStr.split(',').map(img => img.trim());
               } else {
                 updatedListing.ai_staged_photos = [photosStr];
               }
             }
-          } else if (Array.isArray(listing.ai_staged_photos)) {
-            updatedListing.ai_staged_photos = listing.ai_staged_photos;
+          } else if (Array.isArray(aiPhotos)) {
+            updatedListing.ai_staged_photos = aiPhotos;
           } else {
             updatedListing.ai_staged_photos = [];
           }
