@@ -9,12 +9,40 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      app_config: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       buildings: {
         Row: {
           age: number | null
           amenities: string[] | null
           bank: string[] | null
           bhk_types: number[] | null
+          building_status: Database["public"]["Enums"]["building_status"] | null
           city: string | null
           collections: string[] | null
           created_at: string | null
@@ -47,6 +75,9 @@ export type Database = {
           amenities?: string[] | null
           bank?: string[] | null
           bhk_types?: number[] | null
+          building_status?:
+            | Database["public"]["Enums"]["building_status"]
+            | null
           city?: string | null
           collections?: string[] | null
           created_at?: string | null
@@ -79,6 +110,9 @@ export type Database = {
           amenities?: string[] | null
           bank?: string[] | null
           bhk_types?: number[] | null
+          building_status?:
+            | Database["public"]["Enums"]["building_status"]
+            | null
           city?: string | null
           collections?: string[] | null
           created_at?: string | null
@@ -646,6 +680,7 @@ export type Database = {
       }
     }
     Enums: {
+      building_status: "Photos Pending" | "Publish"
       collections:
         | "Affordable"
         | "Gated Apartment"

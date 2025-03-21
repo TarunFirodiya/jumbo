@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +10,7 @@ export type BuildingWithFeatures = Tables<"buildings">;
 // Define a type for listings with properly typed images that extends the base listing type
 export type ListingWithProcessedImages = Tables<"listings"> & {
   images: string[] | null;
+  ai_staged_photos?: string[] | null;
 };
 
 export function useBuildingData(id: string) {
@@ -78,6 +80,7 @@ export function useBuildingData(id: string) {
           // Create a safe copy of the listing to modify with properly typed images field
           const updatedListing = { ...listing } as ListingWithProcessedImages;
           
+          // Process regular images
           if (typeof listing.images === 'string') {
             try {
               // Try to parse as JSON first
@@ -98,6 +101,24 @@ export function useBuildingData(id: string) {
           } else {
             // If images is null or undefined, set as empty array
             updatedListing.images = [];
+          }
+          
+          // Process AI staged photos if they exist
+          if (typeof listing.ai_staged_photos === 'string') {
+            try {
+              updatedListing.ai_staged_photos = JSON.parse(listing.ai_staged_photos as unknown as string);
+            } catch (e) {
+              const photosStr = listing.ai_staged_photos as unknown as string;
+              if (photosStr.includes(',')) {
+                updatedListing.ai_staged_photos = photosStr.split(',').map(img => img.trim());
+              } else {
+                updatedListing.ai_staged_photos = [photosStr];
+              }
+            }
+          } else if (Array.isArray(listing.ai_staged_photos)) {
+            updatedListing.ai_staged_photos = listing.ai_staged_photos;
+          } else {
+            updatedListing.ai_staged_photos = [];
           }
           
           return updatedListing;

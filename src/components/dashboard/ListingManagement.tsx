@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { PencilIcon, Home, ImageIcon, X } from "lucide-react";
+import { PencilIcon, Home, ImageIcon, X, Video } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 
 import { format } from "date-fns";
@@ -30,6 +30,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
+  const [uploadedAIStagedPhotos, setUploadedAIStagedPhotos] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -65,7 +66,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     }
   });
 
-  const uploadImages = async (files: File[]) => {
+  const uploadImages = async (files: File[], folder: string = 'listing-images') => {
     if (!files.length) return [];
     
     setIsUploading(true);
@@ -75,7 +76,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
       for (const file of files) {
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-        const filePath = `listing-images/${fileName}`;
+        const filePath = `${folder}/${fileName}`;
         
         const { error: uploadError } = await supabase.storage
           .from('listings')
@@ -110,6 +111,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
       const building = buildings?.find(b => b.id === building_id);
       
       const imageUrls = await uploadImages(uploadedImages);
+      const aiStagedUrls = await uploadImages(uploadedAIStagedPhotos, 'ai-staged-photos');
 
       const listingData = {
         building_id,
@@ -122,7 +124,8 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         facing: formData.get('facing')?.toString() || null,
         agent_id: currentUser.id,
         building_name: building?.name || null,
-        images: imageUrls.length ? imageUrls : []
+        images: imageUrls.length ? imageUrls : [],
+        ai_staged_photos: aiStagedUrls.length ? aiStagedUrls : []
       };
 
       const { error } = await supabase
@@ -135,6 +138,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
       queryClient.invalidateQueries({ queryKey: ['listings'] });
       setIsCreateOpen(false);
       setUploadedImages([]);
+      setUploadedAIStagedPhotos([]);
       toast({
         title: "Success",
         description: "Listing created successfully",
@@ -157,10 +161,16 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
       const building = buildings?.find(b => b.id === building_id);
       
       let imageUrls = editingListing?.images || [];
+      let aiStagedUrls = editingListing?.ai_staged_photos || [];
       
       if (uploadedImages.length) {
         const newUrls = await uploadImages(uploadedImages);
         imageUrls = [...(imageUrls || []), ...newUrls];
+      }
+      
+      if (uploadedAIStagedPhotos.length) {
+        const newUrls = await uploadImages(uploadedAIStagedPhotos, 'ai-staged-photos');
+        aiStagedUrls = [...(aiStagedUrls || []), ...newUrls];
       }
 
       const listingData = {
@@ -173,7 +183,8 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         maintenance: Number(formData.get('maintenance')),
         facing: formData.get('facing')?.toString() || null,
         building_name: building?.name || null,
-        images: imageUrls
+        images: imageUrls,
+        ai_staged_photos: aiStagedUrls
       };
 
       if (!listingId) throw new Error('Listing ID is required');
@@ -189,6 +200,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
       queryClient.invalidateQueries({ queryKey: ['listings'] });
       setEditingListing(null);
       setUploadedImages([]);
+      setUploadedAIStagedPhotos([]);
       toast({
         title: "Success",
         description: "Listing updated successfully",
@@ -245,11 +257,17 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     if (editingListing) {
       const processUpdate = async () => {
         let imageUrls = editingListing?.images || [];
+        let aiStagedUrls = editingListing?.ai_staged_photos || [];
         let floorPlanUrl = editingListing?.floor_plan_image || null;
         
         if (uploadedImages.length) {
           const newUrls = await uploadImages(uploadedImages);
           imageUrls = [...(imageUrls || []), ...newUrls];
+        }
+        
+        if (uploadedAIStagedPhotos.length) {
+          const newUrls = await uploadImages(uploadedAIStagedPhotos, 'ai-staged-photos');
+          aiStagedUrls = [...(aiStagedUrls || []), ...newUrls];
         }
         
         if (floorPlanUpload) {
@@ -275,6 +293,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
           facing: formData.get('facing')?.toString() || null,
           building_name: building?.name || null,
           images: imageUrls,
+          ai_staged_photos: aiStagedUrls,
           floor_plan_image: floorPlanUrl,
           parking_spots: formData.get('parking_spots') ? Number(formData.get('parking_spots')) : null,
           balconies: formData.get('balconies') ? Number(formData.get('balconies')) : null,
@@ -296,6 +315,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         queryClient.invalidateQueries({ queryKey: ['listings'] });
         setEditingListing(null);
         setUploadedImages([]);
+        setUploadedAIStagedPhotos([]);
         setSelectedDate(undefined);
         toast({
           title: "Success",
@@ -318,6 +338,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         const building = buildings?.find(b => b.id === building_id);
         
         const imageUrls = await uploadImages(uploadedImages);
+        const aiStagedUrls = await uploadImages(uploadedAIStagedPhotos, 'ai-staged-photos');
         
         let floorPlanUrl = null;
         if (floorPlanUpload) {
@@ -337,6 +358,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
           agent_id: currentUser.id,
           building_name: building?.name || null,
           images: imageUrls.length ? imageUrls : [],
+          ai_staged_photos: aiStagedUrls.length ? aiStagedUrls : [],
           floor_plan_image: floorPlanUrl,
           parking_spots: formData.get('parking_spots') ? Number(formData.get('parking_spots')) : null,
           balconies: formData.get('balconies') ? Number(formData.get('balconies')) : null,
@@ -355,6 +377,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         queryClient.invalidateQueries({ queryKey: ['listings'] });
         setIsCreateOpen(false);
         setUploadedImages([]);
+        setUploadedAIStagedPhotos([]);
         setSelectedDate(undefined);
         toast({
           title: "Success",
@@ -608,7 +631,11 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
             type="file"
             multiple
             accept="image/*"
-            onChange={handleFileChange}
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                setUploadedImages(Array.from(e.target.files));
+              }
+            }}
             className="cursor-pointer"
           />
           
@@ -628,7 +655,17 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
                       variant="destructive"
                       size="icon"
                       className="h-5 w-5 absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => removeExistingImage(index)}
+                      onClick={() => {
+                        if (editingListing && editingListing.images) {
+                          const updatedImages = [...editingListing.images];
+                          updatedImages.splice(index, 1);
+                          
+                          setEditingListing({
+                            ...editingListing,
+                            images: updatedImages
+                          });
+                        }
+                      }}
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -654,7 +691,94 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
                       variant="destructive"
                       size="icon"
                       className="h-5 w-5 absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => removeNewImage(index)}
+                      onClick={() => {
+                        const updatedImages = [...uploadedImages];
+                        updatedImages.splice(index, 1);
+                        setUploadedImages(updatedImages);
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <div className="space-y-2 border-t pt-4">
+          <Label htmlFor="ai_staged_photos" className="text-base font-medium">AI Staged Photos</Label>
+          <Input 
+            id="ai_staged_photos" 
+            name="ai_staged_photos" 
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                setUploadedAIStagedPhotos(Array.from(e.target.files));
+              }
+            }}
+            className="cursor-pointer"
+          />
+          
+          {listing?.ai_staged_photos && listing.ai_staged_photos.length > 0 && (
+            <div className="mt-2">
+              <Label>Existing AI Staged Photos</Label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {listing.ai_staged_photos.map((image, index) => (
+                  <div key={index} className="relative group">
+                    <img 
+                      src={image} 
+                      alt={`AI Staged ${index + 1}`} 
+                      className="h-20 w-20 object-cover rounded-md"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="h-5 w-5 absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => {
+                        if (editingListing && editingListing.ai_staged_photos) {
+                          const updatedPhotos = [...editingListing.ai_staged_photos];
+                          updatedPhotos.splice(index, 1);
+                          
+                          setEditingListing({
+                            ...editingListing,
+                            ai_staged_photos: updatedPhotos
+                          });
+                        }
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {uploadedAIStagedPhotos.length > 0 && (
+            <div className="mt-2">
+              <Label>New AI Staged Photos to Upload</Label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {Array.from(uploadedAIStagedPhotos).map((file, index) => (
+                  <div key={index} className="relative group">
+                    <img 
+                      src={URL.createObjectURL(file)} 
+                      alt={`AI Staged Preview ${index + 1}`} 
+                      className="h-20 w-20 object-cover rounded-md"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="h-5 w-5 absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => {
+                        const updatedPhotos = [...uploadedAIStagedPhotos];
+                        updatedPhotos.splice(index, 1);
+                        setUploadedAIStagedPhotos(updatedPhotos);
+                      }}
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -757,6 +881,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
               <TableHead>Price</TableHead>
               <TableHead>Facing</TableHead>
               <TableHead>Images</TableHead>
+              <TableHead>AI Staged</TableHead>
               <TableHead className="w-[80px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -794,6 +919,30 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
                   )}
                 </TableCell>
                 <TableCell>
+                  {listing.ai_staged_photos && listing.ai_staged_photos.length > 0 ? (
+                    <div className="flex -space-x-2">
+                      {listing.ai_staged_photos.slice(0, 2).map((image, index) => (
+                        <img 
+                          key={index} 
+                          src={image} 
+                          alt={`AI Staged ${index + 1}`} 
+                          className="h-8 w-8 rounded-full border border-background object-cover"
+                        />
+                      ))}
+                      {listing.ai_staged_photos.length > 2 && (
+                        <div className="flex items-center justify-center h-8 w-8 rounded-full bg-muted text-xs">
+                          +{listing.ai_staged_photos.length - 2}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center text-muted-foreground">
+                      <ImageIcon className="h-4 w-4 mr-1" />
+                      <span className="text-xs">None</span>
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -806,7 +955,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
             ))}
             {!listings?.length && (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
                   No listings found
                 </TableCell>
               </TableRow>
