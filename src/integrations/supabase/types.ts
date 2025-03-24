@@ -147,6 +147,7 @@ export type Database = {
           "99acres_price": number | null
           active_loan_flag: boolean | null
           agent_id: string | null
+          ai_staged_photos: string[] | null
           availability: string | null
           balconies: number | null
           bathrooms: number | null
@@ -171,6 +172,7 @@ export type Database = {
           loan_bank: string | null
           magicbricks_price: number | null
           maintenance: number | null
+          media_metadata: Json | null
           nobroker_price: number | null
           occupancy_status:
             | Database["public"]["Enums"]["occupancy_status"]
@@ -186,6 +188,7 @@ export type Database = {
           price_psqft: number | null
           reserve_price: number | null
           status: string | null
+          thumbnail_image: string | null
           uds_area: number | null
           visit_fulfiller: Database["public"]["Enums"]["visit_fulfiller"] | null
         }
@@ -193,6 +196,7 @@ export type Database = {
           "99acres_price"?: number | null
           active_loan_flag?: boolean | null
           agent_id?: string | null
+          ai_staged_photos?: string[] | null
           availability?: string | null
           balconies?: number | null
           bathrooms?: number | null
@@ -217,6 +221,7 @@ export type Database = {
           loan_bank?: string | null
           magicbricks_price?: number | null
           maintenance?: number | null
+          media_metadata?: Json | null
           nobroker_price?: number | null
           occupancy_status?:
             | Database["public"]["Enums"]["occupancy_status"]
@@ -232,6 +237,7 @@ export type Database = {
           price_psqft?: number | null
           reserve_price?: number | null
           status?: string | null
+          thumbnail_image?: string | null
           uds_area?: number | null
           visit_fulfiller?:
             | Database["public"]["Enums"]["visit_fulfiller"]
@@ -241,6 +247,7 @@ export type Database = {
           "99acres_price"?: number | null
           active_loan_flag?: boolean | null
           agent_id?: string | null
+          ai_staged_photos?: string[] | null
           availability?: string | null
           balconies?: number | null
           bathrooms?: number | null
@@ -265,6 +272,7 @@ export type Database = {
           loan_bank?: string | null
           magicbricks_price?: number | null
           maintenance?: number | null
+          media_metadata?: Json | null
           nobroker_price?: number | null
           occupancy_status?:
             | Database["public"]["Enums"]["occupancy_status"]
@@ -280,6 +288,7 @@ export type Database = {
           price_psqft?: number | null
           reserve_price?: number | null
           status?: string | null
+          thumbnail_image?: string | null
           uds_area?: number | null
           visit_fulfiller?:
             | Database["public"]["Enums"]["visit_fulfiller"]

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tables } from "@/integrations/supabase/types";
+import { normalizeImageArray } from "@/utils/mediaProcessing";
 
 // Define a type that includes the proper properties
 export type BuildingWithFeatures = Tables<"buildings">;
@@ -11,6 +12,14 @@ export type BuildingWithFeatures = Tables<"buildings">;
 export type ListingWithProcessedImages = Tables<"listings"> & {
   images: string[] | null;
   ai_staged_photos: string[] | null;
+  media_metadata?: {
+    regularImages: string[];
+    aiStagedPhotos: string[];
+    floorPlan: string | null;
+    video: string | null;
+    streetView: string | null;
+    lastUpdated: string;
+  } | null;
 };
 
 export function useBuildingData(id: string) {
@@ -32,20 +41,8 @@ export function useBuildingData(id: string) {
         if (data) {
           const buildingWithFeatures = data as BuildingWithFeatures;
           
-          if (typeof buildingWithFeatures.images === 'string') {
-            try {
-              // Some images might be stored as comma-separated strings
-              const imageStr = buildingWithFeatures.images as unknown as string;
-              if (imageStr.includes(',')) {
-                buildingWithFeatures.images = imageStr.split(',').map(img => img.trim());
-              } else {
-                buildingWithFeatures.images = [imageStr];
-              }
-            } catch (e) {
-              console.error('Error processing building images:', e);
-              buildingWithFeatures.images = buildingWithFeatures.images ? [buildingWithFeatures.images as unknown as string] : [];
-            }
-          }
+          // Normalize images to array format
+          buildingWithFeatures.images = normalizeImageArray(buildingWithFeatures.images);
           
           return buildingWithFeatures;
         }
@@ -75,56 +72,30 @@ export function useBuildingData(id: string) {
 
         if (error) throw error;
         
-        // Process listing images if needed
+        // Process listing images to ensure proper typing
         return data?.map(listing => {
-          // Create a safe copy of the listing to modify with properly typed images field
-          const updatedListing = { ...listing } as ListingWithProcessedImages;
+          // Create a safe copy of the listing to modify with properly typed fields
+          const processedListing = { ...listing } as ListingWithProcessedImages;
           
           // Process regular images
-          if (typeof listing.images === 'string') {
-            try {
-              // Try to parse as JSON first
-              updatedListing.images = JSON.parse(listing.images as unknown as string);
-            } catch (e) {
-              // If can't parse as JSON, try as comma-separated string
-              const imagesStr = listing.images as unknown as string;
-              if (imagesStr.includes(',')) {
-                updatedListing.images = imagesStr.split(',').map(img => img.trim());
-              } else {
-                // If it's just a single string and not JSON or comma-separated
-                updatedListing.images = [imagesStr];
-              }
-            }
-          } else if (Array.isArray(listing.images)) {
-            // If it's already an array, keep it
-            updatedListing.images = listing.images;
-          } else {
-            // If images is null or undefined, set as empty array
-            updatedListing.images = [];
+          processedListing.images = normalizeImageArray(listing.images);
+          
+          // Process AI staged photos
+          processedListing.ai_staged_photos = normalizeImageArray(listing.ai_staged_photos);
+          
+          // Use media_metadata if available, otherwise generate a default structure
+          if (!processedListing.media_metadata) {
+            processedListing.media_metadata = {
+              regularImages: processedListing.images || [],
+              aiStagedPhotos: processedListing.ai_staged_photos || [],
+              floorPlan: listing.floor_plan_image || null,
+              video: null,
+              streetView: null,
+              lastUpdated: new Date().toISOString()
+            };
           }
           
-          // Process AI staged photos if they exist
-          // First, check if the property exists in the database response
-          const aiPhotos = (listing as any).ai_staged_photos;
-          
-          if (typeof aiPhotos === 'string') {
-            try {
-              updatedListing.ai_staged_photos = JSON.parse(aiPhotos);
-            } catch (e) {
-              const photosStr = aiPhotos;
-              if (photosStr.includes(',')) {
-                updatedListing.ai_staged_photos = photosStr.split(',').map(img => img.trim());
-              } else {
-                updatedListing.ai_staged_photos = [photosStr];
-              }
-            }
-          } else if (Array.isArray(aiPhotos)) {
-            updatedListing.ai_staged_photos = aiPhotos;
-          } else {
-            updatedListing.ai_staged_photos = [];
-          }
-          
-          return updatedListing;
+          return processedListing;
         });
       } catch (error) {
         console.error('Error fetching listings:', error);
