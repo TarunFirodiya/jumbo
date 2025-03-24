@@ -13,3 +13,9 @@ createRoot(root).render(
   </React.StrictMode>
 );
 
+// Report initial page view to Google Analytics
+if (typeof window !== 'undefined' && (window as any).gtag) {
+  (window as any).gtag('config', 'G-7PDFV18DN2', {
+    page_path: window.location.pathname,
+  });
+}
