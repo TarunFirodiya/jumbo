@@ -264,7 +264,7 @@ export default function MainLayout({
               <h3 className="font-medium text-lg mb-4">Contact</h3>
               <address className="not-italic text-sm text-gray-600">
                 <p>761 Urban Vault</p>
-                <p>Mumbai, Maharashtra 400001</p>
+                <p>HSR Layout, Bangalore, Karnataka</p>
                 <p className="mt-2">support@seraihomes.com</p>
                 <p>+91 9876543210</p>
               </address>
