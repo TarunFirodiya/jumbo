@@ -20,16 +20,25 @@ export const CarouselControls = memo(function CarouselControls({
     return null;
   }
 
+  const goToPrevious = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newIndex = currentSlide === 0 ? displayImages.length - 1 : currentSlide - 1;
+    setCurrentSlide(newIndex);
+  };
+
+  const goToNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newIndex = currentSlide === displayImages.length - 1 ? 0 : currentSlide + 1;
+    setCurrentSlide(newIndex);
+  };
+
   return (
     <>
       <Button
         variant="ghost"
         size="icon"
         className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 text-white hover:bg-black/70"
-        onClick={(e) => {
-          e.stopPropagation();
-          setCurrentSlide(prev => (prev === 0 ? displayImages.length - 1 : prev - 1));
-        }}
+        onClick={goToPrevious}
       >
         <ChevronLeft className="h-6 w-6" />
         <span className="sr-only">Previous image</span>
@@ -39,10 +48,7 @@ export const CarouselControls = memo(function CarouselControls({
         variant="ghost"
         size="icon"
         className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 text-white hover:bg-black/70"
-        onClick={(e) => {
-          e.stopPropagation();
-          setCurrentSlide(prev => (prev === displayImages.length - 1 ? 0 : prev + 1));
-        }}
+        onClick={goToNext}
       >
         <ChevronRight className="h-6 w-6" />
         <span className="sr-only">Next image</span>
