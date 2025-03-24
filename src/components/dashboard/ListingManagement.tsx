@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,12 +12,15 @@ import { useToast } from "@/hooks/use-toast";
 import { PencilIcon, Home, ImageIcon, X, Video } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { ListingWithProcessedImages } from "@/components/building/hooks/useBuildingData";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ListingManagementProps {
   currentUser: Profile;
@@ -443,418 +447,434 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     }, [listing]);
 
     return (
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {listing && <input type="hidden" name="listingId" value={listing.id} />}
-        
-        <div className="space-y-2">
-          <Label htmlFor="building_id">Building</Label>
-          <select 
-            id="building_id" 
-            name="building_id" 
-            className="w-full rounded-md border p-2"
-            defaultValue={listing?.building_id || ''}
-            required
-          >
-            <option value="">Select a building</option>
-            {buildings?.map((building) => (
-              <option key={building.id} value={building.id}>
-                {building.name}
-              </option>
-            ))}
-          </select>
-        </div>
+      <Tabs defaultValue="basic" className="w-full">
+        <TabsList className="grid grid-cols-3 mb-4">
+          <TabsTrigger value="basic">Basic Info</TabsTrigger>
+          <TabsTrigger value="features">Features</TabsTrigger>
+          <TabsTrigger value="media">Media</TabsTrigger>
+        </TabsList>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="bedrooms">Bedrooms</Label>
-            <Input 
-              id="bedrooms" 
-              name="bedrooms" 
-              type="number"
-              defaultValue={listing?.bedrooms || ''} 
-              required 
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {listing && <input type="hidden" name="listingId" value={listing.id} />}
           
-          <div className="space-y-2">
-            <Label htmlFor="bathrooms">Bathrooms</Label>
-            <Input 
-              id="bathrooms" 
-              name="bathrooms" 
-              type="number"
-              defaultValue={listing?.bathrooms || ''} 
-              required 
-            />
-          </div>
-        </div>
+          <TabsContent value="basic" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="building_id">Building</Label>
+              <select 
+                id="building_id" 
+                name="building_id" 
+                className="w-full rounded-md border p-2"
+                defaultValue={listing?.building_id || ''}
+                required
+              >
+                <option value="">Select a building</option>
+                {buildings?.map((building) => (
+                  <option key={building.id} value={building.id}>
+                    {building.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="built_up_area">Built Up Area (sq ft)</Label>
-            <Input 
-              id="built_up_area" 
-              name="built_up_area" 
-              type="number"
-              defaultValue={listing?.built_up_area || ''} 
-              required 
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="carpet_area">Carpet Area (sq ft)</Label>
-            <Input 
-              id="carpet_area" 
-              name="carpet_area" 
-              type="number"
-              defaultValue={listing?.carpet_area || ''} 
-            />
-          </div>
-        </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="bedrooms">Bedrooms</Label>
+                <Input 
+                  id="bedrooms" 
+                  name="bedrooms" 
+                  type="number"
+                  defaultValue={listing?.bedrooms || ''} 
+                  required 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="bathrooms">Bathrooms</Label>
+                <Input 
+                  id="bathrooms" 
+                  name="bathrooms" 
+                  type="number"
+                  defaultValue={listing?.bathrooms || ''} 
+                  required 
+                />
+              </div>
+            </div>
 
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="floor">Floor</Label>
-            <Input 
-              id="floor" 
-              name="floor" 
-              type="number"
-              defaultValue={listing?.floor || ''} 
-              required 
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="parking_spots">Parking Spots</Label>
-            <Input 
-              id="parking_spots" 
-              name="parking_spots" 
-              type="number"
-              min="0"
-              defaultValue={listing?.parking_spots || '0'} 
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="balconies">Balconies</Label>
-            <Input 
-              id="balconies" 
-              name="balconies" 
-              type="number"
-              min="0"
-              defaultValue={listing?.balconies || '0'} 
-            />
-          </div>
-        </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="built_up_area">Built Up Area (sq ft)</Label>
+                <Input 
+                  id="built_up_area" 
+                  name="built_up_area" 
+                  type="number"
+                  defaultValue={listing?.built_up_area || ''} 
+                  required 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="carpet_area">Carpet Area (sq ft)</Label>
+                <Input 
+                  id="carpet_area" 
+                  name="carpet_area" 
+                  type="number"
+                  defaultValue={listing?.carpet_area || ''} 
+                />
+              </div>
+            </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="price">Price</Label>
-            <Input 
-              id="price" 
-              name="price" 
-              type="number"
-              defaultValue={listing?.price || ''} 
-              required 
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="maintenance">Maintenance</Label>
-            <Input 
-              id="maintenance" 
-              name="maintenance" 
-              type="number"
-              defaultValue={listing?.maintenance || ''} 
-              required 
-            />
-          </div>
-        </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="price">Price</Label>
+                <Input 
+                  id="price" 
+                  name="price" 
+                  type="number"
+                  defaultValue={listing?.price || ''} 
+                  required 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="maintenance">Maintenance</Label>
+                <Input 
+                  id="maintenance" 
+                  name="maintenance" 
+                  type="number"
+                  defaultValue={listing?.maintenance || ''} 
+                  required 
+                />
+              </div>
+            </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="facing">Facing</Label>
-            <select 
-              id="facing" 
-              name="facing" 
-              className="w-full rounded-md border p-2"
-              defaultValue={listing?.facing || ''}
-              required
-            >
-              <option value="">Select facing direction</option>
-              {['North', 'South', 'East', 'West', 'North East', 'North West', 'South East', 'South West'].map((direction) => (
-                <option key={direction} value={direction}>
-                  {direction}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="furnishing_status">Furnishing Status</Label>
-            <select 
-              id="furnishing_status" 
-              name="furnishing_status" 
-              className="w-full rounded-md border p-2"
-              defaultValue={listing?.furnishing_status || ''}
-            >
-              <option value="">Select furnishing</option>
-              {['unfurnished', 'semi-furnished', 'fully furnished'].map((status) => (
-                <option key={status} value={status}>
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="availability">Availability</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  id="availability"
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !selectedDate && "text-muted-foreground"
-                  )}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <select 
+                  id="status" 
+                  name="status" 
+                  className="w-full rounded-md border p-2"
+                  defaultValue={listing?.status || 'available'}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "PPP") : "Immediate"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <input 
-              type="hidden" 
-              name="availability" 
-              value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ''} 
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <select 
-              id="status" 
-              name="status" 
-              className="w-full rounded-md border p-2"
-              defaultValue={listing?.status || 'available'}
-            >
-              <option value="available">Available</option>
-              <option value="reserved">Reserved</option>
-              <option value="sold">Sold</option>
-            </select>
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="images">Unit Images</Label>
-          <Input 
-            id="images" 
-            name="images" 
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={(e) => {
-              if (e.target.files && e.target.files.length > 0) {
-                setUploadedImages(Array.from(e.target.files));
-              }
-            }}
-            className="cursor-pointer"
-          />
-          
-          {listing?.images && listing.images.length > 0 && (
-            <div className="mt-2">
-              <Label>Existing Images</Label>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {listing.images.map((image, index) => (
-                  <div key={index} className="relative group">
-                    <img 
-                      src={image} 
-                      alt={`Listing ${index + 1}`} 
-                      className="h-20 w-20 object-cover rounded-md"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="h-5 w-5 absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => {
-                        if (editingListing && editingListing.images) {
-                          const updatedImages = [...editingListing.images];
-                          updatedImages.splice(index, 1);
-                          
-                          setEditingListing({
-                            ...editingListing,
-                            images: updatedImages
-                          });
-                        }
-                      }}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
+                  <option value="available">Available</option>
+                  <option value="reserved">Reserved</option>
+                  <option value="sold">Sold</option>
+                </select>
               </div>
-            </div>
-          )}
-          
-          {uploadedImages.length > 0 && (
-            <div className="mt-2">
-              <Label>New Images to Upload</Label>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {Array.from(uploadedImages).map((file, index) => (
-                  <div key={index} className="relative group">
-                    <img 
-                      src={URL.createObjectURL(file)} 
-                      alt={`Preview ${index + 1}`} 
-                      className="h-20 w-20 object-cover rounded-md"
-                    />
+              
+              <div className="space-y-2">
+                <Label htmlFor="availability">Availability</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
                     <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="h-5 w-5 absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => {
-                        const updatedImages = [...uploadedImages];
-                        updatedImages.splice(index, 1);
-                        setUploadedImages(updatedImages);
-                      }}
+                      id="availability"
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !selectedDate && "text-muted-foreground"
+                      )}
                     >
-                      <X className="h-3 w-3" />
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "PPP") : "Immediate"}
                     </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        
-        <div className="space-y-2 border-t pt-4">
-          <Label htmlFor="ai_staged_photos" className="text-base font-medium">AI Staged Photos</Label>
-          <Input 
-            id="ai_staged_photos" 
-            name="ai_staged_photos" 
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={(e) => {
-              if (e.target.files && e.target.files.length > 0) {
-                setUploadedAIStagedPhotos(Array.from(e.target.files));
-              }
-            }}
-            className="cursor-pointer"
-          />
-          
-          {listing?.ai_staged_photos && listing.ai_staged_photos.length > 0 && (
-            <div className="mt-2">
-              <Label>Existing AI Staged Photos</Label>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {listing.ai_staged_photos.map((image, index) => (
-                  <div key={index} className="relative group">
-                    <img 
-                      src={image} 
-                      alt={`AI Staged ${index + 1}`} 
-                      className="h-20 w-20 object-cover rounded-md"
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      initialFocus
                     />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="h-5 w-5 absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => {
-                        if (editingListing && editingListing.ai_staged_photos) {
-                          const updatedPhotos = [...editingListing.ai_staged_photos];
-                          updatedPhotos.splice(index, 1);
-                          
-                          setEditingListing({
-                            ...editingListing,
-                            ai_staged_photos: updatedPhotos
-                          });
-                        }
-                      }}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {uploadedAIStagedPhotos.length > 0 && (
-            <div className="mt-2">
-              <Label>New AI Staged Photos to Upload</Label>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {Array.from(uploadedAIStagedPhotos).map((file, index) => (
-                  <div key={index} className="relative group">
-                    <img 
-                      src={URL.createObjectURL(file)} 
-                      alt={`AI Staged Preview ${index + 1}`} 
-                      className="h-20 w-20 object-cover rounded-md"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="h-5 w-5 absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => {
-                        const updatedPhotos = [...uploadedAIStagedPhotos];
-                        updatedPhotos.splice(index, 1);
-                        setUploadedAIStagedPhotos(updatedPhotos);
-                      }}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="floor_plan">Floor Plan Image</Label>
-          <Input 
-            id="floor_plan" 
-            name="floor_plan" 
-            type="file"
-            accept="image/*"
-            className="cursor-pointer"
-          />
-          
-          {listing?.floor_plan_image && (
-            <div className="mt-2">
-              <Label>Existing Floor Plan</Label>
-              <div className="mt-1">
-                <img 
-                  src={listing.floor_plan_image} 
-                  alt="Floor Plan" 
-                  className="max-h-40 object-contain rounded-md border border-border"
+                  </PopoverContent>
+                </Popover>
+                <input 
+                  type="hidden" 
+                  name="availability" 
+                  value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ''} 
                 />
               </div>
             </div>
-          )}
-        </div>
+          </TabsContent>
 
-        <Button 
-          type="submit" 
-          className="w-full"
-          disabled={isUploading || createListing.isPending || updateListing.isPending}
-        >
-          {isUploading ? 'Uploading images...' : 
-           (createListing.isPending || updateListing.isPending) ? 'Saving...' : 
-           listing ? 'Update Listing' : 'Create Listing'}
-        </Button>
-      </form>
+          <TabsContent value="features" className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="floor">Floor</Label>
+                <Input 
+                  id="floor" 
+                  name="floor" 
+                  type="number"
+                  defaultValue={listing?.floor || ''} 
+                  required 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="parking_spots">Parking Spots</Label>
+                <Input 
+                  id="parking_spots" 
+                  name="parking_spots" 
+                  type="number"
+                  min="0"
+                  defaultValue={listing?.parking_spots || '0'} 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="balconies">Balconies</Label>
+                <Input 
+                  id="balconies" 
+                  name="balconies" 
+                  type="number"
+                  min="0"
+                  defaultValue={listing?.balconies || '0'} 
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="facing">Facing</Label>
+                <select 
+                  id="facing" 
+                  name="facing" 
+                  className="w-full rounded-md border p-2"
+                  defaultValue={listing?.facing || ''}
+                  required
+                >
+                  <option value="">Select facing direction</option>
+                  {['North', 'South', 'East', 'West', 'North East', 'North West', 'South East', 'South West'].map((direction) => (
+                    <option key={direction} value={direction}>
+                      {direction}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="furnishing_status">Furnishing Status</Label>
+                <select 
+                  id="furnishing_status" 
+                  name="furnishing_status" 
+                  className="w-full rounded-md border p-2"
+                  defaultValue={listing?.furnishing_status || ''}
+                >
+                  <option value="">Select furnishing</option>
+                  {['unfurnished', 'semi-furnished', 'fully furnished'].map((status) => (
+                    <option key={status} value={status}>
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="media" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="images">Unit Images</Label>
+              <Input 
+                id="images" 
+                name="images" 
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    setUploadedImages(Array.from(e.target.files));
+                  }
+                }}
+                className="cursor-pointer"
+              />
+              
+              {listing?.images && listing.images.length > 0 && (
+                <div className="mt-2">
+                  <Label>Existing Images</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {listing.images.map((image, index) => (
+                      <div key={index} className="relative group">
+                        <img 
+                          src={image} 
+                          alt={`Listing ${index + 1}`} 
+                          className="h-20 w-20 object-cover rounded-md"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="h-5 w-5 absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => {
+                            if (editingListing && editingListing.images) {
+                              const updatedImages = [...editingListing.images];
+                              updatedImages.splice(index, 1);
+                              
+                              setEditingListing({
+                                ...editingListing,
+                                images: updatedImages
+                              });
+                            }
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {uploadedImages.length > 0 && (
+                <div className="mt-2">
+                  <Label>New Images to Upload</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {Array.from(uploadedImages).map((file, index) => (
+                      <div key={index} className="relative group">
+                        <img 
+                          src={URL.createObjectURL(file)} 
+                          alt={`Preview ${index + 1}`} 
+                          className="h-20 w-20 object-cover rounded-md"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="h-5 w-5 absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => {
+                            const updatedImages = [...uploadedImages];
+                            updatedImages.splice(index, 1);
+                            setUploadedImages(updatedImages);
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="ai_staged_photos" className="text-base font-medium">AI Staged Photos</Label>
+              <Input 
+                id="ai_staged_photos" 
+                name="ai_staged_photos" 
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    setUploadedAIStagedPhotos(Array.from(e.target.files));
+                  }
+                }}
+                className="cursor-pointer"
+              />
+              
+              {listing?.ai_staged_photos && listing.ai_staged_photos.length > 0 && (
+                <div className="mt-2">
+                  <Label>Existing AI Staged Photos</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {listing.ai_staged_photos.map((image, index) => (
+                      <div key={index} className="relative group">
+                        <img 
+                          src={image} 
+                          alt={`AI Staged ${index + 1}`} 
+                          className="h-20 w-20 object-cover rounded-md"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="h-5 w-5 absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => {
+                            if (editingListing && editingListing.ai_staged_photos) {
+                              const updatedPhotos = [...editingListing.ai_staged_photos];
+                              updatedPhotos.splice(index, 1);
+                              
+                              setEditingListing({
+                                ...editingListing,
+                                ai_staged_photos: updatedPhotos
+                              });
+                            }
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {uploadedAIStagedPhotos.length > 0 && (
+                <div className="mt-2">
+                  <Label>New AI Staged Photos to Upload</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {Array.from(uploadedAIStagedPhotos).map((file, index) => (
+                      <div key={index} className="relative group">
+                        <img 
+                          src={URL.createObjectURL(file)} 
+                          alt={`AI Staged Preview ${index + 1}`} 
+                          className="h-20 w-20 object-cover rounded-md"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="h-5 w-5 absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => {
+                            const updatedPhotos = [...uploadedAIStagedPhotos];
+                            updatedPhotos.splice(index, 1);
+                            setUploadedAIStagedPhotos(updatedPhotos);
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="floor_plan">Floor Plan Image</Label>
+              <Input 
+                id="floor_plan" 
+                name="floor_plan" 
+                type="file"
+                accept="image/*"
+                className="cursor-pointer"
+              />
+              
+              {listing?.floor_plan_image && (
+                <div className="mt-2">
+                  <Label>Existing Floor Plan</Label>
+                  <div className="mt-1">
+                    <img 
+                      src={listing.floor_plan_image} 
+                      alt="Floor Plan" 
+                      className="max-h-40 object-contain rounded-md border border-border"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <div className="pt-4 border-t">
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={isUploading || createListing.isPending || updateListing.isPending}
+            >
+              {isUploading ? 'Uploading images...' : 
+               (createListing.isPending || updateListing.isPending) ? 'Saving...' : 
+               listing ? 'Update Listing' : 'Create Listing'}
+            </Button>
+          </div>
+        </form>
+      </Tabs>
     );
   };
 
@@ -893,11 +913,15 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
               Add New Listing
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[600px] max-h-[85vh]">
             <DialogHeader>
               <DialogTitle>Create New Listing</DialogTitle>
             </DialogHeader>
-            <ListingForm />
+            <ScrollArea className="max-h-[calc(85vh-80px)] pr-4">
+              <div className="py-2">
+                <ListingForm />
+              </div>
+            </ScrollArea>
           </DialogContent>
         </Dialog>
       </div>
@@ -997,14 +1021,17 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
       </div>
 
       <Dialog open={!!editingListing} onOpenChange={(open) => !open && setEditingListing(null)}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh]">
           <DialogHeader>
             <DialogTitle>Edit Listing</DialogTitle>
           </DialogHeader>
-          {editingListing && <ListingForm listing={editingListing} />}
+          <ScrollArea className="max-h-[calc(85vh-80px)] pr-4">
+            <div className="py-2">
+              {editingListing && <ListingForm listing={editingListing} />}
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
   );
 }
-
