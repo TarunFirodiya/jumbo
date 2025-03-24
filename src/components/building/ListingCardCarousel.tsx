@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getThumbnailUrl } from '@/utils/mediaProcessing';
@@ -79,6 +79,12 @@ export function ListingCardCarousel({
       onImageClick();
     }
   };
+  
+  // Check if current image is from AI staged photos
+  const isAIImage = aiStagedPhotos && aiStagedPhotos.includes(displayImages[currentIndex]);
+  
+  // Check if current image is the thumbnail
+  const isThumbnail = thumbnailImage && displayImages[currentIndex] === thumbnailImage;
 
   return (
     <div
@@ -100,10 +106,18 @@ export function ListingCardCarousel({
         }}
       />
 
-      {/* AI staged badge if showing an AI image */}
-      {aiStagedPhotos && aiStagedPhotos.includes(displayImages[currentIndex]) && (
-        <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-          AI Staged
+      {/* AI staged badge */}
+      {isAIImage && (
+        <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+          <Sparkles className="h-3 w-3" />
+          <span>AI Staged</span>
+        </div>
+      )}
+      
+      {/* Thumbnail badge */}
+      {isThumbnail && (
+        <div className="absolute bottom-2 right-2 bg-yellow-500 text-black text-xs px-2 py-1 rounded-full">
+          Featured
         </div>
       )}
 
