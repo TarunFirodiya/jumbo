@@ -1,4 +1,3 @@
-
 import { useState, useEffect, memo, useCallback } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -20,6 +19,7 @@ interface ImageCarouselProps {
   videoThumbnail?: string | null;
   streetView?: string | null;
   floorPlanImage?: string | null;
+  aiStagedPhotos?: string[] | null;
   onImageClick?: (e: React.MouseEvent) => void;
 }
 
@@ -88,7 +88,7 @@ const MediaElement = memo(({ url, index, onError, buildingName }: { url: string;
 
 MediaElement.displayName = 'MediaElement';
 
-export const ImageCarousel = memo(function ImageCarousel({ images, videoThumbnail, streetView, floorPlanImage, onImageClick }: ImageCarouselProps) {
+export const ImageCarousel = memo(function ImageCarousel({ images, videoThumbnail, streetView, floorPlanImage, aiStagedPhotos, onImageClick }: ImageCarouselProps) {
   const [showFullScreen, setShowFullScreen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [emblaApi, setEmblaApi] = useState<UseEmblaCarouselType[1] | null>(null);
