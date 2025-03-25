@@ -4,10 +4,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Star, MapPin, CalendarDays, Building2, Home, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateBuildingSlug } from "@/utils/slugUtils";
-import { Buildings } from "@/integrations/supabase/types";
+import { Tables } from "@/integrations/supabase/types";
 
 interface BuildingCardProps {
-  building: any; // Using any for now, should be properly typed
+  building: Tables<"buildings">; // Using the correct type from Supabase types
   onNavigate: (path: string) => void;
   onShortlist: (buildingId: string) => void;
   isShortlisted: boolean;
