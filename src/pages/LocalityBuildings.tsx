@@ -14,6 +14,7 @@ import { SEO } from "@/components/SEO";
 import { cn } from "@/lib/utils";
 import { Filter } from "@/components/ui/filters";
 import { BuildingCard } from "@/components/buildings/BuildingCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
 
@@ -183,13 +184,63 @@ export default function LocalityBuildings() {
     if (selectedCollections.length) {
       description += `Explore ${selectedCollections.join(', ')} properties. `;
     }
-    description += "Find your perfect home with detailed listings, amenities, and pricing information.";
+    if (activeFilters.length) {
+      const filterTypes = activeFilters.map(f => f.type).join(', ');
+      description += `Filtered by ${filterTypes}. `;
+    }
+    description += `${filteredBuildings.length} properties available. Find your perfect home with detailed listings, amenities, and pricing information.`;
     return description;
   };
+  
+  const getKeywords = () => {
+    const keywords = [
+      `${localityDisplayName} real estate`,
+      `${localityDisplayName} property`,
+      `${localityDisplayName} apartments`
+    ];
+    
+    if (selectedCollections.length) {
+      selectedCollections.forEach(collection => {
+        keywords.push(`${collection} in ${localityDisplayName}`);
+      });
+    }
+    
+    const bhkFilters = activeFilters.find(f => f.type === 'BHK');
+    if (bhkFilters) {
+      bhkFilters.value.forEach(bhk => {
+        keywords.push(`${bhk} in ${localityDisplayName}`);
+      });
+    }
+    
+    return keywords;
+  };
 
-  const handleFiltersChange = useCallback((filters: Filter[]) => {
-    setActiveFilters(filters);
-  }, []);
+  const getStructuredData = () => {
+    return {
+      "@context": "https://schema.org",
+      "@type": "RealEstateAgent",
+      "name": "Cozy Dwell Search",
+      "description": getSEODescription(),
+      "url": `https://www.cozydwellsearch.com/buildings/locality/${encodeURIComponent(locality || '')}`,
+      "areaServed": {
+        "@type": "City",
+        "name": localityDisplayName
+      },
+      "numberOfItems": filteredBuildings.length,
+      "telephone": "+91-8800000000",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "IN"
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": `https://www.cozydwellsearch.com/buildings/locality/${encodeURIComponent(locality || '')}?search={search_term_string}`,
+        "query-input": "required name=search_term_string"
+      }
+    };
+  };
+
+  const isMobile = useIsMobile();
 
   if (buildingsLoading) {
     return (
@@ -208,15 +259,8 @@ export default function LocalityBuildings() {
         title={`Properties in ${localityDisplayName} ${selectedCollections.length ? `| ${selectedCollections.join(', ')}` : ''} | Cozy Dwell Search`}
         description={getSEODescription()}
         canonical={`/buildings/locality/${encodeURIComponent(locality || '')}`}
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "RealEstateAgent",
-          "name": "Cozy Dwell Search",
-          "description": getSEODescription(),
-          "url": `https://www.cozydwellsearch.com/buildings/locality/${encodeURIComponent(locality || '')}`,
-          "areaServed": localityDisplayName,
-          "numberOfItems": filteredBuildings.length
-        }}
+        structuredData={getStructuredData()}
+        keywords={getKeywords()}
       />
       
       <div className="sticky top-0 z-10 bg-background py-4 space-y-4">

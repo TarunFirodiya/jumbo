@@ -37,11 +37,9 @@ export default function BuildingDetails() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Extract building ID from either the ID param or the slug
   const buildingId = useMemo(() => {
     if (id) return id;
     if (slug) {
-      // Try to extract the full UUID from the slug
       const extractedId = extractIdFromSlug(slug);
       console.log("Extracted ID from slug:", extractedId);
       if (extractedId) return extractedId;
@@ -64,7 +62,6 @@ export default function BuildingDetails() {
     toggleShortlist
   } = useShortlist(buildingId, building?.name || '');
 
-  // Redirect to the SEO-friendly URL if we came in via the old URL pattern
   useEffect(() => {
     if (building && id && !slug) {
       const seoSlug = generateBuildingSlug(
@@ -130,10 +127,13 @@ export default function BuildingDetails() {
     });
   };
 
-  // Handle invalid UUID
   if (!isValidId && buildingId) {
     return <>
-        <SEO title="Invalid Property ID | Cozy Dwell Search" />
+        <SEO 
+          title="Invalid Property ID | Cozy Dwell Search" 
+          description="The property ID provided is not valid. Please try searching for properties from our main listing page."
+          noindex={true}
+        />
         <div className="container mx-auto px-4 py-8 text-center">
           <h1 className="text-2xl font-bold mb-4">Invalid Property ID</h1>
           <p className="mb-4">The property ID in the URL is not in a valid format.</p>
@@ -144,7 +144,11 @@ export default function BuildingDetails() {
 
   if (isLoading) {
     return <>
-        <SEO title="Loading Property Details | Cozy Dwell Search" />
+        <SEO 
+          title="Loading Property Details | Cozy Dwell Search"
+          description="Please wait while we load the property details."
+          noindex={true}
+        />
         <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[60vh]">
           <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
         </div>
@@ -153,7 +157,11 @@ export default function BuildingDetails() {
 
   if (!building) {
     return <>
-        <SEO title="Property Not Found | Cozy Dwell Search" />
+        <SEO 
+          title="Property Not Found | Cozy Dwell Search"
+          description="We couldn't find the property you're looking for. Please try browsing our other available properties."
+          noindex={true}
+        />
         <div className="container mx-auto px-4 py-8 text-center">
           <h1 className="text-2xl font-bold mb-4">Property Not Found</h1>
           <p className="mb-4">We couldn't find the property you're looking for.</p>
@@ -166,7 +174,6 @@ export default function BuildingDetails() {
   const stringFeatures = Array.isArray(amenitiesArray) ? amenitiesArray.map(f => String(f)) : [];
   const amenitiesText = stringFeatures.slice(0, 3).join(', ');
 
-  // Generate a SEO-friendly canonical URL
   const seoSlug = generateBuildingSlug(
     building.name,
     building.locality,
@@ -174,6 +181,14 @@ export default function BuildingDetails() {
     building.id
   );
   const canonicalUrl = `/property/${seoSlug}`;
+
+  const keywords = [
+    `${building.bhk_types?.join(', ')} BHK`,
+    building.name,
+    building.locality || 'luxury homes',
+    'property for sale',
+    ...stringFeatures.slice(0, 5)
+  ];
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -199,12 +214,18 @@ export default function BuildingDetails() {
       "@type": "QuantitativeValue",
       "unitText": "SQFT"
     },
+    "amenityFeature": stringFeatures.map(feature => ({
+      "@type": "LocationFeatureSpecification",
+      "name": feature
+    })),
     "offers": {
       "@type": "Offer",
       "priceCurrency": "INR",
       "price": startingPrice,
       "validFrom": new Date().toISOString()
-    }
+    },
+    "telephone": "+91-8800000000",
+    "url": `https://www.cozydwellsearch.com${canonicalUrl}`
   };
 
   return <div className="min-h-screen flex flex-col relative">
@@ -214,7 +235,10 @@ export default function BuildingDetails() {
         canonical={canonicalUrl} 
         ogImage={building.images?.[0] || ''} 
         type="article" 
-        structuredData={structuredData} 
+        structuredData={structuredData}
+        keywords={keywords}
+        publishedTime={building.created_at ? new Date(building.created_at).toISOString() : undefined}
+        modifiedTime={building.updated_at ? new Date(building.updated_at).toISOString() : undefined}
       />
 
       <div className="container mx-auto px-4 pt-4">

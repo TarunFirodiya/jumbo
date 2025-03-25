@@ -1,0 +1,10 @@
+
+User-agent: *
+Allow: /
+
+# Disallow admin or sensitive areas
+Disallow: /admin/
+Disallow: /dashboard/
+
+# Sitemap location
+Sitemap: https://www.cozydwellsearch.com/sitemap.xml
