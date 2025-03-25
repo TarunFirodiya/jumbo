@@ -9,90 +9,76 @@ import {
   useState, 
   ReactNode 
 } from "react"
-import { motion, useMotionValue, useSpring } from "framer-motion"
+import { motion, useScroll, useTransform, MotionValue } from "framer-motion"
 
-interface FloatingContextType {
-  x: number;
-  y: number;
-  sensitivity: number;
+// Context for sharing the sensitivity value
+const FloatingContext = createContext<number>(0)
+
+type FloatingProps = {
+  sensitivity?: number
+  children: ReactNode
+  className?: string
 }
 
-const FloatingContext = createContext<FloatingContextType>({
-  x: 0,
-  y: 0,
-  sensitivity: 1,
-})
-
-interface FloatingProps {
-  children: ReactNode;
-  className?: string;
-  sensitivity?: number;
+type FloatingElementProps = {
+  depth?: number
+  className?: string
+  children: ReactNode
 }
 
 export default function Floating({ 
+  sensitivity = 0.05, 
   children, 
-  className = "", 
-  sensitivity = 1 
+  className = "" 
 }: FloatingProps) {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
-  
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({
-        x: (e.clientX / window.innerWidth - 0.5) * 2,
-        y: (e.clientY / window.innerHeight - 0.5) * 2,
-      })
-    }
-
-    window.addEventListener("mousemove", handleMouseMove)
-    return () => window.removeEventListener("mousemove", handleMouseMove)
-  }, [])
-
   return (
-    <FloatingContext.Provider 
-      value={{ 
-        x: mousePosition.x, 
-        y: mousePosition.y, 
-        sensitivity 
-      }}
-    >
-      <div className={`relative ${className}`}>{children}</div>
+    <FloatingContext.Provider value={sensitivity}>
+      <div className={className}>
+        {children}
+      </div>
     </FloatingContext.Provider>
   )
 }
 
-interface FloatingElementProps {
-  children: ReactNode;
-  className?: string;
-  depth?: number;
-}
-
 export function FloatingElement({ 
-  children, 
+  depth = 1, 
   className = "", 
-  depth = 1 
+  children 
 }: FloatingElementProps) {
-  const { x, y, sensitivity } = useContext(FloatingContext)
-  const elementRef = useRef<HTMLDivElement>(null)
+  const sensitivity = useContext(FloatingContext)
+  const effectStrength = depth * sensitivity
   
-  const motionX = useMotionValue(0)
-  const motionY = useMotionValue(0)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const ref = useRef<HTMLDivElement>(null)
   
-  const springX = useSpring(motionX, { stiffness: 100, damping: 30 })
-  const springY = useSpring(motionY, { stiffness: 100, damping: 30 })
-
   useEffect(() => {
-    motionX.set(x * depth * sensitivity * -10)
-    motionY.set(y * depth * sensitivity * -10)
-  }, [x, y, depth, sensitivity])
-
+    const handleMouseMove = (e: MouseEvent) => {
+      // Get viewport dimensions
+      const centerX = window.innerWidth / 2
+      const centerY = window.innerHeight / 2
+      
+      // Calculate distance from center (as a relative value)
+      const offsetX = (e.clientX - centerX) / centerX
+      const offsetY = (e.clientY - centerY) / centerY
+      
+      setMousePosition({ x: offsetX, y: offsetY })
+    }
+    
+    window.addEventListener('mousemove', handleMouseMove)
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+    }
+  }, [])
+  
   return (
     <motion.div
-      ref={elementRef}
+      ref={ref}
       className={`absolute ${className}`}
       style={{
-        x: springX,
-        y: springY,
+        x: mousePosition.x * 40 * effectStrength * -1,
+        y: mousePosition.y * 40 * effectStrength * -1,
+        transition: "transform 0.1s linear"
       }}
     >
       {children}
