@@ -39,7 +39,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
     setShowVisitModal(true);
   };
 
-  // Prepare images for carousel
+  // Prepare images for carousel - ensure we're correctly processing both images array and thumbnail
   const images = normalizeImageArray(listing.images);
   const thumbnailImage = listing.thumbnail_image || (images.length > 0 ? images[0] : null);
 

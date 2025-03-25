@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { getThumbnailUrl } from '@/utils/mediaProcessing';
 
 interface ListingCardCarouselProps {
   images: string[];
@@ -26,50 +25,42 @@ export function ListingCardCarousel({
 }: ListingCardCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   
-  // Prioritize display order: thumbnail > AI staged > regular images > fallback
+  // Prioritize display order: thumbnail > regular images > fallback
   const displayImages = (() => {
-    // If thumbnail is specified, make it the first image
-    if (thumbnailImage) {
-      return [thumbnailImage, ...(images || [])].filter(Boolean);
+    // Start with an empty array
+    let result: string[] = [];
+    
+    // Add thumbnail at the beginning if it exists and isn't already in images
+    if (thumbnailImage && !images.includes(thumbnailImage)) {
+      result.push(thumbnailImage);
     }
     
-    // If AI staged photos exist, prioritize them
-    if (aiStagedPhotos && aiStagedPhotos.length > 0) {
-      return [...aiStagedPhotos, ...(images || [])].filter(Boolean);
-    }
-    
-    // Regular images if available
+    // Add all regular images
     if (images?.length) {
-      return [...images].filter(Boolean);
+      result = [...result, ...images];
     }
     
-    // Fallback image
-    return ["/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"];
+    // Filter out any empty/null values
+    result = result.filter(Boolean);
+    
+    // If we have no images, use fallback
+    if (result.length === 0) {
+      return ["/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"];
+    }
+    
+    return result;
   })();
 
-  if (!displayImages?.length) {
-    return (
-      <div className={cn(
-        "overflow-hidden rounded-t-lg bg-muted",
-        aspectRatio === 'portrait' ? 'aspect-[3/4]' : aspectRatio === 'square' ? 'aspect-square' : 'aspect-video',
-        className
-      )}>
-        <div className="h-full w-full flex items-center justify-center">
-          <img 
-            src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
-            alt="Building placeholder"
-            className="w-full h-full object-cover"
-          />
-        </div>
-      </div>
-    );
-  }
+  // Only enable navigation if we have more than one image
+  const hasMultipleImages = displayImages.length > 1;
 
   const nextImage = () => {
+    if (!hasMultipleImages) return;
     setCurrentIndex((prevIndex) => (prevIndex + 1) % displayImages.length);
   };
 
   const prevImage = () => {
+    if (!hasMultipleImages) return;
     setCurrentIndex((prevIndex) => (prevIndex - 1 + displayImages.length) % displayImages.length);
   };
 
@@ -122,7 +113,7 @@ export function ListingCardCarousel({
       )}
 
       {/* Navigation arrows - only show if there's more than one image */}
-      {displayImages.length > 1 && (
+      {hasMultipleImages && (
         <>
           <Button
             onClick={(e) => {
@@ -153,7 +144,7 @@ export function ListingCardCarousel({
       )}
 
       {/* Image pagination dots */}
-      {displayImages.length > 1 && (
+      {hasMultipleImages && (
         <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
           {displayImages.map((_, index) => (
             <button
