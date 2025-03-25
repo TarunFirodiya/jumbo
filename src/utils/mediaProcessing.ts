@@ -1,4 +1,3 @@
-
 /**
  * Utility functions for processing media files (images, videos, etc.)
  */
@@ -66,7 +65,7 @@ export const getThumbnailUrl = (
   const normalImages = normalizeImageArray(images);
   if (normalImages.length > 0) return normalImages[0];
   
-  // Default fallback
+  // Default fallback to one of the existing lovable uploads
   return "/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png";
 };
 
