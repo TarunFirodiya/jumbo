@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BadgeIndianRupee, Bed, Square, Compass, Layers } from "lucide-react";
@@ -6,6 +7,7 @@ import { useState } from "react";
 import { VisitRequestModal } from "./VisitRequestModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ListingCardCarousel } from "./building/ListingCardCarousel";
 
 type ListingCardProps = {
   listing: Tables<"listings">;
@@ -36,8 +38,22 @@ export default function ListingCard({ listing }: ListingCardProps) {
     setShowVisitModal(true);
   };
 
+  // Prepare images for carousel
+  const images = listing.images ? 
+    (Array.isArray(listing.images) ? listing.images : [listing.images]) 
+    : [];
+
   return (
     <Card className="overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow">
+      {/* Carousel for listing images */}
+      <div className="relative">
+        <ListingCardCarousel 
+          images={images}
+          thumbnailImage={listing.thumbnail_url}
+          alt={`Listing in ${listing.building_name}`}
+        />
+      </div>
+      
       <div className="p-6 space-y-4">
         <div className="flex items-center gap-2 text-lg font-semibold">
           <BadgeIndianRupee className="h-5 w-5 text-muted-foreground" />
