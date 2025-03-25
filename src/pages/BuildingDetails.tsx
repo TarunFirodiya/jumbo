@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PropertyGallery } from "@/components/building/PropertyGallery";
@@ -17,16 +18,14 @@ import { motion } from "framer-motion";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 import { AmenitiesGrid } from "@/components/building/AmenitiesGrid";
 import { LocationTab } from "@/components/building/tabs/LocationTab";
+import { generateBuildingSlug, extractIdFromSlug } from "@/utils/slugUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function BuildingDetails() {
-  const {
-    id
-  } = useParams();
+  const { id, slug } = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [selectedListing, setSelectedListing] = useState<string | null>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const isScrolled = useScrollAnimation();
@@ -39,15 +38,44 @@ export default function BuildingDetails() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Extract building ID from either the ID param or the slug
+  const buildingId = useMemo(() => {
+    if (id) return id;
+    if (slug) {
+      // For slugs, try to extract the ID from the end of the slug
+      // If we can't find it, we'll need to do a database lookup (not implemented here)
+      const extractedId = extractIdFromSlug(slug);
+      if (extractedId) return extractedId;
+      
+      // If we can't extract the ID, we'll need to look it up by the slug
+      // This would be implemented here
+    }
+    return "";
+  }, [id, slug]);
+
   const {
     building,
     listings,
     isLoading
-  } = useBuildingData(id!);
+  } = useBuildingData(buildingId);
+  
   const {
     isShortlisted,
     toggleShortlist
-  } = useShortlist(id!, building?.name || '');
+  } = useShortlist(buildingId, building?.name || '');
+
+  // Redirect to the SEO-friendly URL if we came in via the old URL pattern
+  useEffect(() => {
+    if (building && id && !slug) {
+      const seoSlug = generateBuildingSlug(
+        building.name,
+        building.locality,
+        building.bhk_types,
+        building.id
+      );
+      navigate(`/property/${seoSlug}`, { replace: true });
+    }
+  }, [building, id, slug, navigate]);
 
   useEffect(() => {
     if (listings && listings.length > 0 && !selectedListing) {
@@ -122,6 +150,15 @@ export default function BuildingDetails() {
   const stringFeatures = Array.isArray(amenitiesArray) ? amenitiesArray.map(f => String(f)) : [];
   const amenitiesText = stringFeatures.slice(0, 3).join(', ');
 
+  // Generate a SEO-friendly canonical URL
+  const seoSlug = generateBuildingSlug(
+    building.name,
+    building.locality,
+    building.bhk_types,
+    building.id
+  );
+  const canonicalUrl = `/property/${seoSlug}`;
+
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Apartment",
@@ -155,7 +192,14 @@ export default function BuildingDetails() {
   };
 
   return <div className="min-h-screen flex flex-col relative">
-      <SEO title={`${building.name} | ${building.bhk_types?.join(', ')} BHK in ${building.locality}`} description={`${building.bhk_types?.join(', ')} BHK apartments available in ${building.locality}. Starting at ₹${(startingPrice / 10000000).toFixed(1)} Cr. Features: ${amenitiesText}.`} canonical={`/buildings/${id}`} ogImage={building.images?.[0] || ''} type="article" structuredData={structuredData} />
+      <SEO 
+        title={`${building.name} | ${building.bhk_types?.join(', ')} BHK in ${building.locality}`} 
+        description={`${building.bhk_types?.join(', ')} BHK apartments available in ${building.locality}. Starting at ₹${(startingPrice / 10000000).toFixed(1)} Cr. Features: ${amenitiesText}.`} 
+        canonical={canonicalUrl} 
+        ogImage={building.images?.[0] || ''} 
+        type="article" 
+        structuredData={structuredData} 
+      />
 
       <div className="container mx-auto px-4 pt-4">
         <BreadcrumbNav buildingName={building.name} locality={building.locality || ''} />
