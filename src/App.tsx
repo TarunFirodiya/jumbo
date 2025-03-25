@@ -9,8 +9,10 @@ import MainLayout from "./layouts/MainLayout";
 import { HelmetProvider } from 'react-helmet-async';
 import { trackPageView } from "./utils/analytics";
 
-// Lazy load components - using more explicit paths to avoid import issues
-const Buildings = lazy(() => import("./pages/Buildings"));
+// Import directly to ensure it works
+import Buildings from "./pages/Buildings";
+
+// Lazy load other components with explicit paths
 const BuildingDetails = lazy(() => import("./pages/BuildingDetails"));
 const LocalityBuildings = lazy(() => import("./pages/LocalityBuildings"));
 const Shortlist = lazy(() => import("./pages/Shortlist"));

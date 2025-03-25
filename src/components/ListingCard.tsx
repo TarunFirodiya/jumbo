@@ -8,6 +8,7 @@ import { VisitRequestModal } from "./VisitRequestModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCardCarousel } from "./building/ListingCardCarousel";
+import { normalizeImageArray } from "@/utils/mediaProcessing";
 
 type ListingCardProps = {
   listing: Tables<"listings">;
@@ -39,9 +40,8 @@ export default function ListingCard({ listing }: ListingCardProps) {
   };
 
   // Prepare images for carousel
-  const images = listing.images ? 
-    (Array.isArray(listing.images) ? listing.images : [listing.images]) 
-    : [];
+  const images = normalizeImageArray(listing.images);
+  const thumbnailImage = listing.thumbnail_image || (images.length > 0 ? images[0] : null);
 
   return (
     <Card className="overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow">
@@ -49,7 +49,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
       <div className="relative">
         <ListingCardCarousel 
           images={images}
-          thumbnailImage={listing.thumbnail_image}
+          thumbnailImage={thumbnailImage}
           alt={`Listing in ${listing.building_name}`}
         />
       </div>
