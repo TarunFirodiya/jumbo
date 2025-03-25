@@ -41,17 +41,22 @@ export default function BuildingDetails() {
   const buildingId = useMemo(() => {
     if (id) return id;
     if (slug) {
-      // Extract the ID from the end of the slug
+      // Try to extract the full UUID from the slug
       const extractedId = extractIdFromSlug(slug);
+      console.log("Extracted ID from slug:", extractedId);
       if (extractedId) return extractedId;
     }
     return "";
   }, [id, slug]);
 
+  console.log("Building ID for data fetching:", buildingId);
+
   const {
     building,
     listings,
-    isLoading
+    isLoading,
+    error,
+    isValidId
   } = useBuildingData(buildingId);
   
   const {
@@ -125,6 +130,18 @@ export default function BuildingDetails() {
     });
   };
 
+  // Handle invalid UUID
+  if (!isValidId && buildingId) {
+    return <>
+        <SEO title="Invalid Property ID | Cozy Dwell Search" />
+        <div className="container mx-auto px-4 py-8 text-center">
+          <h1 className="text-2xl font-bold mb-4">Invalid Property ID</h1>
+          <p className="mb-4">The property ID in the URL is not in a valid format.</p>
+          <Button onClick={() => navigate('/buildings')}>Browse All Properties</Button>
+        </div>
+      </>;
+  }
+
   if (isLoading) {
     return <>
         <SEO title="Loading Property Details | Cozy Dwell Search" />
@@ -137,7 +154,11 @@ export default function BuildingDetails() {
   if (!building) {
     return <>
         <SEO title="Property Not Found | Cozy Dwell Search" />
-        <div className="container mx-auto px-4 py-8">Building not found</div>
+        <div className="container mx-auto px-4 py-8 text-center">
+          <h1 className="text-2xl font-bold mb-4">Property Not Found</h1>
+          <p className="mb-4">We couldn't find the property you're looking for.</p>
+          <Button onClick={() => navigate('/buildings')}>Browse All Properties</Button>
+        </div>
       </>;
   }
 

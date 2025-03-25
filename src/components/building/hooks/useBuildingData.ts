@@ -25,17 +25,30 @@ export type ListingWithProcessedImages = Tables<"listings"> & {
 export function useBuildingData(id: string) {
   const { toast } = useToast();
   
+  // Validate UUID format first
+  const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  
   const { data: building, isLoading, error: buildingError } = useQuery({
     queryKey: ['building', id],
     queryFn: async () => {
       try {
+        console.log("Fetching building with ID:", id);
+        
+        if (!isValidUUID) {
+          console.error("Invalid UUID format:", id);
+          throw new Error(`Invalid UUID format: ${id}`);
+        }
+        
         const { data, error } = await supabase
           .from('buildings')
           .select('*')
           .eq('id', id)
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase error:", error);
+          throw error;
+        }
         
         // Process images to ensure they're an array
         if (data) {
@@ -59,18 +72,29 @@ export function useBuildingData(id: string) {
       }
     },
     retry: 2,
+    enabled: id !== "" && isValidUUID,
   });
 
   const { data: listings, error: listingsError } = useQuery({
     queryKey: ['listings', id],
     queryFn: async () => {
       try {
+        console.log("Fetching listings for building ID:", id);
+        
+        if (!isValidUUID) {
+          console.error("Invalid UUID format:", id);
+          throw new Error(`Invalid UUID format: ${id}`);
+        }
+        
         const { data, error } = await supabase
           .from('listings')
           .select('*')
           .eq('building_id', id);
 
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase listings error:", error);
+          throw error;
+        }
         
         // Process listing images to ensure proper typing
         return data?.map(listing => {
@@ -107,7 +131,7 @@ export function useBuildingData(id: string) {
         throw error;
       }
     },
-    enabled: !!id,
+    enabled: !!id && id !== "" && isValidUUID,
     retry: 2,
   });
 
@@ -115,6 +139,7 @@ export function useBuildingData(id: string) {
     building,
     listings,
     isLoading,
-    error: buildingError || listingsError
+    error: buildingError || listingsError,
+    isValidId: isValidUUID
   };
 }

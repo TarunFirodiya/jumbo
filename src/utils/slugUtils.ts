@@ -62,9 +62,10 @@ export function generateBuildingSlug(
  * @returns The building ID if found in the slug
  */
 export function extractIdFromSlug(slug: string): string | null {
-  // The ID is the entire string after the last hyphen
-  const lastHyphenIndex = slug.lastIndexOf('-');
-  if (lastHyphenIndex === -1) return null;
+  // The UUID in our database is 36 characters with hyphens
+  // Standard UUID format: 8-4-4-4-12 characters = 36 total with hyphens
+  const uuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const match = slug.match(uuidPattern);
   
-  return slug.substring(lastHyphenIndex + 1);
+  return match ? match[0] : null;
 }
