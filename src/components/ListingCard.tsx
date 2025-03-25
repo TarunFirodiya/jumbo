@@ -49,7 +49,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
       <div className="relative">
         <ListingCardCarousel 
           images={images}
-          thumbnailImage={listing.thumbnail_url}
+          thumbnailImage={listing.thumbnail_image}
           alt={`Listing in ${listing.building_name}`}
         />
       </div>
