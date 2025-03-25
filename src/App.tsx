@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -64,8 +65,10 @@ const App = () => (
                   <Route path="/buildings" element={<Buildings />} />
                   <Route path="/buildings/locality/:locality" element={<LocalityBuildings />} />
                   
+                  {/* Primary route for SEO-friendly property URLs */}
                   <Route path="/property/:slug" element={<BuildingDetails />} />
                   
+                  {/* Legacy route for backward compatibility - redirects to /property/:slug */}
                   <Route path="/buildings/:id" element={<BuildingDetails />} />
                   
                   <Route path="/shortlist" element={<Shortlist />} />

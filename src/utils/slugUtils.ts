@@ -48,9 +48,9 @@ export function generateBuildingSlug(
     .replace(/-+/g, "-")      // Replace multiple hyphens with single hyphen
     .trim();
   
-  // Add a portion of the ID at the end for uniqueness (last 6 chars)
+  // Add the full ID at the end for uniqueness
   if (id) {
-    slug += `-${id.slice(-6)}`;
+    slug += `-${id}`;
   }
   
   return slug;
@@ -62,7 +62,9 @@ export function generateBuildingSlug(
  * @returns The building ID if found in the slug
  */
 export function extractIdFromSlug(slug: string): string | null {
-  // The ID is the last 6 characters after the last hyphen
-  const match = slug.match(/-([a-zA-Z0-9]{6})$/);
-  return match ? match[1] : null;
+  // The ID is the entire string after the last hyphen
+  const lastHyphenIndex = slug.lastIndexOf('-');
+  if (lastHyphenIndex === -1) return null;
+  
+  return slug.substring(lastHyphenIndex + 1);
 }

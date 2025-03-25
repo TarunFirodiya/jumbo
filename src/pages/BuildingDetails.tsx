@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PropertyGallery } from "@/components/building/PropertyGallery";
@@ -42,13 +41,9 @@ export default function BuildingDetails() {
   const buildingId = useMemo(() => {
     if (id) return id;
     if (slug) {
-      // For slugs, try to extract the ID from the end of the slug
-      // If we can't find it, we'll need to do a database lookup (not implemented here)
+      // Extract the ID from the end of the slug
       const extractedId = extractIdFromSlug(slug);
       if (extractedId) return extractedId;
-      
-      // If we can't extract the ID, we'll need to look it up by the slug
-      // This would be implemented here
     }
     return "";
   }, [id, slug]);
