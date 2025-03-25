@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Search, Heart } from "lucide-react";
@@ -169,6 +170,11 @@ export default function LocalityBuildings() {
         ? prev.filter(id => id !== collectionId)
         : [...prev, collectionId]
     );
+  }, []);
+
+  // Add the missing handleFiltersChange function
+  const handleFiltersChange = useCallback((filters: Filter[]) => {
+    setActiveFilters(filters);
   }, []);
 
   const navigateToBuilding = useCallback((path: string) => {
