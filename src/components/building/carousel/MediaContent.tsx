@@ -120,7 +120,7 @@ export const MediaContent = memo(function MediaContent({
   }
   
   if (activeTab === "streetView" && streetView) {
-    console.log(`[MediaContent] Rendering street view: ${streetView}`);
+    console.log(`[MediaContent] Rendering street view: ${streetView} (Is Google Maps: ${isGoogleMapsUrl(streetView)})`);
     
     if (isGoogleMapsUrl(streetView)) {
       return (
@@ -140,6 +140,7 @@ export const MediaContent = memo(function MediaContent({
         <div className="flex flex-col items-center justify-center text-white/80 p-6 text-center">
           <p>Street view format is not supported</p>
           <p className="text-sm mt-2">Please use a Google Maps Street View link</p>
+          <p className="text-xs mt-4 text-gray-400 break-all">{streetView}</p>
         </div>
       );
     }

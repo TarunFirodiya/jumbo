@@ -5,7 +5,8 @@
 
 const GOOGLE_DRIVE_REGEX = /drive\.google\.com\/[^\/]+\/d\/([^\/]+)/;
 const YOUTUBE_REGEX = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-const GOOGLE_MAPS_REGEX = /maps\.googleapis\.com|google\.com\/maps/;
+// Updated to catch more Google Maps URL formats, including maps.app.goo.gl links
+const GOOGLE_MAPS_REGEX = /maps\.googleapis\.com|google\.com\/maps|maps\.app\.goo\.gl|goo\.gl\/maps/i;
 
 /**
  * Detects if a URL is a Google Drive link
@@ -64,7 +65,54 @@ export const getYoutubeEmbedUrl = (url: string): string => {
  * @returns True if the URL is a Google Maps link
  */
 export const isGoogleMapsUrl = (url: string): boolean => {
-  return !!url && GOOGLE_MAPS_REGEX.test(url);
+  console.log(`Checking if URL is Google Maps: ${url}`);
+  const result = !!url && GOOGLE_MAPS_REGEX.test(url);
+  console.log(`isGoogleMapsUrl result: ${result}`);
+  return result;
+};
+
+/**
+ * Converts a Google Maps URL to an embed URL
+ * @param url The Google Maps URL
+ * @returns An embed URL for the map
+ */
+export const getGoogleMapsEmbedUrl = (url: string): string => {
+  if (!url) return '';
+  
+  console.log(`Processing Google Maps URL: ${url}`);
+  
+  // Handle short URLs (goo.gl/maps or maps.app.goo.gl)
+  if (url.includes('goo.gl/')) {
+    return `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3887.9!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zM!5e0!3m2!1sen!2sin!4v1633935892999!5m2!1sen!2sin&q=${encodeURIComponent(url)}`;
+  }
+  
+  // If it's already an embed URL, return as is
+  if (url.includes('/embed')) {
+    return url;
+  }
+  
+  // Try to extract location from the URL
+  try {
+    // For regular Google Maps URLs that contain a location param
+    const locationMatch = url.match(/[?&]q=([^&]+)/);
+    if (locationMatch && locationMatch[1]) {
+      const location = decodeURIComponent(locationMatch[1]);
+      return `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3887.9!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zM!5e0!3m2!1sen!2sin!4v1633935892999!5m2!1sen!2sin&q=${encodeURIComponent(location)}`;
+    }
+    
+    // For Google Maps URLs that have coordinates
+    const coordsMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (coordsMatch && coordsMatch[1] && coordsMatch[2]) {
+      const lat = coordsMatch[1];
+      const lng = coordsMatch[2];
+      return `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3887.9!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zM!5e0!3m2!1sen!2sin!4v1633935892999!5m2!1sen!2sin&q=${lat},${lng}`;
+    }
+  } catch (e) {
+    console.error('Error processing Google Maps URL:', e);
+  }
+  
+  // If all else fails, use the original URL in an iframe src
+  return url;
 };
 
 /**
@@ -83,6 +131,10 @@ export const processMediaUrl = (url: string): string => {
   
   if (isYoutubeUrl(url)) {
     return getYoutubeEmbedUrl(url);
+  }
+  
+  if (isGoogleMapsUrl(url)) {
+    return getGoogleMapsEmbedUrl(url);
   }
   
   return url;

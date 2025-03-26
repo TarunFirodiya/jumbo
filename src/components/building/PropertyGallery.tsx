@@ -57,7 +57,7 @@ export function PropertyGallery({
         videoThumbnail={processedVideoThumbnail} 
         streetView={processedStreetView} 
         floorPlanImage={processedFloorPlan}
-        aiStagedPhotos={normalizedAiPhotos}
+        aiStagedPhotos={normalizedAiPhotos && normalizedAiPhotos.length > 0 ? normalizedAiPhotos : null}
       />
     </div>
   );
