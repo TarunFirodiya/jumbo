@@ -277,8 +277,9 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
       }
       
       if (formData.get('availability')) {
-        updatedData.availability = formData.get('availability')?.toString() 
-          ? new Date(formData.get('availability')?.toString() || '') 
+        const availabilityValue = formData.get('availability')?.toString();
+        updatedData.availability = availabilityValue 
+          ? availabilityValue 
           : editingListing.availability;
       }
 
@@ -932,3 +933,4 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     </div>
   );
 }
+
