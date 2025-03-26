@@ -5,27 +5,27 @@ import { cn } from "@/lib/utils";
 import { TextRotate } from "@/components/ui/text-rotate";
 import Floating, { FloatingElement } from "@/components/ui/parallax-floating";
 
-// Images for the floating elements
+// Updated images for the floating elements
 const exampleImages = [
   {
-    url: "/lovable-uploads/8d9be52a-902f-45b2-9186-e5ff951e340b.png",
-    title: "Colorful decorative image",
+    url: "/lovable-uploads/bab9aea2-f261-49eb-867d-f0d7a731d270.png",
+    title: "Security shield icon",
   },
   {
-    url: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=3087&auto=format&fit=crop",
-    title: "Modern apartment interior",
+    url: "/lovable-uploads/a7f217e2-856c-43b3-ad1f-923583877464.png",
+    title: "Modern house 3D icon",
   },
   {
-    url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=3150&auto=format&fit=crop",
-    title: "Beautiful house exterior",
+    url: "/lovable-uploads/341f318a-2492-41ed-adb0-d0b63d478444.png",
+    title: "Key icon",
   },
   {
-    url: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=3175&auto=format&fit=crop",
-    title: "Modern home with pool",
+    url: "/lovable-uploads/acf94706-ef81-433d-8c77-c20841d8be7f.png",
+    title: "Location pin icon",
   },
   {
-    url: "https://images.unsplash.com/photo-1600566753151-384129cf4e3e?q=80&w=3150&auto=format&fit=crop",
-    title: "Cozy living room",
+    url: "/lovable-uploads/315a0028-009a-4c1b-bd13-632d0da2d721.png",
+    title: "Indian rupee icon",
   },
 ];
 
@@ -60,7 +60,7 @@ export function AnimatedHero({
           <motion.img
             src={exampleImages[0].url}
             alt={exampleImages[0].title}
-            className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 object-cover hover:scale-105 duration-200 cursor-pointer transition-transform -rotate-[3deg] shadow-2xl rounded-xl"
+            className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 object-contain hover:scale-105 duration-200 cursor-pointer transition-transform -rotate-[3deg] shadow-2xl rounded-xl"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
@@ -74,7 +74,7 @@ export function AnimatedHero({
           <motion.img
             src={exampleImages[1].url}
             alt={exampleImages[1].title}
-            className="w-24 h-20 sm:w-32 sm:h-24 md:w-40 md:h-32 lg:w-48 lg:h-40 object-cover hover:scale-105 duration-200 cursor-pointer transition-transform -rotate-6 shadow-2xl rounded-xl"
+            className="w-24 h-20 sm:w-32 sm:h-24 md:w-40 md:h-32 lg:w-48 lg:h-40 object-contain hover:scale-105 duration-200 cursor-pointer transition-transform -rotate-6 shadow-2xl rounded-xl"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
@@ -88,7 +88,7 @@ export function AnimatedHero({
           <motion.img
             src={exampleImages[2].url}
             alt={exampleImages[2].title}
-            className="w-32 h-24 sm:w-40 sm:h-32 md:w-48 md:h-40 lg:w-56 lg:h-48 object-cover rotate-[4deg] hover:scale-105 duration-200 cursor-pointer transition-transform shadow-2xl rounded-xl"
+            className="w-32 h-24 sm:w-40 sm:h-32 md:w-48 md:h-40 lg:w-56 lg:h-48 object-contain rotate-[4deg] hover:scale-105 duration-200 cursor-pointer transition-transform shadow-2xl rounded-xl"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.9 }}
@@ -103,7 +103,7 @@ export function AnimatedHero({
           <motion.img
             src={exampleImages[3].url}
             alt={exampleImages[3].title}
-            className="w-24 h-20 sm:w-32 sm:h-28 md:w-40 md:h-36 lg:w-48 lg:h-44 object-cover hover:scale-105 duration-200 cursor-pointer transition-transform shadow-2xl rotate-[6deg] rounded-xl"
+            className="w-24 h-20 sm:w-32 sm:h-28 md:w-40 md:h-36 lg:w-48 lg:h-44 object-contain hover:scale-105 duration-200 cursor-pointer transition-transform shadow-2xl rotate-[6deg] rounded-xl"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.1 }}
@@ -117,7 +117,7 @@ export function AnimatedHero({
           <motion.img
             src={exampleImages[4].url}
             alt={exampleImages[4].title}
-            className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 lg:w-56 lg:h-56 object-cover hover:scale-105 duration-200 cursor-pointer transition-transform shadow-2xl rotate-[8deg] rounded-xl"
+            className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 lg:w-56 lg:h-56 object-contain hover:scale-105 duration-200 cursor-pointer transition-transform shadow-2xl rotate-[8deg] rounded-xl"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.3 }}
