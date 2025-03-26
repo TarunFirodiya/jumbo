@@ -191,52 +191,108 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const updateListing = useMutation({
     mutationFn: async (formData: FormData) => {
       const listingId = formData.get('listingId')?.toString();
-      const building_id = formData.get('building_id')?.toString() || null;
-      const building = buildings?.find(b => b.id === building_id);
+      if (!listingId || !editingListing) throw new Error('Building ID is required');
       
       let imageUrls = editingListing?.images || [];
       let aiStagedUrls = editingListing?.ai_staged_photos || [];
       
       if (uploadedImages.length) {
         const newUrls = await uploadImages(uploadedImages);
-        imageUrls = [...(imageUrls || []), ...newUrls];
+        imageUrls = [...(Array.isArray(imageUrls) ? imageUrls : []), ...newUrls];
       }
       
       if (uploadedAIStagedPhotos.length) {
         const newUrls = await uploadImages(uploadedAIStagedPhotos, 'ai-staged-photos');
-        aiStagedUrls = [...(aiStagedUrls || []), ...newUrls];
+        aiStagedUrls = [...(Array.isArray(aiStagedUrls) ? aiStagedUrls : []), ...newUrls];
       }
 
-      const listingData: Partial<Listing> = {
-        ...editingListing,
-        building_id,
-        bedrooms: formData.get('bedrooms') ? Number(formData.get('bedrooms')) : editingListing.bedrooms,
-        bathrooms: formData.get('bathrooms') ? Number(formData.get('bathrooms')) : editingListing.bathrooms,
-        built_up_area: formData.get('built_up_area') ? Number(formData.get('built_up_area')) : editingListing.built_up_area,
-        carpet_area: formData.get('carpet_area') ? Number(formData.get('carpet_area')) : editingListing.carpet_area,
-        floor: formData.get('floor') ? Number(formData.get('floor')) : editingListing.floor,
-        price: formData.get('price') ? Number(formData.get('price')) : editingListing.price,
-        maintenance: formData.get('maintenance') ? Number(formData.get('maintenance')) : editingListing.maintenance,
-        facing: formData.get('facing')?.toString() || editingListing.facing,
-        building_name: building?.name || editingListing.building_name,
-        images: imageUrls,
-        ai_staged_photos: aiStagedUrls,
-        floor_plan_image: editingListing?.floor_plan_image,
-        parking_spots: formData.get('parking_spots') ? Number(formData.get('parking_spots')) : editingListing.parking_spots,
-        balconies: formData.get('balconies') ? Number(formData.get('balconies')) : editingListing.balconies,
-        furnishing_status: formData.get('furnishing_status')?.toString() || editingListing.furnishing_status,
-        status: formData.get('status')?.toString() || editingListing.status,
-        availability: formData.get('availability')?.toString() || editingListing.availability
-      };
+      const updatedData: Partial<Listing> = { ...editingListing };
+      
+      if (formData.get('building_id')) {
+        updatedData.building_id = formData.get('building_id')?.toString() || editingListing.building_id;
+      }
+      
+      if (formData.get('bedrooms')) {
+        updatedData.bedrooms = Number(formData.get('bedrooms'));
+      }
+      
+      if (formData.get('bathrooms')) {
+        updatedData.bathrooms = Number(formData.get('bathrooms'));
+      }
+      
+      if (formData.get('built_up_area')) {
+        updatedData.built_up_area = Number(formData.get('built_up_area'));
+      }
+      
+      if (formData.get('carpet_area')) {
+        updatedData.carpet_area = formData.get('carpet_area') ? Number(formData.get('carpet_area')) : editingListing.carpet_area;
+      }
+      
+      if (formData.get('floor')) {
+        updatedData.floor = Number(formData.get('floor'));
+      }
+      
+      if (formData.get('price')) {
+        updatedData.price = Number(formData.get('price'));
+      }
+      
+      if (formData.get('maintenance')) {
+        updatedData.maintenance = Number(formData.get('maintenance'));
+      }
 
-      if (!listingId) throw new Error('Listing ID is required');
+      if (formData.get('facing')) {
+        updatedData.facing = formData.get('facing')?.toString() || editingListing.facing;
+      }
+      
+      if (formData.get('building_id')) {
+        const building_id = formData.get('building_id')?.toString();
+        const building = await supabase
+          .from('buildings')
+          .select('name')
+          .eq('id', building_id)
+          .single();
+          
+        if (building.data) {
+          updatedData.building_name = building.data.name;
+        }
+      }
+
+      updatedData.images = imageUrls;
+      updatedData.ai_staged_photos = aiStagedUrls;
+      
+      if (formData.get('parking_spots')) {
+        updatedData.parking_spots = Number(formData.get('parking_spots'));
+      }
+      
+      if (formData.get('balconies')) {
+        updatedData.balconies = Number(formData.get('balconies'));
+      }
+      
+      if (formData.get('furnishing_status')) {
+        updatedData.furnishing_status = formData.get('furnishing_status')?.toString() || editingListing.furnishing_status;
+      }
+      
+      if (formData.get('status')) {
+        updatedData.status = formData.get('status')?.toString() || editingListing.status;
+      }
+      
+      if (formData.get('availability')) {
+        updatedData.availability = formData.get('availability')?.toString() 
+          ? new Date(formData.get('availability')?.toString() || '') 
+          : editingListing.availability;
+      }
+
+      console.log("Updating listing with data:", updatedData);
 
       const { error } = await supabase
         .from('listings')
-        .update(listingData)
+        .update(updatedData)
         .eq('id', listingId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase update error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings'] });
@@ -263,180 +319,14 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     const form = e.currentTarget;
     const formData = new FormData(form);
     
-    const floorPlanInput = form.querySelector('#floor_plan') as HTMLInputElement;
-    let floorPlanUpload = null;
-    
-    if (floorPlanInput && floorPlanInput.files && floorPlanInput.files.length > 0) {
-      floorPlanUpload = floorPlanInput.files[0];
-    }
-    
-    const uploadFloorPlan = async () => {
-      if (!floorPlanUpload) return null;
-      
-      setIsUploading(true);
-      try {
-        const fileExt = floorPlanUpload.name.split('.').pop();
-        const fileName = `floor-plan-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-        const filePath = `floor-plans/${fileName}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('listings')
-          .upload(filePath, floorPlanUpload);
-          
-        if (uploadError) throw uploadError;
-        
-        const { data } = supabase.storage
-          .from('listings')
-          .getPublicUrl(filePath);
-          
-        return data.publicUrl;
-      } catch (error) {
-        console.error('Error uploading floor plan:', error);
-        return null;
-      }
-    };
+    console.log("Form submission - editing listing:", !!editingListing);
     
     if (editingListing) {
-      const processUpdate = async () => {
-        let imageUrls = editingListing?.images || [];
-        let aiStagedUrls = editingListing?.ai_staged_photos || [];
-        let floorPlanUrl = editingListing?.floor_plan_image || null;
-        
-        if (uploadedImages.length) {
-          const newUrls = await uploadImages(uploadedImages);
-          imageUrls = [...(imageUrls || []), ...newUrls];
-        }
-        
-        if (uploadedAIStagedPhotos.length) {
-          const newUrls = await uploadImages(uploadedAIStagedPhotos, 'ai-staged-photos');
-          aiStagedUrls = [...(aiStagedUrls || []), ...newUrls];
-        }
-        
-        if (floorPlanUpload) {
-          const newFloorPlanUrl = await uploadFloorPlan();
-          if (newFloorPlanUrl) {
-            floorPlanUrl = newFloorPlanUrl;
-          }
-        }
-
-        const listingId = formData.get('listingId')?.toString();
-        const building_id = formData.get('building_id')?.toString() || editingListing.building_id;
-        const building = buildings?.find(b => b.id === building_id);
-        
-        const listingData: Partial<Listing> = {
-          ...editingListing,
-          building_id,
-          bedrooms: formData.get('bedrooms') ? Number(formData.get('bedrooms')) : editingListing.bedrooms,
-          bathrooms: formData.get('bathrooms') ? Number(formData.get('bathrooms')) : editingListing.bathrooms,
-          built_up_area: formData.get('built_up_area') ? Number(formData.get('built_up_area')) : editingListing.built_up_area,
-          carpet_area: formData.get('carpet_area') ? Number(formData.get('carpet_area')) : editingListing.carpet_area,
-          floor: formData.get('floor') ? Number(formData.get('floor')) : editingListing.floor,
-          price: formData.get('price') ? Number(formData.get('price')) : editingListing.price,
-          maintenance: formData.get('maintenance') ? Number(formData.get('maintenance')) : editingListing.maintenance,
-          facing: formData.get('facing')?.toString() || editingListing.facing,
-          building_name: building?.name || editingListing.building_name,
-          images: imageUrls,
-          ai_staged_photos: aiStagedUrls,
-          floor_plan_image: floorPlanUrl,
-          parking_spots: formData.get('parking_spots') ? Number(formData.get('parking_spots')) : editingListing.parking_spots,
-          balconies: formData.get('balconies') ? Number(formData.get('balconies')) : editingListing.balconies,
-          furnishing_status: formData.get('furnishing_status')?.toString() || editingListing.furnishing_status,
-          status: formData.get('status')?.toString() || editingListing.status,
-          availability: formData.get('availability')?.toString() || editingListing.availability
-        };
-
-        if (!listingId) throw new Error('Listing ID is required');
-
-        const { error } = await supabase
-          .from('listings')
-          .update(listingData)
-          .eq('id', listingId);
-
-        if (error) throw error;
-        
-        setIsUploading(false);
-        queryClient.invalidateQueries({ queryKey: ['listings'] });
-        setEditingListing(null);
-        setUploadedImages([]);
-        setUploadedAIStagedPhotos([]);
-        setSelectedDate(undefined);
-        toast({
-          title: "Success",
-          description: "Listing updated successfully",
-        });
-      };
-      
-      processUpdate().catch((error) => {
-        setIsUploading(false);
-        toast({
-          title: "Error",
-          description: "Failed to update listing. Please try again.",
-          variant: "destructive"
-        });
-        console.error('Error updating listing:', error);
-      });
+      console.log("Editing existing listing:", editingListing.id);
+      updateListing.mutate(formData);
     } else {
-      const processCreate = async () => {
-        const building_id = formData.get('building_id')?.toString() || null;
-        const building = buildings?.find(b => b.id === building_id);
-        
-        const imageUrls = await uploadImages(uploadedImages);
-        const aiStagedUrls = await uploadImages(uploadedAIStagedPhotos, 'ai-staged-photos');
-        
-        let floorPlanUrl = null;
-        if (floorPlanUpload) {
-          floorPlanUrl = await uploadFloorPlan();
-        }
-
-        const listingData = {
-          building_id,
-          bedrooms: Number(formData.get('bedrooms')),
-          bathrooms: Number(formData.get('bathrooms')),
-          built_up_area: Number(formData.get('built_up_area')),
-          carpet_area: formData.get('carpet_area') ? Number(formData.get('carpet_area')) : null,
-          floor: Number(formData.get('floor')),
-          price: Number(formData.get('price')),
-          maintenance: Number(formData.get('maintenance')),
-          facing: formData.get('facing')?.toString() || null,
-          agent_id: currentUser.id,
-          building_name: building?.name || null,
-          images: imageUrls.length ? imageUrls : [],
-          ai_staged_photos: aiStagedUrls.length ? aiStagedUrls : [],
-          floor_plan_image: floorPlanUrl,
-          parking_spots: formData.get('parking_spots') ? Number(formData.get('parking_spots')) : null,
-          balconies: formData.get('balconies') ? Number(formData.get('balconies')) : null,
-          furnishing_status: formData.get('furnishing_status')?.toString() || null,
-          status: formData.get('status')?.toString() || 'available',
-          availability: formData.get('availability')?.toString() || null
-        };
-
-        const { error } = await supabase
-          .from('listings')
-          .insert(listingData);
-
-        if (error) throw error;
-        
-        setIsUploading(false);
-        queryClient.invalidateQueries({ queryKey: ['listings'] });
-        setIsCreateOpen(false);
-        setUploadedImages([]);
-        setUploadedAIStagedPhotos([]);
-        setSelectedDate(undefined);
-        toast({
-          title: "Success",
-          description: "Listing created successfully",
-        });
-      };
-      
-      processCreate().catch((error) => {
-        setIsUploading(false);
-        toast({
-          title: "Error",
-          description: "Failed to create listing. Please try again.",
-          variant: "destructive"
-        });
-        console.error('Error creating listing:', error);
-      });
+      console.log("Creating new listing");
+      createListing.mutate(formData);
     }
   };
 
