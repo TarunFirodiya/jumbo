@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -208,19 +207,26 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         aiStagedUrls = [...(aiStagedUrls || []), ...newUrls];
       }
 
-      const listingData = {
+      const listingData: Partial<Listing> = {
+        ...editingListing,
         building_id,
-        bedrooms: Number(formData.get('bedrooms')),
-        bathrooms: Number(formData.get('bathrooms')),
-        built_up_area: Number(formData.get('built_up_area')),
-        carpet_area: formData.get('carpet_area') ? Number(formData.get('carpet_area')) : null,
-        floor: Number(formData.get('floor')),
-        price: Number(formData.get('price')),
-        maintenance: Number(formData.get('maintenance')),
-        facing: formData.get('facing')?.toString() || null,
-        building_name: building?.name || null,
+        bedrooms: formData.get('bedrooms') ? Number(formData.get('bedrooms')) : editingListing.bedrooms,
+        bathrooms: formData.get('bathrooms') ? Number(formData.get('bathrooms')) : editingListing.bathrooms,
+        built_up_area: formData.get('built_up_area') ? Number(formData.get('built_up_area')) : editingListing.built_up_area,
+        carpet_area: formData.get('carpet_area') ? Number(formData.get('carpet_area')) : editingListing.carpet_area,
+        floor: formData.get('floor') ? Number(formData.get('floor')) : editingListing.floor,
+        price: formData.get('price') ? Number(formData.get('price')) : editingListing.price,
+        maintenance: formData.get('maintenance') ? Number(formData.get('maintenance')) : editingListing.maintenance,
+        facing: formData.get('facing')?.toString() || editingListing.facing,
+        building_name: building?.name || editingListing.building_name,
         images: imageUrls,
-        ai_staged_photos: aiStagedUrls
+        ai_staged_photos: aiStagedUrls,
+        floor_plan_image: editingListing?.floor_plan_image,
+        parking_spots: formData.get('parking_spots') ? Number(formData.get('parking_spots')) : editingListing.parking_spots,
+        balconies: formData.get('balconies') ? Number(formData.get('balconies')) : editingListing.balconies,
+        furnishing_status: formData.get('furnishing_status')?.toString() || editingListing.furnishing_status,
+        status: formData.get('status')?.toString() || editingListing.status,
+        availability: formData.get('availability')?.toString() || editingListing.availability
       };
 
       if (!listingId) throw new Error('Listing ID is required');
@@ -314,28 +320,29 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         }
 
         const listingId = formData.get('listingId')?.toString();
-        const building_id = formData.get('building_id')?.toString() || null;
+        const building_id = formData.get('building_id')?.toString() || editingListing.building_id;
         const building = buildings?.find(b => b.id === building_id);
         
-        const listingData = {
+        const listingData: Partial<Listing> = {
+          ...editingListing,
           building_id,
-          bedrooms: Number(formData.get('bedrooms')),
-          bathrooms: Number(formData.get('bathrooms')),
-          built_up_area: Number(formData.get('built_up_area')),
-          carpet_area: formData.get('carpet_area') ? Number(formData.get('carpet_area')) : null,
-          floor: Number(formData.get('floor')),
-          price: Number(formData.get('price')),
-          maintenance: Number(formData.get('maintenance')),
-          facing: formData.get('facing')?.toString() || null,
-          building_name: building?.name || null,
+          bedrooms: formData.get('bedrooms') ? Number(formData.get('bedrooms')) : editingListing.bedrooms,
+          bathrooms: formData.get('bathrooms') ? Number(formData.get('bathrooms')) : editingListing.bathrooms,
+          built_up_area: formData.get('built_up_area') ? Number(formData.get('built_up_area')) : editingListing.built_up_area,
+          carpet_area: formData.get('carpet_area') ? Number(formData.get('carpet_area')) : editingListing.carpet_area,
+          floor: formData.get('floor') ? Number(formData.get('floor')) : editingListing.floor,
+          price: formData.get('price') ? Number(formData.get('price')) : editingListing.price,
+          maintenance: formData.get('maintenance') ? Number(formData.get('maintenance')) : editingListing.maintenance,
+          facing: formData.get('facing')?.toString() || editingListing.facing,
+          building_name: building?.name || editingListing.building_name,
           images: imageUrls,
           ai_staged_photos: aiStagedUrls,
           floor_plan_image: floorPlanUrl,
-          parking_spots: formData.get('parking_spots') ? Number(formData.get('parking_spots')) : null,
-          balconies: formData.get('balconies') ? Number(formData.get('balconies')) : null,
-          furnishing_status: formData.get('furnishing_status')?.toString() || null,
-          status: formData.get('status')?.toString() || 'available',
-          availability: formData.get('availability')?.toString() || null
+          parking_spots: formData.get('parking_spots') ? Number(formData.get('parking_spots')) : editingListing.parking_spots,
+          balconies: formData.get('balconies') ? Number(formData.get('balconies')) : editingListing.balconies,
+          furnishing_status: formData.get('furnishing_status')?.toString() || editingListing.furnishing_status,
+          status: formData.get('status')?.toString() || editingListing.status,
+          availability: formData.get('availability')?.toString() || editingListing.availability
         };
 
         if (!listingId) throw new Error('Listing ID is required');

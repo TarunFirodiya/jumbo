@@ -287,6 +287,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
       const amenitiesList = prepareAmenities();
       
       const buildingData = {
+        ...editingBuilding,
         name: formData.get('name')?.toString() || editingBuilding.name,
         city: formData.get('city')?.toString() || editingBuilding.city,
         locality: formData.get('locality')?.toString() || editingBuilding.locality,
@@ -1011,4 +1012,3 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     </div>
   );
 }
-
