@@ -121,20 +121,21 @@ export function useBuildingData(id: string) {
           } else if (typeof aiPhotos === 'string') {
             // If it's a string, try to parse as JSON or split by comma
             try {
-              if (aiPhotos.trim().startsWith('[')) {
+              const aiPhotosString = aiPhotos as string;
+              if (aiPhotosString.trim().startsWith('[')) {
                 // Looks like JSON array
-                const parsed = JSON.parse(aiPhotos);
-                processedListing.ai_staged_photos = Array.isArray(parsed) ? parsed.filter(Boolean) : [aiPhotos];
-              } else if (aiPhotos.includes(',')) {
+                const parsed = JSON.parse(aiPhotosString);
+                processedListing.ai_staged_photos = Array.isArray(parsed) ? parsed.filter(Boolean) : [aiPhotosString];
+              } else if (aiPhotosString.includes(',')) {
                 // Comma-separated string
-                processedListing.ai_staged_photos = aiPhotos.split(',').map(url => url.trim()).filter(Boolean);
+                processedListing.ai_staged_photos = aiPhotosString.split(',').map(url => url.trim()).filter(Boolean);
               } else {
                 // Single URL
-                processedListing.ai_staged_photos = [aiPhotos];
+                processedListing.ai_staged_photos = [aiPhotosString];
               }
             } catch (e) {
               console.error(`Error parsing AI staged photos for listing ${listing.id}:`, e);
-              processedListing.ai_staged_photos = [aiPhotos]; // Use as single string
+              processedListing.ai_staged_photos = [aiPhotos as string]; // Use as single string
             }
           } else if (Array.isArray(aiPhotos)) {
             // If it's already an array, filter out nulls/empty strings
