@@ -1,6 +1,7 @@
 
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Sparkles } from 'lucide-react';
+import { isYoutubeUrl, isGoogleMapsUrl, getMediaType } from '@/utils/mediaProcessing';
 
 interface MediaContentProps {
   activeTab: string;
@@ -21,19 +22,48 @@ export const MediaContent = memo(function MediaContent({
   floorPlanImage,
   buildingName = "Property"
 }: MediaContentProps) {
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  
   // Debug log for active tab and images
   console.log(`[MediaContent] Rendering for tab ${activeTab} with ${displayImages.length} images`);
   console.log(`[MediaContent] Current slide: ${currentSlide}`);
-  console.log(`[MediaContent] Display images:`, displayImages);
   
   if (displayImages.length === 0) {
     console.log(`[MediaContent] No images available for ${activeTab} tab`);
-    return <p className="text-white">No content available</p>;
+    return (
+      <div className="flex flex-col items-center justify-center text-white/80 p-6 text-center">
+        <p>No content available for this section</p>
+        <p className="text-sm mt-2">Try selecting a different category from the tabs above</p>
+      </div>
+    );
   }
 
+  // Handle image error by storing it in state
+  const handleImageError = (url: string) => {
+    console.error(`[MediaContent] Image failed to load: ${url}`);
+    setImageErrors(prev => ({ ...prev, [url]: true }));
+  };
+
+  const imageUrl = displayImages[currentSlide];
+  
+  // If we've already had an error with this image, use fallback
+  if (imageUrl && imageErrors[imageUrl]) {
+    console.log(`[MediaContent] Using fallback for previously failed image: ${imageUrl}`);
+    return (
+      <div className="flex flex-col items-center justify-center text-white/80 p-6 text-center">
+        <img 
+          src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
+          alt="Image not available"
+          className="w-64 h-64 object-contain opacity-50 mb-4"
+        />
+        <p>The image could not be loaded</p>
+        <p className="text-sm mt-2">The source may be unavailable or in an unsupported format</p>
+      </div>
+    );
+  }
+  
   // Render different content based on active tab
   if (activeTab === "photos" || activeTab === "imagine") {
-    const imageUrl = displayImages[currentSlide];
     console.log(`[MediaContent] Rendering image: ${imageUrl} for ${activeTab} tab`);
     
     return (
@@ -42,10 +72,7 @@ export const MediaContent = memo(function MediaContent({
           src={imageUrl}
           alt={`${activeTab === "imagine" ? "AI Staged Image" : "Property view"} ${currentSlide + 1}`}
           className="max-h-full max-w-full object-contain"
-          onError={(e) => {
-            console.error(`[MediaContent] Image failed to load: ${imageUrl}`);
-            (e.target as HTMLImageElement).src = "/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png";
-          }}
+          onError={() => handleImageError(imageUrl)}
         />
         
         {activeTab === "imagine" && (
@@ -60,34 +87,62 @@ export const MediaContent = memo(function MediaContent({
   
   if (activeTab === "video" && videoThumbnail) {
     console.log(`[MediaContent] Rendering video: ${videoThumbnail}`);
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <iframe 
-          src={videoThumbnail} 
-          className="w-full max-h-full max-w-full" 
-          style={{ height: "80vh" }}
-          frameBorder="0" 
-          allowFullScreen
-          title="Property video"
-        ></iframe>
-      </div>
-    );
+    
+    if (isYoutubeUrl(videoThumbnail)) {
+      return (
+        <div className="w-full h-full flex items-center justify-center">
+          <iframe 
+            src={videoThumbnail} 
+            className="w-full max-h-full max-w-full" 
+            style={{ height: "80vh" }}
+            frameBorder="0" 
+            allowFullScreen
+            title="Property video"
+          ></iframe>
+        </div>
+      );
+    } else {
+      // If it's not a YouTube URL, try to render as a direct video
+      return (
+        <div className="w-full h-full flex items-center justify-center">
+          <video 
+            src={videoThumbnail}
+            className="w-full max-h-full max-w-full" 
+            style={{ height: "80vh" }}
+            controls
+            onError={() => handleImageError(videoThumbnail)}
+          >
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      );
+    }
   }
   
   if (activeTab === "streetView" && streetView) {
     console.log(`[MediaContent] Rendering street view: ${streetView}`);
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <iframe 
-          src={streetView} 
-          className="w-full max-h-full max-w-full" 
-          style={{ height: "80vh" }}
-          frameBorder="0" 
-          allowFullScreen
-          title="Street view"
-        ></iframe>
-      </div>
-    );
+    
+    if (isGoogleMapsUrl(streetView)) {
+      return (
+        <div className="w-full h-full flex items-center justify-center">
+          <iframe 
+            src={streetView} 
+            className="w-full max-h-full max-w-full" 
+            style={{ height: "80vh" }}
+            frameBorder="0" 
+            allowFullScreen
+            title="Street view"
+          ></iframe>
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex flex-col items-center justify-center text-white/80 p-6 text-center">
+          <p>Street view format is not supported</p>
+          <p className="text-sm mt-2">Please use a Google Maps Street View link</p>
+        </div>
+      );
+    }
   }
   
   if (activeTab === "floorPlan" && floorPlanImage) {
@@ -97,14 +152,16 @@ export const MediaContent = memo(function MediaContent({
         src={floorPlanImage} 
         alt="Floor Plan" 
         className="max-h-full max-w-full object-contain" 
-        onError={(e) => {
-          console.error(`[MediaContent] Floor plan failed to load: ${floorPlanImage}`);
-          (e.target as HTMLImageElement).src = "/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png";
-        }}
+        onError={() => handleImageError(floorPlanImage)}
       />
     );
   }
   
   console.log(`[MediaContent] No specific content available for ${activeTab} tab`);
-  return <p className="text-white">No content available for this category</p>;
+  return (
+    <div className="flex flex-col items-center justify-center text-white/80 p-6 text-center">
+      <p>No content available for this category</p>
+      <p className="text-sm mt-2">Try selecting a different category or check back later</p>
+    </div>
+  );
 });

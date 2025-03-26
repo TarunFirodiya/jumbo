@@ -3,6 +3,113 @@
  * Utility functions for processing media files (images, videos, etc.)
  */
 
+const GOOGLE_DRIVE_REGEX = /drive\.google\.com\/[^\/]+\/d\/([^\/]+)/;
+const YOUTUBE_REGEX = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+const GOOGLE_MAPS_REGEX = /maps\.googleapis\.com|google\.com\/maps/;
+
+/**
+ * Detects if a URL is a Google Drive link
+ * @param url The URL to check
+ * @returns True if the URL is a Google Drive link
+ */
+export const isGoogleDriveUrl = (url: string): boolean => {
+  return !!url && GOOGLE_DRIVE_REGEX.test(url);
+};
+
+/**
+ * Converts a Google Drive link to a direct download link
+ * @param url The Google Drive URL
+ * @returns A direct download URL for the file
+ */
+export const getGoogleDriveDirectUrl = (url: string): string => {
+  if (!url) return '';
+  
+  // Extract the file ID from the URL
+  const match = url.match(GOOGLE_DRIVE_REGEX);
+  if (!match || !match[1]) return url;
+  
+  const fileId = match[1];
+  console.log(`Converting Google Drive link: File ID = ${fileId} from URL: ${url}`);
+  return `https://drive.google.com/uc?export=view&id=${fileId}`;
+};
+
+/**
+ * Detects if a URL is a YouTube link
+ * @param url The URL to check
+ * @returns True if the URL is a YouTube link
+ */
+export const isYoutubeUrl = (url: string): boolean => {
+  return !!url && YOUTUBE_REGEX.test(url);
+};
+
+/**
+ * Converts a YouTube URL to an embed URL
+ * @param url The YouTube URL
+ * @returns An embed URL for the video
+ */
+export const getYoutubeEmbedUrl = (url: string): string => {
+  if (!url) return '';
+  
+  const match = url.match(YOUTUBE_REGEX);
+  if (!match || !match[1]) return url;
+  
+  const videoId = match[1];
+  console.log(`Converting YouTube link: Video ID = ${videoId} from URL: ${url}`);
+  return `https://www.youtube.com/embed/${videoId}`;
+};
+
+/**
+ * Detects if a URL is a Google Maps link
+ * @param url The URL to check
+ * @returns True if the URL is a Google Maps link
+ */
+export const isGoogleMapsUrl = (url: string): boolean => {
+  return !!url && GOOGLE_MAPS_REGEX.test(url);
+};
+
+/**
+ * Processes a URL to ensure it's in a format that can be displayed
+ * @param url The URL to process
+ * @returns A processed URL that can be displayed
+ */
+export const processMediaUrl = (url: string): string => {
+  if (!url) return '';
+  
+  console.log(`Processing media URL: ${url}`);
+  
+  if (isGoogleDriveUrl(url)) {
+    return getGoogleDriveDirectUrl(url);
+  }
+  
+  if (isYoutubeUrl(url)) {
+    return getYoutubeEmbedUrl(url);
+  }
+  
+  return url;
+};
+
+/**
+ * Determines the type of media from a URL
+ * @param url The URL to analyze
+ * @returns The type of media ('image', 'video', 'map', or 'unknown')
+ */
+export const getMediaType = (url: string): 'image' | 'video' | 'map' | 'unknown' => {
+  if (!url) return 'unknown';
+  
+  const lowerUrl = url.toLowerCase();
+  
+  if (isYoutubeUrl(url)) return 'video';
+  if (isGoogleMapsUrl(url)) return 'map';
+  
+  if (lowerUrl.match(/\.(jpeg|jpg|gif|png|webp|avif|svg)(\?.*)?$/)) return 'image';
+  if (lowerUrl.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/)) return 'video';
+  
+  // For Google Drive, try to guess based on context or fallback to image
+  if (isGoogleDriveUrl(url)) return 'image';
+  
+  return 'unknown';
+};
+
 /**
  * Processes and normalizes image URLs to ensure they're in a consistent format
  * @param images Image URLs that could be in various formats (string, array, JSON string)
@@ -20,7 +127,12 @@ export const normalizeImageArray = (images: unknown): string[] => {
   // If already an array, return it (with type safety check)
   if (Array.isArray(images)) {
     console.log("normalizeImageArray: Input is already an array");
-    const filteredArray = images.filter(Boolean) as string[];
+    const filteredArray = images.filter(Boolean).map(img => {
+      if (typeof img === 'string') {
+        return processMediaUrl(img);
+      }
+      return String(img);
+    });
     console.log("normalizeImageArray: Filtered array:", filteredArray);
     return filteredArray;
   }
@@ -31,24 +143,29 @@ export const normalizeImageArray = (images: unknown): string[] => {
       console.log("normalizeImageArray: Input looks like JSON, attempting to parse");
       const parsed = JSON.parse(images);
       if (Array.isArray(parsed)) {
-        const filteredArray = parsed.filter(Boolean);
+        const filteredArray = parsed.filter(Boolean).map(img => {
+          if (typeof img === 'string') {
+            return processMediaUrl(img);
+          }
+          return String(img);
+        });
         console.log("normalizeImageArray: Successfully parsed as array:", filteredArray);
         return filteredArray;
       } else {
         console.log("normalizeImageArray: Parsed JSON is not an array, treating as single string");
-        return [images];
+        return [processMediaUrl(images)];
       }
     } catch (e) {
       // If parsing fails, treat as a single string
       console.error('normalizeImageArray: Error parsing image JSON:', e);
-      return [images];
+      return [processMediaUrl(images)];
     }
   }
   
   // If it's a comma-separated string, split it
   if (typeof images === 'string' && images.includes(',')) {
     console.log("normalizeImageArray: Input is comma-separated string, splitting");
-    const splitArray = images.split(',').map(img => img.trim()).filter(Boolean);
+    const splitArray = images.split(',').map(img => processMediaUrl(img.trim())).filter(Boolean);
     console.log("normalizeImageArray: Split result:", splitArray);
     return splitArray;
   }
@@ -56,7 +173,7 @@ export const normalizeImageArray = (images: unknown): string[] => {
   // If it's just a single string
   if (typeof images === 'string') {
     console.log("normalizeImageArray: Input is a single string");
-    return [images];
+    return [processMediaUrl(images)];
   }
   
   // Fallback: return empty array if none of the above
@@ -81,7 +198,7 @@ export const getThumbnailUrl = (
   // If there's a specific thumbnail, use it
   if (thumbnailUrl) {
     console.log("getThumbnailUrl: Using explicit thumbnail:", thumbnailUrl);
-    return thumbnailUrl;
+    return processMediaUrl(thumbnailUrl);
   }
   
   // Next priority: AI-staged photos if available
@@ -122,9 +239,9 @@ export const createMediaMetadata = (
   return {
     regularImages: normalizeImageArray(images),
     aiStagedPhotos: normalizeImageArray(aiStagedPhotos),
-    floorPlan: floorPlanImage || null,
-    video: videoUrl || null,
-    streetView: streetViewUrl || null,
+    floorPlan: floorPlanImage ? processMediaUrl(floorPlanImage) : null,
+    video: videoUrl ? processMediaUrl(videoUrl) : null,
+    streetView: streetViewUrl ? processMediaUrl(streetViewUrl) : null,
     lastUpdated: new Date().toISOString()
   };
 };

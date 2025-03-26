@@ -1,6 +1,7 @@
 
 import { ImageCarousel } from "./ImageCarousel";
-import { getThumbnailUrl } from "@/utils/mediaProcessing";
+import { normalizeImageArray, processMediaUrl } from "@/utils/mediaProcessing";
+import { useEffect } from "react";
 
 interface PropertyGalleryProps {
   images: string[];
@@ -17,28 +18,45 @@ export function PropertyGallery({
   floorPlanImage,
   aiStagedPhotos
 }: PropertyGalleryProps) {
-  // Process images to ensure they are arrays
-  const normalizedImages = Array.isArray(images) ? images : (images ? [images] : []);
-  const normalizedAiPhotos = Array.isArray(aiStagedPhotos) ? aiStagedPhotos : (aiStagedPhotos ? [aiStagedPhotos] : []);
+  // Process all media URLs
+  const processedVideoThumbnail = videoThumbnail ? processMediaUrl(videoThumbnail) : null;
+  const processedStreetView = streetView ? processMediaUrl(streetView) : null;
+  const processedFloorPlan = floorPlanImage ? processMediaUrl(floorPlanImage) : null;
+  
+  // Process images to ensure they are arrays with processed URLs
+  const normalizedImages = normalizeImageArray(images);
+  const normalizedAiPhotos = normalizeImageArray(aiStagedPhotos);
   
   // Log for debugging - verbose to track exactly what's happening
-  console.log("PropertyGallery - Input Images:", images);
-  console.log("PropertyGallery - Input AI Staged Photos:", aiStagedPhotos);
-  console.log("PropertyGallery - Normalized Regular Images:", normalizedImages);
-  console.log("PropertyGallery - Normalized AI Photos:", normalizedAiPhotos);
+  useEffect(() => {
+    console.log("PropertyGallery - Input Images:", images);
+    console.log("PropertyGallery - Input AI Staged Photos:", aiStagedPhotos);
+    console.log("PropertyGallery - Input Video:", videoThumbnail);
+    console.log("PropertyGallery - Input Street View:", streetView);
+    console.log("PropertyGallery - Input Floor Plan:", floorPlanImage);
     
-  // If we have no images at all, use a default
+    console.log("PropertyGallery - Processed Images:", normalizedImages);
+    console.log("PropertyGallery - Processed AI Photos:", normalizedAiPhotos);
+    console.log("PropertyGallery - Processed Video:", processedVideoThumbnail);
+    console.log("PropertyGallery - Processed Street View:", processedStreetView);
+    console.log("PropertyGallery - Processed Floor Plan:", processedFloorPlan);
+  }, [
+    images, aiStagedPhotos, videoThumbnail, streetView, floorPlanImage,
+    normalizedImages, normalizedAiPhotos, processedVideoThumbnail, processedStreetView, processedFloorPlan
+  ]);
+    
+  // If we have no images at all, use a default placeholder
   const displayImages = normalizedImages?.length > 0 
     ? normalizedImages 
-    : [getThumbnailUrl(null, normalizedImages, normalizedAiPhotos)];
+    : ["/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"];
 
   return (
     <div className="w-full rounded-lg overflow-hidden bg-muted">
       <ImageCarousel 
         images={displayImages} 
-        videoThumbnail={videoThumbnail} 
-        streetView={streetView} 
-        floorPlanImage={floorPlanImage}
+        videoThumbnail={processedVideoThumbnail} 
+        streetView={processedStreetView} 
+        floorPlanImage={processedFloorPlan}
         aiStagedPhotos={normalizedAiPhotos}
       />
     </div>
