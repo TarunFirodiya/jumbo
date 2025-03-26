@@ -112,7 +112,40 @@ export function useBuildingData(id: string) {
           processedListing.images = normalizeImageArray(listing.images);
           
           // Process AI staged photos
-          processedListing.ai_staged_photos = normalizeImageArray(listing.ai_staged_photos);
+          const aiPhotos = listing.ai_staged_photos;
+          console.log(`- Raw AI staged photos before processing:`, aiPhotos);
+          
+          // Handle different potential formats of AI staged photos
+          if (aiPhotos === null || aiPhotos === undefined) {
+            processedListing.ai_staged_photos = [];
+          } else if (typeof aiPhotos === 'string') {
+            // If it's a string, try to parse as JSON or split by comma
+            try {
+              if (aiPhotos.trim().startsWith('[')) {
+                // Looks like JSON array
+                const parsed = JSON.parse(aiPhotos);
+                processedListing.ai_staged_photos = Array.isArray(parsed) ? parsed.filter(Boolean) : [aiPhotos];
+              } else if (aiPhotos.includes(',')) {
+                // Comma-separated string
+                processedListing.ai_staged_photos = aiPhotos.split(',').map(url => url.trim()).filter(Boolean);
+              } else {
+                // Single URL
+                processedListing.ai_staged_photos = [aiPhotos];
+              }
+            } catch (e) {
+              console.error(`Error parsing AI staged photos for listing ${listing.id}:`, e);
+              processedListing.ai_staged_photos = [aiPhotos]; // Use as single string
+            }
+          } else if (Array.isArray(aiPhotos)) {
+            // If it's already an array, filter out nulls/empty strings
+            processedListing.ai_staged_photos = aiPhotos.filter(Boolean);
+          } else {
+            // Fallback - convert to string and use as single item
+            processedListing.ai_staged_photos = [String(aiPhotos)];
+          }
+          
+          // Ensure all URLs are properly processed
+          processedListing.ai_staged_photos = normalizeImageArray(processedListing.ai_staged_photos);
           
           console.log(`- Processed regular images:`, processedListing.images);
           console.log(`- Processed AI staged photos:`, processedListing.ai_staged_photos);

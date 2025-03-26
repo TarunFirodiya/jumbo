@@ -1,5 +1,5 @@
 
-import { memo, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
 import { isYoutubeUrl, isGoogleMapsUrl, getMediaType } from '@/utils/mediaProcessing';
 
@@ -25,8 +25,11 @@ export const MediaContent = memo(function MediaContent({
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   
   // Debug log for active tab and images
-  console.log(`[MediaContent] Rendering for tab ${activeTab} with ${displayImages.length} images`);
-  console.log(`[MediaContent] Current slide: ${currentSlide}`);
+  useEffect(() => {
+    console.log(`[MediaContent] Component mounted/updated for tab ${activeTab}`);
+    console.log(`[MediaContent] Display images:`, displayImages);
+    console.log(`[MediaContent] Current slide: ${currentSlide}`);
+  }, [activeTab, displayImages, currentSlide]);
   
   if (displayImages.length === 0) {
     console.log(`[MediaContent] No images available for ${activeTab} tab`);

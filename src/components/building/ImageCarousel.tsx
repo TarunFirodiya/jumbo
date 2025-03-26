@@ -92,25 +92,50 @@ export const ImageCarousel = memo(function ImageCarousel({
   const [activeTab, setActiveTab] = useState("photos");
   const [aiImages, setAiImages] = useState<string[]>([]);
 
-  // More verbose logging to debug the AI images issue
+  // Enhanced logging for AI image debugging
   useEffect(() => {
     console.log("[ImageCarousel] Received props:");
     console.log("- AI Staged Photos:", aiStagedPhotos);
     console.log("- Regular Images:", images);
     console.log("- Active Tab:", activeTab);
+    console.log("- Video Thumbnail:", videoThumbnail);
+    console.log("- Street View:", streetView);
+    console.log("- Floor Plan:", floorPlanImage);
 
-    if (aiStagedPhotos && aiStagedPhotos.length > 0) {
-      console.log("[ImageCarousel] Using real AI staged photos from database:", aiStagedPhotos);
-      setAiImages(aiStagedPhotos);
-    } else if (images && images.length > 0) {
+    // For AI images, we need to ensure we're using valid data
+    if (aiStagedPhotos && Array.isArray(aiStagedPhotos) && aiStagedPhotos.length > 0) {
+      // Filter out any null or undefined values in the array
+      const validAiPhotos = aiStagedPhotos.filter(Boolean);
+      
+      console.log("[ImageCarousel] Valid AI staged photos:", validAiPhotos);
+      
+      if (validAiPhotos.length > 0) {
+        console.log("[ImageCarousel] Using real AI staged photos from database:", validAiPhotos);
+        setAiImages(validAiPhotos);
+      } else {
+        console.log("[ImageCarousel] AI staged photos array exists but contains no valid URLs");
+        generatePlaceholderAiImages();
+      }
+    } else {
+      console.log("[ImageCarousel] No valid AI staged photos available");
+      generatePlaceholderAiImages();
+    }
+  }, [images, aiStagedPhotos, activeTab, videoThumbnail, streetView, floorPlanImage]);
+
+  // Helper function to generate placeholder AI images
+  const generatePlaceholderAiImages = () => {
+    if (images && images.length > 0) {
       console.log("[ImageCarousel] Generating placeholder AI images");
       const generatedImages = Array.from({ length: 3 }).map((_, index) => 
         generateAIImage(images[0], index)
       );
       console.log("[ImageCarousel] Generated placeholder AI images:", generatedImages);
       setAiImages(generatedImages);
+    } else {
+      console.log("[ImageCarousel] No regular images to base placeholder AI images on");
+      setAiImages([]);
     }
-  }, [images, aiStagedPhotos, activeTab]);
+  };
 
   const handleImageError = useCallback((index: number) => {
     console.log(`[ImageCarousel] Image at index ${index} failed to load`);
@@ -125,19 +150,22 @@ export const ImageCarousel = memo(function ImageCarousel({
         return floorPlanImage ? [floorPlanImage] : [];
       case "imagine":
         console.log("[ImageCarousel] Getting 'imagine' tab images", { aiStagedPhotos, aiImages });
-        if (aiStagedPhotos && aiStagedPhotos.length > 0) {
+        if (aiStagedPhotos && Array.isArray(aiStagedPhotos) && aiStagedPhotos.filter(Boolean).length > 0) {
           console.log("[ImageCarousel] Using aiStagedPhotos for imagine tab:", aiStagedPhotos);
-          return aiStagedPhotos;
+          return aiStagedPhotos.filter(Boolean);
         }
         console.log("[ImageCarousel] Using generated aiImages for imagine tab:", aiImages);
         return aiImages.length > 0 ? aiImages : [];
+      case "video":
+        return videoThumbnail ? [videoThumbnail] : [];
       default:
         return images;
     }
-  }, [activeTab, images, streetView, floorPlanImage, aiImages, aiStagedPhotos]);
+  }, [activeTab, images, streetView, floorPlanImage, aiImages, aiStagedPhotos, videoThumbnail]);
 
   const displayImages = getDisplayImages();
   console.log("[ImageCarousel] Final displayImages:", displayImages);
+  console.log("[ImageCarousel] Current active tab:", activeTab);
 
   if (!images?.length) {
     return (
