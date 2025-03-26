@@ -1,3 +1,4 @@
+
 import { 
   Car, Wifi, Dumbbell, Building2, Gamepad2, 
   Building, Trees, Home, Shield, Droplet, 
@@ -61,7 +62,17 @@ interface AmenitiesGridProps {
 export function AmenitiesGrid({ features }: AmenitiesGridProps) {
   const [showAll, setShowAll] = useState(false);
   const initialItems = ITEMS_PER_ROW * INITIAL_ROWS;
-  const displayedFeatures = showAll ? features : features.slice(0, initialItems);
+  
+  // Only slice the array if we need to hide some features and showAll is false
+  const displayedFeatures = (features.length > initialItems && !showAll) 
+    ? features.slice(0, initialItems) 
+    : features;
+
+  console.log('AmenitiesGrid:', { 
+    totalFeatures: features.length,
+    displayedFeatures: displayedFeatures.length,
+    showAll
+  });
 
   return (
     <div className="space-y-4">
