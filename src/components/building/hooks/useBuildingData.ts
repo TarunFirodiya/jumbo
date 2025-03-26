@@ -107,6 +107,9 @@ export function useBuildingData(id: string) {
           // Process AI staged photos
           processedListing.ai_staged_photos = normalizeImageArray(listing.ai_staged_photos);
           
+          console.log("Processed listing images:", processedListing.images);
+          console.log("Processed AI staged photos:", processedListing.ai_staged_photos);
+          
           // Use media_metadata if available, otherwise generate a default structure
           if (!processedListing.media_metadata) {
             processedListing.media_metadata = {

@@ -17,15 +17,18 @@ export function PropertyGallery({
   floorPlanImage,
   aiStagedPhotos
 }: PropertyGalleryProps) {
-  // Use all available images, prioritizing AI-staged photos when present
-  const allImages = aiStagedPhotos && aiStagedPhotos.length > 0 
-    ? [...aiStagedPhotos, ...(images || [])]
-    : images;
+  // Process images to ensure they are arrays
+  const normalizedImages = Array.isArray(images) ? images : (images ? [images] : []);
+  const normalizedAiPhotos = Array.isArray(aiStagedPhotos) ? aiStagedPhotos : (aiStagedPhotos ? [aiStagedPhotos] : []);
+  
+  // Log for debugging
+  console.log("PropertyGallery - Regular Images:", normalizedImages);
+  console.log("PropertyGallery - AI Staged Photos:", normalizedAiPhotos);
     
   // If we have no images at all, use a default
-  const displayImages = allImages?.length > 0 
-    ? allImages 
-    : [getThumbnailUrl(null, images, aiStagedPhotos)];
+  const displayImages = normalizedImages?.length > 0 
+    ? normalizedImages 
+    : [getThumbnailUrl(null, normalizedImages, normalizedAiPhotos)];
 
   return (
     <div className="w-full rounded-lg overflow-hidden bg-muted">
@@ -34,7 +37,7 @@ export function PropertyGallery({
         videoThumbnail={videoThumbnail} 
         streetView={streetView} 
         floorPlanImage={floorPlanImage}
-        aiStagedPhotos={aiStagedPhotos}
+        aiStagedPhotos={normalizedAiPhotos}
       />
     </div>
   );

@@ -39,9 +39,18 @@ export default function ListingCard({ listing }: ListingCardProps) {
     setShowVisitModal(true);
   };
 
-  // Prepare images for carousel - ensure we're correctly processing both images array and thumbnail
+  // Process images to ensure they are arrays
   const images = normalizeImageArray(listing.images);
-  const thumbnailImage = listing.thumbnail_image || (images.length > 0 ? images[0] : null);
+  const aiStagedPhotos = normalizeImageArray(listing.ai_staged_photos);
+  
+  // Properly determine the thumbnail image
+  // 1. Use explicit thumbnail if available
+  // 2. Or use first AI staged photo if available
+  // 3. Or use first regular image if available
+  const thumbnailImage = 
+    listing.thumbnail_image || 
+    (aiStagedPhotos.length > 0 ? aiStagedPhotos[0] : null) ||
+    (images.length > 0 ? images[0] : null);
 
   return (
     <Card className="overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow">
@@ -50,6 +59,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
         <ListingCardCarousel 
           images={images}
           thumbnailImage={thumbnailImage}
+          aiStagedPhotos={aiStagedPhotos}
           alt={`Listing in ${listing.building_name}`}
         />
       </div>

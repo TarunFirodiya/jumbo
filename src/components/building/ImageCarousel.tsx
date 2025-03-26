@@ -1,4 +1,3 @@
-
 import { useState, useEffect, memo, useCallback } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -31,10 +30,7 @@ const getYoutubeEmbedUrl = (url: string) => {
   return `https://www.youtube.com/embed/${videoId}`;
 };
 
-// Generate an AI staged image based on the building's details
 const generateAIImage = (buildingName: string, index: number) => {
-  // For now, we'll use placeholder images. In a real implementation, you would
-  // integrate with an AI image generation service.
   const placeholders = [
     '/lovable-uploads/1e05ff87-3f51-476e-adaf-2dd13c1fa4f7.png',
     '/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png',
@@ -57,7 +53,6 @@ export const MediaElement = memo(({ url, index, onError, buildingName }: { url: 
     );
   }
 
-  // Check if it's a Google Street View URL and fix the rendering
   if (url?.includes('maps.googleapis.com') && url.includes('streetview')) {
     return (
       <iframe
@@ -99,14 +94,20 @@ export const ImageCarousel = memo(function ImageCarousel({
   const [aiImages, setAiImages] = useState<string[]>([]);
 
   useEffect(() => {
-    // Generate AI images when component mounts
-    if (images && images.length > 0) {
+    console.log("AI Staged Photos:", aiStagedPhotos);
+    console.log("Regular Images:", images);
+
+    if (aiStagedPhotos && aiStagedPhotos.length > 0) {
+      console.log("Using real AI staged photos from database");
+      setAiImages(aiStagedPhotos);
+    } else if (images && images.length > 0) {
+      console.log("Generating placeholder AI images");
       const generatedImages = Array.from({ length: 3 }).map((_, index) => 
         generateAIImage(images[0], index)
       );
       setAiImages(generatedImages);
     }
-  }, [images]);
+  }, [images, aiStagedPhotos]);
 
   const handleImageError = useCallback((index: number) => {
     setFailedImages(prev => ({ ...prev, [index]: true }));
@@ -119,7 +120,10 @@ export const ImageCarousel = memo(function ImageCarousel({
       case "floorPlan":
         return floorPlanImage ? [floorPlanImage] : [];
       case "imagine":
-        return aiImages.length > 0 ? aiImages : (aiStagedPhotos || []);
+        if (aiStagedPhotos && aiStagedPhotos.length > 0) {
+          return aiStagedPhotos;
+        }
+        return aiImages.length > 0 ? aiImages : [];
       default:
         return images;
     }
@@ -143,6 +147,7 @@ export const ImageCarousel = memo(function ImageCarousel({
   const buildingName = "Property"; // Ideally pass this from props
 
   const handleTabChange = (value: string) => {
+    console.log("Tab changed to:", value);
     setActiveTab(value);
     setCurrentSlide(0);
   };
@@ -150,7 +155,6 @@ export const ImageCarousel = memo(function ImageCarousel({
   return (
     <>
       <div className="w-full relative rounded-lg overflow-hidden bg-muted">
-        {/* Overlay tabs on the left side */}
         <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
           <CategoryTabs 
             activeTab={activeTab}
@@ -163,7 +167,6 @@ export const ImageCarousel = memo(function ImageCarousel({
           />
         </div>
 
-        {/* Main image display */}
         <div 
           className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 md:grid-rows-2 md:h-[500px] cursor-pointer"
           onClick={() => setShowFullScreen(true)}
@@ -262,7 +265,6 @@ export const ImageCarousel = memo(function ImageCarousel({
         </div>
       </div>
 
-      {/* Full Screen Modal */}
       <Dialog open={showFullScreen} onOpenChange={setShowFullScreen}>
         <DialogContent className="max-w-screen-lg p-0 bg-black h-[90vh] flex flex-col">
           <div className="flex items-center justify-between p-4 text-white">

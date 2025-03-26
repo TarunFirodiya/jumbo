@@ -25,25 +25,41 @@ export function ListingCardCarousel({
 }: ListingCardCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   
-  // Prioritize display order: thumbnail > regular images > fallback
+  // Build display images array with priority order:
+  // 1. Thumbnail (if provided)
+  // 2. AI staged photos (if available)
+  // 3. Regular images
+  // 4. Fallback image
   const displayImages = (() => {
-    // Start with an empty array
     let result: string[] = [];
     
-    // Add thumbnail at the beginning if it exists and isn't already in images
-    if (thumbnailImage && !images.includes(thumbnailImage)) {
+    // Add thumbnail first if it exists and isn't already included elsewhere
+    if (thumbnailImage) {
       result.push(thumbnailImage);
     }
     
-    // Add all regular images
-    if (images?.length) {
-      result = [...result, ...images];
+    // Then add AI staged photos if available
+    if (aiStagedPhotos && aiStagedPhotos.length > 0) {
+      // Avoid duplicating the thumbnail if it's also the first AI staged photo
+      const filteredAiPhotos = aiStagedPhotos.filter(photo => 
+        photo !== thumbnailImage
+      );
+      result = [...result, ...filteredAiPhotos];
     }
     
-    // Filter out any empty/null values
+    // Then add regular images, avoiding duplicates
+    if (images && images.length > 0) {
+      const filteredImages = images.filter(img => 
+        img !== thumbnailImage && 
+        !(aiStagedPhotos || []).includes(img)
+      );
+      result = [...result, ...filteredImages];
+    }
+    
+    // Filter out any empty strings, null, or undefined values
     result = result.filter(Boolean);
     
-    // If we have no images, use fallback
+    // If we still have no images, use fallback
     if (result.length === 0) {
       return ["/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"];
     }
@@ -72,7 +88,7 @@ export function ListingCardCarousel({
   };
   
   // Check if current image is from AI staged photos
-  const isAIImage = aiStagedPhotos && aiStagedPhotos.includes(displayImages[currentIndex]);
+  const isAIImage = aiStagedPhotos?.includes(displayImages[currentIndex]);
   
   // Check if current image is the thumbnail
   const isThumbnail = thumbnailImage && displayImages[currentIndex] === thumbnailImage;
