@@ -1,3 +1,4 @@
+
 import { useState, useEffect, memo, useCallback } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -64,11 +65,9 @@ export const MediaElement = memo(({ url, index, onError, buildingName }: { url: 
     );
   }
 
-  const processedUrl = url;
-
   return (
     <img
-      src={processedUrl}
+      src={url}
       alt={`Image ${index + 1} of ${buildingName}`}
       className="w-full h-full object-cover"
       loading="lazy"
@@ -93,23 +92,28 @@ export const ImageCarousel = memo(function ImageCarousel({
   const [activeTab, setActiveTab] = useState("photos");
   const [aiImages, setAiImages] = useState<string[]>([]);
 
+  // More verbose logging to debug the AI images issue
   useEffect(() => {
-    console.log("AI Staged Photos:", aiStagedPhotos);
-    console.log("Regular Images:", images);
+    console.log("[ImageCarousel] Received props:");
+    console.log("- AI Staged Photos:", aiStagedPhotos);
+    console.log("- Regular Images:", images);
+    console.log("- Active Tab:", activeTab);
 
     if (aiStagedPhotos && aiStagedPhotos.length > 0) {
-      console.log("Using real AI staged photos from database");
+      console.log("[ImageCarousel] Using real AI staged photos from database:", aiStagedPhotos);
       setAiImages(aiStagedPhotos);
     } else if (images && images.length > 0) {
-      console.log("Generating placeholder AI images");
+      console.log("[ImageCarousel] Generating placeholder AI images");
       const generatedImages = Array.from({ length: 3 }).map((_, index) => 
         generateAIImage(images[0], index)
       );
+      console.log("[ImageCarousel] Generated placeholder AI images:", generatedImages);
       setAiImages(generatedImages);
     }
-  }, [images, aiStagedPhotos]);
+  }, [images, aiStagedPhotos, activeTab]);
 
   const handleImageError = useCallback((index: number) => {
+    console.log(`[ImageCarousel] Image at index ${index} failed to load`);
     setFailedImages(prev => ({ ...prev, [index]: true }));
   }, []);
 
@@ -120,9 +124,12 @@ export const ImageCarousel = memo(function ImageCarousel({
       case "floorPlan":
         return floorPlanImage ? [floorPlanImage] : [];
       case "imagine":
+        console.log("[ImageCarousel] Getting 'imagine' tab images", { aiStagedPhotos, aiImages });
         if (aiStagedPhotos && aiStagedPhotos.length > 0) {
+          console.log("[ImageCarousel] Using aiStagedPhotos for imagine tab:", aiStagedPhotos);
           return aiStagedPhotos;
         }
+        console.log("[ImageCarousel] Using generated aiImages for imagine tab:", aiImages);
         return aiImages.length > 0 ? aiImages : [];
       default:
         return images;
@@ -130,6 +137,7 @@ export const ImageCarousel = memo(function ImageCarousel({
   }, [activeTab, images, streetView, floorPlanImage, aiImages, aiStagedPhotos]);
 
   const displayImages = getDisplayImages();
+  console.log("[ImageCarousel] Final displayImages:", displayImages);
 
   if (!images?.length) {
     return (
@@ -147,7 +155,7 @@ export const ImageCarousel = memo(function ImageCarousel({
   const buildingName = "Property"; // Ideally pass this from props
 
   const handleTabChange = (value: string) => {
-    console.log("Tab changed to:", value);
+    console.log("[ImageCarousel] Tab changed to:", value);
     setActiveTab(value);
     setCurrentSlide(0);
   };

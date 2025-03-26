@@ -56,6 +56,7 @@ export function useBuildingData(id: string) {
           
           // Normalize images to array format
           buildingWithFeatures.images = normalizeImageArray(buildingWithFeatures.images);
+          console.log("Building with normalized images:", buildingWithFeatures.images);
           
           return buildingWithFeatures;
         }
@@ -97,9 +98,15 @@ export function useBuildingData(id: string) {
         }
         
         // Process listing images to ensure proper typing
-        return data?.map(listing => {
+        const processedListings = data?.map(listing => {
           // Create a safe copy of the listing to modify with properly typed fields
           const processedListing = { ...listing } as ListingWithProcessedImages;
+          
+          // Process regular images - be very verbose for tracking
+          console.log(`Processing listing ${listing.id}:`);
+          console.log(`- Original images:`, listing.images);
+          console.log(`- Original AI staged photos:`, listing.ai_staged_photos);
+          console.log(`- Thumbnail image:`, listing.thumbnail_image);
           
           // Process regular images
           processedListing.images = normalizeImageArray(listing.images);
@@ -107,8 +114,8 @@ export function useBuildingData(id: string) {
           // Process AI staged photos
           processedListing.ai_staged_photos = normalizeImageArray(listing.ai_staged_photos);
           
-          console.log("Processed listing images:", processedListing.images);
-          console.log("Processed AI staged photos:", processedListing.ai_staged_photos);
+          console.log(`- Processed regular images:`, processedListing.images);
+          console.log(`- Processed AI staged photos:`, processedListing.ai_staged_photos);
           
           // Use media_metadata if available, otherwise generate a default structure
           if (!processedListing.media_metadata) {
@@ -124,6 +131,8 @@ export function useBuildingData(id: string) {
           
           return processedListing;
         });
+        
+        return processedListings;
       } catch (error) {
         console.error('Error fetching listings:', error);
         toast({

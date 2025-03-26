@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BadgeIndianRupee, Bed, Square, Compass, Layers } from "lucide-react";
@@ -43,14 +42,13 @@ export default function ListingCard({ listing }: ListingCardProps) {
   const images = normalizeImageArray(listing.images);
   const aiStagedPhotos = normalizeImageArray(listing.ai_staged_photos);
   
-  // Properly determine the thumbnail image
-  // 1. Use explicit thumbnail if available
-  // 2. Or use first AI staged photo if available
-  // 3. Or use first regular image if available
-  const thumbnailImage = 
-    listing.thumbnail_image || 
-    (aiStagedPhotos.length > 0 ? aiStagedPhotos[0] : null) ||
-    (images.length > 0 ? images[0] : null);
+  console.log("[ListingCard] Processing images for listing:", listing.id);
+  console.log("[ListingCard] Thumbnail:", listing.thumbnail_image);
+  console.log("[ListingCard] Images:", images);
+  console.log("[ListingCard] AI Images:", aiStagedPhotos);
+  
+  // Clear distinction between the thumbnail source and image sources
+  const thumbnailImage = listing.thumbnail_image || null;
 
   return (
     <Card className="overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow">

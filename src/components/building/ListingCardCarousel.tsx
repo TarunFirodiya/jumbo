@@ -25,6 +25,18 @@ export function ListingCardCarousel({
 }: ListingCardCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   
+  // Debug logs to trace image availability
+  console.log("[ListingCardCarousel] Props received:", { 
+    imagesCount: images?.length || 0,
+    aiStagedCount: aiStagedPhotos?.length || 0,
+    thumbnailImage,
+    aspectRatio
+  });
+  
+  if (thumbnailImage) {
+    console.log("[ListingCardCarousel] Using thumbnailImage:", thumbnailImage);
+  }
+  
   // Build display images array with priority order:
   // 1. Thumbnail (if provided)
   // 2. AI staged photos (if available)
@@ -33,37 +45,44 @@ export function ListingCardCarousel({
   const displayImages = (() => {
     let result: string[] = [];
     
-    // Add thumbnail first if it exists and isn't already included elsewhere
+    // Add thumbnail first if it exists
     if (thumbnailImage) {
+      console.log("[ListingCardCarousel] Adding thumbnail to display images:", thumbnailImage);
       result.push(thumbnailImage);
     }
     
     // Then add AI staged photos if available
     if (aiStagedPhotos && aiStagedPhotos.length > 0) {
+      console.log("[ListingCardCarousel] Adding AI staged photos:", aiStagedPhotos);
       // Avoid duplicating the thumbnail if it's also the first AI staged photo
       const filteredAiPhotos = aiStagedPhotos.filter(photo => 
-        photo !== thumbnailImage
+        photo !== thumbnailImage && photo
       );
       result = [...result, ...filteredAiPhotos];
     }
     
     // Then add regular images, avoiding duplicates
     if (images && images.length > 0) {
+      console.log("[ListingCardCarousel] Adding regular images:", images);
       const filteredImages = images.filter(img => 
         img !== thumbnailImage && 
-        !(aiStagedPhotos || []).includes(img)
+        !(aiStagedPhotos || []).includes(img) &&
+        img // Ensure it's not empty
       );
       result = [...result, ...filteredImages];
     }
     
     // Filter out any empty strings, null, or undefined values
     result = result.filter(Boolean);
+    console.log("[ListingCardCarousel] Combined images before filtering:", result);
     
     // If we still have no images, use fallback
     if (result.length === 0) {
+      console.log("[ListingCardCarousel] No images found, using fallback");
       return ["/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"];
     }
     
+    console.log("[ListingCardCarousel] Final display images:", result);
     return result;
   })();
 
@@ -108,6 +127,7 @@ export function ListingCardCarousel({
         onClick={handleImageClick}
         className="h-full w-full object-cover transition-all duration-500 group-hover:scale-105"
         onError={(e) => {
+          console.error(`[ListingCardCarousel] Image failed to load:`, displayImages[currentIndex]);
           // Fallback to placeholder on error
           (e.target as HTMLImageElement).src = "/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png";
         }}

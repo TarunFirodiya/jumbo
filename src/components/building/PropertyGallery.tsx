@@ -21,9 +21,11 @@ export function PropertyGallery({
   const normalizedImages = Array.isArray(images) ? images : (images ? [images] : []);
   const normalizedAiPhotos = Array.isArray(aiStagedPhotos) ? aiStagedPhotos : (aiStagedPhotos ? [aiStagedPhotos] : []);
   
-  // Log for debugging
-  console.log("PropertyGallery - Regular Images:", normalizedImages);
-  console.log("PropertyGallery - AI Staged Photos:", normalizedAiPhotos);
+  // Log for debugging - verbose to track exactly what's happening
+  console.log("PropertyGallery - Input Images:", images);
+  console.log("PropertyGallery - Input AI Staged Photos:", aiStagedPhotos);
+  console.log("PropertyGallery - Normalized Regular Images:", normalizedImages);
+  console.log("PropertyGallery - Normalized AI Photos:", normalizedAiPhotos);
     
   // If we have no images at all, use a default
   const displayImages = normalizedImages?.length > 0 
