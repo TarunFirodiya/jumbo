@@ -288,32 +288,74 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
       
       const buildingData = {
         ...editingBuilding,
-        name: formData.get('name')?.toString() || editingBuilding.name,
-        city: formData.get('city')?.toString() || editingBuilding.city,
-        locality: formData.get('locality')?.toString() || editingBuilding.locality,
-        sub_locality: formData.get('sub_locality')?.toString() || editingBuilding.sub_locality,
-        latitude: formData.get('latitude') ? Number(formData.get('latitude')) : editingBuilding.latitude,
-        longitude: formData.get('longitude') ? Number(formData.get('longitude')) : editingBuilding.longitude,
-        type: formData.get('type')?.toString() || editingBuilding.type,
-        age: formData.get('age') ? Number(formData.get('age')) : editingBuilding.age,
-        total_floors: formData.get('total_floors') ? Number(formData.get('total_floors')) : editingBuilding.total_floors,
-        min_price: formData.get('min_price') ? Number(formData.get('min_price')) : editingBuilding.min_price,
-        max_price: formData.get('max_price') ? Number(formData.get('max_price')) : editingBuilding.max_price,
-        price_psqft: formData.get('price_psqft') ? Number(formData.get('price_psqft')) : editingBuilding.price_psqft,
-        bhk_types: selectedBHKTypes.length ? selectedBHKTypes : editingBuilding.bhk_types,
-        lifestyle_cohort: formData.get('lifestyle_cohort') ? Number(formData.get('lifestyle_cohort')) : editingBuilding.lifestyle_cohort,
-        collections: selectedCollections.length ? selectedCollections : editingBuilding.collections,
-        amenities: amenitiesList.length ? amenitiesList : editingBuilding.amenities,
-        google_rating: formData.get('google_rating') ? Number(formData.get('google_rating')) : editingBuilding.google_rating,
-        bank: selectedBanks.length ? selectedBanks : editingBuilding.bank,
-        water: selectedWaterSources.length ? selectedWaterSources : editingBuilding.water,
-        map_link: formData.get('map_link')?.toString() || editingBuilding.map_link,
-        street_view: formData.get('street_view')?.toString() || editingBuilding.street_view,
-        video_thumbnail: formData.get('video_thumbnail')?.toString() || editingBuilding.video_thumbnail,
-        data_source: formData.get('data_source')?.toString() || editingBuilding.data_source,
-        images: imageUrls,
-        total_units: formData.get('total_units') ? Number(formData.get('total_units')) : editingBuilding.total_units
       };
+
+      const name = formData.get('name')?.toString();
+      if (name) buildingData.name = name;
+
+      const city = formData.get('city')?.toString();
+      if (city) buildingData.city = city;
+
+      const locality = formData.get('locality')?.toString();
+      if (locality) buildingData.locality = locality;
+
+      const sub_locality = formData.get('sub_locality')?.toString();
+      if (sub_locality !== undefined) buildingData.sub_locality = sub_locality || null;
+
+      const latitude = formData.get('latitude') ? Number(formData.get('latitude')) : null;
+      if (latitude !== null) buildingData.latitude = latitude;
+
+      const longitude = formData.get('longitude') ? Number(formData.get('longitude')) : null;
+      if (longitude !== null) buildingData.longitude = longitude;
+
+      const type = formData.get('type')?.toString();
+      if (type !== undefined) buildingData.type = type || null;
+
+      const age = formData.get('age') ? Number(formData.get('age')) : null;
+      if (age !== null) buildingData.age = age;
+
+      const total_floors = formData.get('total_floors') ? Number(formData.get('total_floors')) : null;
+      if (total_floors !== null) buildingData.total_floors = total_floors;
+
+      const min_price = formData.get('min_price') ? Number(formData.get('min_price')) : null;
+      if (min_price !== null) buildingData.min_price = min_price;
+
+      const max_price = formData.get('max_price') ? Number(formData.get('max_price')) : null;
+      if (max_price !== null) buildingData.max_price = max_price;
+
+      const price_psqft = formData.get('price_psqft') ? Number(formData.get('price_psqft')) : null;
+      if (price_psqft !== null) buildingData.price_psqft = price_psqft;
+
+      const lifestyle_cohort = formData.get('lifestyle_cohort') ? Number(formData.get('lifestyle_cohort')) : null;
+      if (lifestyle_cohort !== null) buildingData.lifestyle_cohort = lifestyle_cohort;
+
+      const google_rating = formData.get('google_rating') ? Number(formData.get('google_rating')) : null;
+      if (google_rating !== null) buildingData.google_rating = google_rating;
+
+      const map_link = formData.get('map_link')?.toString();
+      if (map_link !== undefined) buildingData.map_link = map_link || null;
+
+      const street_view = formData.get('street_view')?.toString();
+      if (street_view !== undefined) buildingData.street_view = street_view || null;
+
+      const video_thumbnail = formData.get('video_thumbnail')?.toString();
+      if (video_thumbnail !== undefined) buildingData.video_thumbnail = video_thumbnail || null;
+
+      const data_source = formData.get('data_source')?.toString();
+      if (data_source !== undefined) buildingData.data_source = data_source || null;
+
+      const total_units = formData.get('total_units') ? Number(formData.get('total_units')) : null;
+      if (total_units !== null) buildingData.total_units = total_units;
+
+      if (selectedBHKTypes.length) buildingData.bhk_types = selectedBHKTypes;
+      if (selectedCollections.length) buildingData.collections = selectedCollections;
+      if (amenitiesList.length) buildingData.amenities = amenitiesList;
+      if (selectedBanks.length) buildingData.bank = selectedBanks;
+      if (selectedWaterSources.length) buildingData.water = selectedWaterSources;
+      
+      if (imageUrls) buildingData.images = imageUrls;
+      
+      console.log("Updating building with data:", buildingData);
 
       const { error } = await supabase
         .from('buildings')
