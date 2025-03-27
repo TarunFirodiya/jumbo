@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +36,6 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [buildingToDelete, setBuildingToDelete] = useState<string | null>(null);
   
-  // Init form completion tracking
   const [formCompletion, setFormCompletion] = useState<CompletionStatus>({
     basic_info: false,
     location: false,
@@ -46,7 +44,6 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     pricing: false
   });
 
-  // Calculate completion percentage
   const calculateCompletionPercentage = (status: CompletionStatus) => {
     const total = Object.keys(status).length;
     const completed = Object.values(status).filter(Boolean).length;
@@ -55,71 +52,71 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
 
   const {
     data: buildings,
-    isLoading,
+    isLoading: buildingsLoading,
     error,
   } = useQuery({
-    queryKey: ["buildings"],
+    queryKey: ['buildings'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("buildings")
-        .select("*");
-
+        .from('buildings')
+        .select('*');
+      
       if (error) throw error;
       
-      // Process the buildings to ensure completion_status is properly typed
-      const processedBuildings = (data || []).map(building => {
-        // Ensure completion_status has the right shape
-        let completion_status: CompletionStatus;
-        if (!building.completion_status) {
-          completion_status = {
+      return data.map(building => {
+        let completionStatus = building.completion_status;
+        if (typeof completionStatus === 'string') {
+          try {
+            completionStatus = JSON.parse(completionStatus);
+          } catch (e) {
+            completionStatus = {
+              basic_info: false,
+              location: false,
+              features: false,
+              media: false,
+              pricing: false
+            };
+          }
+        } else if (!completionStatus) {
+          completionStatus = {
             basic_info: false,
             location: false,
             features: false,
             media: false,
             pricing: false
           };
-        } else {
-          const cs = building.completion_status as Record<string, boolean>;
-          completion_status = {
-            basic_info: !!cs.basic_info,
-            location: !!cs.location,
-            features: !!cs.features,
-            media: !!cs.media,
-            pricing: !!cs.pricing
-          };
         }
         
-        // Ensure features has the right shape
-        let features: BuildingFeatures;
-        if (!building.features) {
+        let features = building.features;
+        if (typeof features === 'string') {
+          try {
+            features = JSON.parse(features);
+          } catch (e) {
+            features = {
+              amenities: [],
+              security: [],
+              connectivity: [],
+              lifestyle: []
+            };
+          }
+        } else if (!features) {
           features = {
             amenities: [],
             security: [],
             connectivity: [],
             lifestyle: []
           };
-        } else {
-          const f = building.features as Record<string, string[]>;
-          features = {
-            amenities: f.amenities || [],
-            security: f.security || [],
-            connectivity: f.connectivity || [],
-            lifestyle: f.lifestyle || []
-          };
         }
         
         return {
           ...building,
-          completion_status,
-          features
-        } as Building;
+          completion_status: completionStatus,
+          features: features
+        };
       });
-      
-      return processedBuildings;
-    },
+    }
   });
 
-  // Handle create or update building
   const uploadImages = async (files: File[], folder: string = 'building-images') => {
     if (!files.length) return [];
     
@@ -191,88 +188,41 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
   };
 
   const createBuilding = useMutation({
-    mutationFn: async (formData: FormData) => {
-      const name = formData.get('name')?.toString();
-      if (!name) throw new Error('Building name is required');
-      
-      // Upload images
-      const imageUrls = await uploadImages(uploadedImages);
-      
-      // Prepare completion status
-      const completion_status: CompletionStatus = {
-        basic_info: !!(name && formData.get('type')),
-        location: !!(formData.get('locality') && formData.get('city')),
-        features: false, // Will be updated based on amenities
-        media: imageUrls.length > 0,
-        pricing: !!(formData.get('min_price') || formData.get('max_price'))
+    mutationFn: async (formData: any) => {
+      const completionStatusForDb = {
+        basic_info: formData.completion_status.basic_info,
+        location: formData.completion_status.location,
+        features: formData.completion_status.features,
+        media: formData.completion_status.media,
+        pricing: formData.completion_status.pricing
       };
-
-      // Prepare features
-      const amenities = formData.getAll('amenities[]').map(x => x.toString());
-      const security = formData.getAll('security[]').map(x => x.toString());
-      const connectivity = formData.getAll('connectivity[]').map(x => x.toString());
-      const lifestyle = formData.getAll('lifestyle[]').map(x => x.toString());
       
-      // Update features completion status
-      completion_status.features = !!(amenities.length || security.length || connectivity.length || lifestyle.length);
+      const featuresForDb = {
+        amenities: formData.features.amenities,
+        security: formData.features.security,
+        connectivity: formData.features.connectivity,
+        lifestyle: formData.features.lifestyle
+      };
       
-      const features: BuildingFeatures = {
-        amenities,
-        security,
-        connectivity,
-        lifestyle
+      const { completion_status, features, ...restOfData } = formData;
+      
+      const dataForDb = {
+        ...restOfData,
+        completion_status: completionStatusForDb,
+        features: featuresForDb
       };
-
-      const buildingData = {
-        name,
-        type: formData.get('type')?.toString(),
-        locality: formData.get('locality')?.toString(),
-        sub_locality: formData.get('sub_locality')?.toString(),
-        city: formData.get('city')?.toString() || 'Bengaluru',
-        bhk_types: [1, 2, 3].filter(bhk => formData.get(`bhk_${bhk}`) === 'on'),
-        total_floors: formData.get('total_floors') ? Number(formData.get('total_floors')) : null,
-        total_units: formData.get('total_units') ? Number(formData.get('total_units')) : null,
-        min_price: formData.get('min_price') ? Number(formData.get('min_price')) : null,
-        max_price: formData.get('max_price') ? Number(formData.get('max_price')) : null,
-        latitude: formData.get('latitude') ? Number(formData.get('latitude')) : null,
-        longitude: formData.get('longitude') ? Number(formData.get('longitude')) : null,
-        map_link: formData.get('map_link')?.toString() || null,
-        images: imageUrls,
-        meta_description: formData.get('meta_description')?.toString() || null,
-        meta_keywords: formData.get('meta_keywords')?.toString().split(',').map(k => k.trim()) || [],
-        user_id: currentUser.id,
-        features,
-        completion_status
-      };
-
+      
       const { data, error } = await supabase
         .from('buildings')
-        .insert(buildingData)
+        .insert(dataForDb)
         .select();
-
+        
       if (error) throw error;
-      
-      // Save media to the property_media table
-      if (data && data.length > 0) {
-        const buildingId = data[0].id;
-        
-        const mediaItems = imageUrls.map(url => ({
-          type: 'regular' as const,
-          url,
-          is_thumbnail: false
-        }));
-        
-        if (mediaItems.length > 0) {
-          await saveMediaToDatabase(buildingId, mediaItems);
-        }
-      }
-      
-      return data;
+      return data[0];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['buildings'] });
       setIsCreateOpen(false);
-      setUploadedImages([]);
       setActiveTab("basic");
       toast({
         title: "Success",
@@ -290,83 +240,40 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
   });
 
   const updateBuilding = useMutation({
-    mutationFn: async (formData: FormData) => {
-      const buildingId = formData.get('buildingId')?.toString();
-      if (!buildingId || !editingBuilding) throw new Error('Building ID is required');
-      
-      let imageUrls = editingBuilding?.images || [];
-      
-      // Upload new images if provided
-      if (uploadedImages.length) {
-        const newUrls = await uploadImages(uploadedImages);
-        imageUrls = [...(Array.isArray(imageUrls) ? imageUrls : []), ...newUrls];
-        
-        // Save new media to the property_media table
-        if (newUrls.length) {
-          const mediaItems = newUrls.map(url => ({
-            type: 'regular' as const,
-            url,
-            is_thumbnail: false
-          }));
-          
-          await saveMediaToDatabase(buildingId, mediaItems);
-        }
-      }
-
-      // Prepare features
-      const amenities = formData.getAll('amenities[]').map(x => x.toString());
-      const security = formData.getAll('security[]').map(x => x.toString());
-      const connectivity = formData.getAll('connectivity[]').map(x => x.toString());
-      const lifestyle = formData.getAll('lifestyle[]').map(x => x.toString());
-      
-      const features: BuildingFeatures = {
-        amenities,
-        security,
-        connectivity,
-        lifestyle
+    mutationFn: async (formData: any) => {
+      const completionStatusForDb = {
+        basic_info: formData.completion_status.basic_info,
+        location: formData.completion_status.location,
+        features: formData.completion_status.features,
+        media: formData.completion_status.media,
+        pricing: formData.completion_status.pricing
       };
-
-      // Prepare completion status
-      const completion_status: CompletionStatus = {
-        basic_info: !!(formData.get('name') && formData.get('type')),
-        location: !!(formData.get('locality') && formData.get('city')),
-        features: !!(amenities.length || security.length || connectivity.length || lifestyle.length),
-        media: imageUrls.length > 0,
-        pricing: !!(formData.get('min_price') || formData.get('max_price'))
+      
+      const featuresForDb = {
+        amenities: formData.features.amenities,
+        security: formData.features.security,
+        connectivity: formData.features.connectivity,
+        lifestyle: formData.features.lifestyle
       };
-
-      const updatedData = {
-        name: formData.get('name')?.toString(),
-        type: formData.get('type')?.toString(),
-        locality: formData.get('locality')?.toString(),
-        sub_locality: formData.get('sub_locality')?.toString(),
-        city: formData.get('city')?.toString() || 'Bengaluru',
-        bhk_types: [1, 2, 3].filter(bhk => formData.get(`bhk_${bhk}`) === 'on'),
-        total_floors: formData.get('total_floors') ? Number(formData.get('total_floors')) : null,
-        total_units: formData.get('total_units') ? Number(formData.get('total_units')) : null,
-        min_price: formData.get('min_price') ? Number(formData.get('min_price')) : null,
-        max_price: formData.get('max_price') ? Number(formData.get('max_price')) : null,
-        latitude: formData.get('latitude') ? Number(formData.get('latitude')) : null,
-        longitude: formData.get('longitude') ? Number(formData.get('longitude')) : null,
-        map_link: formData.get('map_link')?.toString() || null,
-        images: imageUrls,
-        meta_description: formData.get('meta_description')?.toString() || null,
-        meta_keywords: formData.get('meta_keywords')?.toString().split(',').map(k => k.trim()) || [],
-        features,
-        completion_status
+      
+      const { completion_status, features, ...restOfData } = formData;
+      
+      const dataForDb = {
+        ...restOfData,
+        completion_status: completionStatusForDb,
+        features: featuresForDb
       };
-
+      
       const { error } = await supabase
         .from('buildings')
-        .update(updatedData)
-        .eq('id', buildingId);
-
+        .update(dataForDb)
+        .eq('id', formData.id);
+        
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['buildings'] });
       setEditingBuilding(null);
-      setUploadedImages([]);
       setActiveTab("basic");
       toast({
         title: "Success",
@@ -413,7 +320,6 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
 
   useEffect(() => {
     if (editingBuilding) {
-      // When editing, initialize the completion status
       setFormCompletion(editingBuilding.completion_status || {
         basic_info: false,
         location: false,
@@ -422,7 +328,6 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         pricing: false
       });
     } else {
-      // Reset form completion when not editing
       setFormCompletion({
         basic_info: false,
         location: false,
@@ -456,7 +361,6 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     }
   };
 
-  // Common amenities and features for selection
   const amenityOptions = [
     "Swimming Pool", "Gym", "Garden", "Children's Play Area", "Clubhouse", 
     "Indoor Games", "Outdoor Sports", "Jogging Track", "Yoga Deck"

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { PencilIcon, Home, ImageIcon, X, Video, Building, Trash2, CheckCircle2, Circle } from "lucide-react";
-import { Listing, CompletionStatus, PropertyMedia } from "@/types/property";
+import { PropertyMedia, EnhancedListing, ListingCompletionStatus } from "@/types/property";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -31,19 +30,6 @@ interface ListingManagementProps {
   currentUser: Profile;
 }
 
-// Enhanced Listing type with metadata and completion status
-interface EnhancedListing extends Listing {
-  media?: PropertyMedia[];
-  variant_options?: {
-    id: string;
-    name: string;
-    price: number;
-    description: string;
-    features: string[];
-  }[];
-  completion_status?: CompletionStatus;
-}
-
 export function ListingManagement({ currentUser }: ListingManagementProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -54,7 +40,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [activeTab, setActiveTab] = useState("basic");
-  const [formCompletion, setFormCompletion] = useState<CompletionStatus>({
+  const [formCompletion, setFormCompletion] = useState<ListingCompletionStatus>({
     basic_info: false,
     floor_plan: false,
     pricing: false,
@@ -66,7 +52,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const [uploadedFloorPlan, setUploadedFloorPlan] = useState<File | null>(null);
 
   // Calculate completion percentage
-  const calculateCompletionPercentage = (status: CompletionStatus) => {
+  const calculateCompletionPercentage = (status: ListingCompletionStatus) => {
     const total = Object.keys(status).length;
     const completed = Object.values(status).filter(Boolean).length;
     return Math.round((completed / total) * 100);
@@ -106,11 +92,11 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   });
 
   // Process listing data to handle both old and new schema
-  const processListingData = async (data: Listing[]) => {
+  const processListingData = async (data: any[]) => {
     const processedListings: EnhancedListing[] = [];
     
     for (const listing of data) {
-      const processedListing: EnhancedListing = { ...listing };
+      const processedListing = { ...listing } as EnhancedListing;
       
       // Handle legacy images field
       if (!Array.isArray(processedListing.images)) {
@@ -298,7 +284,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         floorPlanUrl = floorPlanUrls.length > 0 ? floorPlanUrls[0] : null;
       }
       
-      // Prepare completion status
+      // Prepare completion status as JSON object for database
       const completion_status = {
         basic_info: !!(building_id && formData.get('bedrooms')),
         floor_plan: !!floorPlanUrl,
@@ -458,8 +444,10 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         media: (imageUrls && imageUrls.length > 0) || (aiStagedUrls && aiStagedUrls.length > 0)
       };
 
-      const updatedData: Partial<Listing> = { 
-        ...editingListing,
+      const updatedData: any = {
+        images: imageUrls,
+        ai_staged_photos: aiStagedUrls,
+        floor_plan_image: floorPlanUrl,
         completion_status
       };
       
@@ -527,10 +515,6 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
       if (selectedDate) {
         updatedData.availability = format(selectedDate, "yyyy-MM-dd");
       }
-
-      updatedData.images = imageUrls;
-      updatedData.ai_staged_photos = aiStagedUrls;
-      updatedData.floor_plan_image = floorPlanUrl;
 
       console.log("Updating listing with data:", updatedData);
 
@@ -930,402 +914,4 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
                   {uploadedFloorPlan && (
                     <div className="mt-4">
                       <h4 className="text-sm font-medium mb-2">New Floor Plan to Upload</h4>
-                      <div className="border rounded-md p-2">
-                        <img 
-                          src={URL.createObjectURL(uploadedFloorPlan)} 
-                          alt="Floor Plan Preview" 
-                          className="max-h-60 object-contain mx-auto"
-                        />
-                        <div className="flex justify-end mt-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setUploadedFloorPlan(null)}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="pricing" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Pricing Information</CardTitle>
-                <CardDescription>Provide pricing details for this unit</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Price (₹)</Label>
-                    <Input 
-                      id="price" 
-                      name="price" 
-                      type="number"
-                      defaultValue={listing?.price || ''} 
-                      required 
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="maintenance">Maintenance (₹)</Label>
-                    <Input 
-                      id="maintenance" 
-                      name="maintenance" 
-                      type="number"
-                      defaultValue={listing?.maintenance || ''} 
-                      required 
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="media" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Media & Photos</CardTitle>
-                <CardDescription>Upload photos of the unit</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="images">Unit Images</Label>
-                  <Input 
-                    id="images" 
-                    name="images" 
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files.length > 0) {
-                        setUploadedImages(Array.from(e.target.files));
-                      }
-                    }}
-                    className="cursor-pointer"
-                  />
-                  
-                  {listing?.images && listing.images.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium mb-2">Existing Images</h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {listing.images.map((image, index) => (
-                          <div key={index} className="relative group rounded-md overflow-hidden">
-                            <img 
-                              src={image as string} 
-                              alt={`Listing ${index + 1}`} 
-                              className="h-24 w-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <Button
-                                type="button"
-                                variant="destructive"
-                                size="sm"
-                                className="h-8 w-8 rounded-full p-0"
-                                onClick={() => {
-                                  if (editingListing && editingListing.images) {
-                                    const updatedImages = [...editingListing.images];
-                                    updatedImages.splice(index, 1);
-                                    
-                                    setEditingListing({
-                                      ...editingListing,
-                                      images: updatedImages
-                                    });
-                                  }
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {uploadedImages.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium mb-2">New Images to Upload</h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {Array.from(uploadedImages).map((file, index) => (
-                          <div key={index} className="relative group rounded-md overflow-hidden">
-                            <img 
-                              src={URL.createObjectURL(file)} 
-                              alt={`Preview ${index + 1}`} 
-                              className="h-24 w-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <Button
-                                type="button"
-                                variant="destructive"
-                                size="sm"
-                                className="h-8 w-8 rounded-full p-0"
-                                onClick={() => {
-                                  const updatedImages = [...uploadedImages];
-                                  updatedImages.splice(index, 1);
-                                  setUploadedImages(updatedImages);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="ai_staged_photos" className="text-base font-medium">AI Staged Photos</Label>
-                  <Input 
-                    id="ai_staged_photos" 
-                    name="ai_staged_photos" 
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files.length > 0) {
-                        setUploadedAIStagedPhotos(Array.from(e.target.files));
-                      }
-                    }}
-                    className="cursor-pointer"
-                  />
-                  
-                  {listing?.ai_staged_photos && listing.ai_staged_photos.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium mb-2">Existing AI Staged Photos</h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {listing.ai_staged_photos.map((image, index) => (
-                          <div key={index} className="relative group rounded-md overflow-hidden">
-                            <img 
-                              src={image as string} 
-                              alt={`AI Staged ${index + 1}`} 
-                              className="h-24 w-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <Button
-                                type="button"
-                                variant="destructive"
-                                size="sm"
-                                className="h-8 w-8 rounded-full p-0"
-                                onClick={() => {
-                                  if (editingListing && editingListing.ai_staged_photos) {
-                                    const updatedPhotos = [...editingListing.ai_staged_photos];
-                                    updatedPhotos.splice(index, 1);
-                                    
-                                    setEditingListing({
-                                      ...editingListing,
-                                      ai_staged_photos: updatedPhotos
-                                    });
-                                  }
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <Badge className="absolute top-1 left-1 bg-purple-500">AI</Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {uploadedAIStagedPhotos.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium mb-2">New AI Staged Photos to Upload</h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {Array.from(uploadedAIStagedPhotos).map((file, index) => (
-                          <div key={index} className="relative group rounded-md overflow-hidden">
-                            <img 
-                              src={URL.createObjectURL(file)} 
-                              alt={`AI Staged Preview ${index + 1}`} 
-                              className="h-24 w-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <Button
-                                type="button"
-                                variant="destructive"
-                                size="sm"
-                                className="h-8 w-8 rounded-full p-0"
-                                onClick={() => {
-                                  const updatedPhotos = [...uploadedAIStagedPhotos];
-                                  updatedPhotos.splice(index, 1);
-                                  setUploadedAIStagedPhotos(updatedPhotos);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <Badge className="absolute top-1 left-1 bg-purple-500">AI</Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <div className="pt-4 border-t flex justify-end space-x-4">
-            <Button 
-              type="button" 
-              variant="outline"
-              onClick={() => {
-                if (editingListing) {
-                  setEditingListing(null);
-                } else {
-                  setIsCreateOpen(false);
-                }
-              }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={isUploading || createListing.isPending || updateListing.isPending}
-            >
-              {isUploading ? 'Uploading...' : 
-               (createListing.isPending || updateListing.isPending) ? 'Saving...' : 
-               listing ? 'Update Listing' : 'Create Listing'}
-            </Button>
-          </div>
-        </form>
-      </Tabs>
-    );
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Manage Listings</h2>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Home className="h-4 w-4 mr-2" />
-              Add New Listing
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
-            <DialogHeader>
-              <DialogTitle>Create New Listing</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="max-h-[calc(90vh-80px)] pr-4">
-              <div className="py-2">
-                <ListingForm />
-              </div>
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Building</TableHead>
-              <TableHead>Unit</TableHead>
-              <TableHead>Area</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Completion</TableHead>
-              <TableHead className="w-[100px] text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {listings?.map((listing) => (
-              <TableRow key={listing.id}>
-                <TableCell className="font-medium">{listing.building_name}</TableCell>
-                <TableCell>{listing.bedrooms} BHK, Floor {listing.floor}</TableCell>
-                <TableCell>{listing.built_up_area} sq ft</TableCell>
-                <TableCell>₹{listing.price?.toLocaleString()}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      listing.status === 'available' ? 'default' :
-                      listing.status === 'reserved' ? 'secondary' :
-                      'outline'
-                    }
-                  >
-                    {listing.status?.charAt(0).toUpperCase() + listing.status?.slice(1)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Progress 
-                    value={calculateCompletionPercentage(listing.completion_status || formCompletion)} 
-                    className="h-2 w-24"
-                  />
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setEditingListing(listing)}
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => handleDeleteClick(listing.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {!listings?.length && (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                  No listings found. Add your first listing to get started.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      <Dialog open={!!editingListing} onOpenChange={(open) => !open && setEditingListing(null)}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>Edit Listing</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[calc(90vh-80px)] pr-4">
-            <div className="py-2">
-              {editingListing && <ListingForm listing={editingListing} />}
-            </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-          </DialogHeader>
-          <p className="py-4">
-            Are you sure you want to delete this listing? This action cannot be undone.
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmDelete} disabled={deleteListing.isPending}>
-              {deleteListing.isPending ? 'Deleting...' : 'Delete Listing'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+                      <

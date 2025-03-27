@@ -11,6 +11,15 @@ export interface CompletionStatus {
   pricing: boolean;
 }
 
+// Define the shape of completion status for listings
+export interface ListingCompletionStatus {
+  basic_info: boolean;
+  floor_plan: boolean;
+  pricing: boolean;
+  features: boolean;
+  media: boolean;
+}
+
 // Define the shape of building features
 export interface BuildingFeatures {
   amenities: string[];
@@ -45,6 +54,9 @@ export interface PropertyMedia {
 // Enhanced listing with properly typed images and media
 export interface EnhancedListing extends Listing {
   media?: PropertyMedia[];
+  images?: string[];
+  ai_staged_photos?: string[];
+  completion_status?: ListingCompletionStatus;
   variant_options?: {
     id: string;
     name: string;

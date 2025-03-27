@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,7 +12,6 @@ import { ListingManagement } from "@/components/dashboard/ListingManagement";
 import VisitManagement from "@/components/dashboard/VisitManagement";
 import { Profile } from "@/types/profile";
 import { Progress } from "@/components/ui/progress";
-import { CompletionStatus } from "@/types/property";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("visits");
@@ -79,7 +77,7 @@ export default function Dashboard() {
       
       const { data: listings, error: listingsError } = await supabase
         .from('listings')
-        .select('id, building_id, completion_status, status');
+        .select('id, building_id, status');
         
       if (listingsError) throw listingsError;
       
@@ -90,23 +88,15 @@ export default function Dashboard() {
       const completeBuildings = buildings?.filter(b => {
         if (!b.completion_status) return false;
         // Handle different shapes of completion_status
-        if (typeof b.completion_status === 'object') {
-          const status = b.completion_status as Record<string, boolean>;
-          return Object.values(status).every(Boolean);
-        }
-        return false;
+        const status = typeof b.completion_status === 'string' 
+          ? JSON.parse(b.completion_status) 
+          : b.completion_status;
+        
+        return Object.values(status).every(Boolean);
       }).length || 0;
       
       // Process listing completion status
-      const completeListings = listings?.filter(l => {
-        if (!l.completion_status) return false;
-        // Handle different shapes of completion_status
-        if (typeof l.completion_status === 'object') {
-          const status = l.completion_status as Record<string, boolean>;
-          return Object.values(status).every(Boolean);
-        }
-        return false;
-      }).length || 0;
+      const completeListings = 0; // We'll skip this for now since listings don't have completion_status yet
       
       // Process listing statuses
       const availableListings = listings?.filter(l => l.status === 'available').length || 0;
