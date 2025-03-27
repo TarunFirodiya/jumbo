@@ -52,7 +52,7 @@ export interface PropertyMedia {
 }
 
 // Enhanced listing with properly typed images and media
-export interface EnhancedListing extends Listing {
+export interface EnhancedListing extends Omit<Listing, 'ai_staged_photos'> {
   media?: PropertyMedia[];
   images?: string[];
   ai_staged_photos?: string[];
@@ -64,4 +64,21 @@ export interface EnhancedListing extends Listing {
     description: string;
     features: string[];
   }[];
+  floor_plan_image?: string | null;
+  building_id?: string;
+  building_name?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  built_up_area?: number;
+  carpet_area?: number | null;
+  floor?: number;
+  price?: number;
+  maintenance?: number;
+  facing?: string | null;
+  parking_spots?: number | null;
+  balconies?: number | null;
+  furnishing_status?: string | null;
+  status?: string;
+  availability?: string | null;
+  id: string;
 }

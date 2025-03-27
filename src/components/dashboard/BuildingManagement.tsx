@@ -318,6 +318,81 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     }
   });
 
+  const editBuilding = async (buildingId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('buildings')
+        .select('*')
+        .eq('id', buildingId)
+        .single();
+        
+      if (error) throw error;
+      
+      let formattedCompletionStatus: CompletionStatus;
+      if (typeof data.completion_status === 'string') {
+        try {
+          formattedCompletionStatus = JSON.parse(data.completion_status as string);
+        } catch (e) {
+          formattedCompletionStatus = {
+            basic_info: false,
+            location: false,
+            features: false,
+            media: false,
+            pricing: false
+          };
+        }
+      } else if (!data.completion_status) {
+        formattedCompletionStatus = {
+          basic_info: false,
+          location: false,
+          features: false,
+          media: false,
+          pricing: false
+        };
+      } else {
+        formattedCompletionStatus = data.completion_status as unknown as CompletionStatus;
+      }
+      
+      let formattedFeatures: BuildingFeatures;
+      if (typeof data.features === 'string') {
+        try {
+          formattedFeatures = JSON.parse(data.features as string);
+        } catch (e) {
+          formattedFeatures = {
+            amenities: [],
+            security: [],
+            connectivity: [],
+            lifestyle: []
+          };
+        }
+      } else if (!data.features) {
+        formattedFeatures = {
+          amenities: [],
+          security: [],
+          connectivity: [],
+          lifestyle: []
+        };
+      } else {
+        formattedFeatures = data.features as unknown as BuildingFeatures;
+      }
+      
+      const formattedBuilding: Building = {
+        ...data,
+        completion_status: formattedCompletionStatus,
+        features: formattedFeatures
+      };
+      
+      setEditingBuilding(formattedBuilding);
+    } catch (error) {
+      console.error('Error fetching building:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch building details",
+        variant: "destructive"
+      });
+    }
+  };
+
   useEffect(() => {
     if (editingBuilding) {
       setFormCompletion(editingBuilding.completion_status || {

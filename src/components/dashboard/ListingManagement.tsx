@@ -312,12 +312,12 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         
         const mediaItems = [
           ...imageUrls.map(url => ({
-            type: 'regular' as const,
+            type: 'regular' as 'regular' | 'ai_staged' | 'floor_plan' | 'video' | 'street_view',
             url,
             is_thumbnail: false
           })),
           ...aiStagedUrls.map(url => ({
-            type: 'ai_staged' as const,
+            type: 'ai_staged' as 'regular' | 'ai_staged' | 'floor_plan' | 'video' | 'street_view',
             url,
             is_thumbnail: false
           }))
@@ -325,7 +325,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         
         if (floorPlanUrl) {
           mediaItems.push({
-            type: 'floor_plan' as const,
+            type: 'floor_plan' as 'regular' | 'ai_staged' | 'floor_plan' | 'video' | 'street_view',
             url: floorPlanUrl,
             is_thumbnail: false
           });
@@ -375,7 +375,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         
         if (newUrls.length) {
           const mediaItems = newUrls.map(url => ({
-            type: 'regular' as const,
+            type: 'regular' as 'regular' | 'ai_staged' | 'floor_plan' | 'video' | 'street_view',
             url,
             is_thumbnail: false
           }));
@@ -390,7 +390,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         
         if (newUrls.length) {
           const mediaItems = newUrls.map(url => ({
-            type: 'ai_staged' as const,
+            type: 'ai_staged' as 'regular' | 'ai_staged' | 'floor_plan' | 'video' | 'street_view',
             url,
             is_thumbnail: false
           }));
@@ -405,7 +405,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
           floorPlanUrl = floorPlanUrls[0];
           
           await saveMediaToDatabase(listingId, [{
-            type: 'floor_plan' as const,
+            type: 'floor_plan' as 'regular' | 'ai_staged' | 'floor_plan' | 'video' | 'street_view',
             url: floorPlanUrl,
             is_thumbnail: false
           }]);
