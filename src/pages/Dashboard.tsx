@@ -13,6 +13,7 @@ import { ListingManagement } from "@/components/dashboard/ListingManagement";
 import VisitManagement from "@/components/dashboard/VisitManagement";
 import { Profile } from "@/types/profile";
 import { Progress } from "@/components/ui/progress";
+import { CompletionStatus } from "@/types/property";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("visits");
@@ -85,16 +86,29 @@ export default function Dashboard() {
       const totalBuildings = buildings?.length || 0;
       const totalListings = listings?.length || 0;
       
-      const completeBuildings = buildings?.filter(
-        b => b.completion_status && 
-        Object.values(b.completion_status).every(Boolean)
-      ).length || 0;
+      // Process building completion status
+      const completeBuildings = buildings?.filter(b => {
+        if (!b.completion_status) return false;
+        // Handle different shapes of completion_status
+        if (typeof b.completion_status === 'object') {
+          const status = b.completion_status as Record<string, boolean>;
+          return Object.values(status).every(Boolean);
+        }
+        return false;
+      }).length || 0;
       
-      const completeListings = listings?.filter(
-        l => l.completion_status && 
-        Object.values(l.completion_status).every(Boolean)
-      ).length || 0;
+      // Process listing completion status
+      const completeListings = listings?.filter(l => {
+        if (!l.completion_status) return false;
+        // Handle different shapes of completion_status
+        if (typeof l.completion_status === 'object') {
+          const status = l.completion_status as Record<string, boolean>;
+          return Object.values(status).every(Boolean);
+        }
+        return false;
+      }).length || 0;
       
+      // Process listing statuses
       const availableListings = listings?.filter(l => l.status === 'available').length || 0;
       const reservedListings = listings?.filter(l => l.status === 'reserved').length || 0;
       const soldListings = listings?.filter(l => l.status === 'sold').length || 0;

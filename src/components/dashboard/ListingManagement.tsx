@@ -10,8 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { PencilIcon, Home, ImageIcon, X, Video, Building, Trash2, CheckCircle2, Circle } from "lucide-react";
-import { Database } from "@/integrations/supabase/types";
-import { ListingWithProcessedImages } from "@/components/building/hooks/useBuildingData";
+import { Listing, CompletionStatus, PropertyMedia } from "@/types/property";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -32,26 +31,8 @@ interface ListingManagementProps {
   currentUser: Profile;
 }
 
-// Property Media type that matches our new table schema
-interface PropertyMedia {
-  id: string;
-  building_id: string | null;
-  listing_id: string | null;
-  type: 'regular' | 'ai_staged' | 'floor_plan' | 'video' | 'street_view';
-  url: string;
-  is_thumbnail: boolean;
-  display_order: number;
-  created_at: string;
-  updated_at: string;
-  metadata: Record<string, any>;
-}
-
-type Building = Database['public']['Tables']['buildings']['Row'];
-
-// Enhanced Listing type with our new schema
-interface EnhancedListing extends Database['public']['Tables']['listings']['Row'] {
-  images?: string[];
-  ai_staged_photos?: string[];
+// Enhanced Listing type with metadata and completion status
+interface EnhancedListing extends Listing {
   media?: PropertyMedia[];
   variant_options?: {
     id: string;
@@ -60,13 +41,7 @@ interface EnhancedListing extends Database['public']['Tables']['listings']['Row'
     description: string;
     features: string[];
   }[];
-  completion_status?: {
-    basic_info: boolean;
-    floor_plan: boolean;
-    pricing: boolean;
-    features: boolean;
-    media: boolean;
-  };
+  completion_status?: CompletionStatus;
 }
 
 export function ListingManagement({ currentUser }: ListingManagementProps) {
@@ -79,7 +54,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [activeTab, setActiveTab] = useState("basic");
-  const [formCompletion, setFormCompletion] = useState({
+  const [formCompletion, setFormCompletion] = useState<CompletionStatus>({
     basic_info: false,
     floor_plan: false,
     pricing: false,
@@ -91,7 +66,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const [uploadedFloorPlan, setUploadedFloorPlan] = useState<File | null>(null);
 
   // Calculate completion percentage
-  const calculateCompletionPercentage = (status: typeof formCompletion) => {
+  const calculateCompletionPercentage = (status: CompletionStatus) => {
     const total = Object.keys(status).length;
     const completed = Object.values(status).filter(Boolean).length;
     return Math.round((completed / total) * 100);
@@ -105,7 +80,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         .select('id, name');
       
       if (error) throw error;
-      return (data as Pick<Building, 'id' | 'name'>[]) || [];
+      return data || [];
     }
   });
 
@@ -131,11 +106,11 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   });
 
   // Process listing data to handle both old and new schema
-  const processListingData = async (data: any[]) => {
+  const processListingData = async (data: Listing[]) => {
     const processedListings: EnhancedListing[] = [];
     
     for (const listing of data) {
-      const processedListing = { ...listing } as EnhancedListing;
+      const processedListing: EnhancedListing = { ...listing };
       
       // Handle legacy images field
       if (!Array.isArray(processedListing.images)) {
@@ -483,7 +458,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         media: (imageUrls && imageUrls.length > 0) || (aiStagedUrls && aiStagedUrls.length > 0)
       };
 
-      const updatedData: Partial<EnhancedListing> = { 
+      const updatedData: Partial<Listing> = { 
         ...editingListing,
         completion_status
       };
@@ -1043,7 +1018,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
                         {listing.images.map((image, index) => (
                           <div key={index} className="relative group rounded-md overflow-hidden">
                             <img 
-                              src={image} 
+                              src={image as string} 
                               alt={`Listing ${index + 1}`} 
                               className="h-24 w-full object-cover"
                             />
@@ -1130,7 +1105,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
                         {listing.ai_staged_photos.map((image, index) => (
                           <div key={index} className="relative group rounded-md overflow-hidden">
                             <img 
-                              src={image} 
+                              src={image as string} 
                               alt={`AI Staged ${index + 1}`} 
                               className="h-24 w-full object-cover"
                             />
