@@ -45,8 +45,10 @@ export type Database = {
           building_status: Database["public"]["Enums"]["building_status"] | null
           city: string | null
           collections: string[] | null
+          completion_status: Json | null
           created_at: string | null
           data_source: string | null
+          features: Json | null
           google_rating: number | null
           id: string
           images: string[] | null
@@ -56,6 +58,8 @@ export type Database = {
           longitude: number | null
           map_link: string | null
           max_price: number | null
+          meta_description: string | null
+          meta_keywords: string[] | null
           min_price: number | null
           name: string
           nearby_places: Json | null
@@ -80,8 +84,10 @@ export type Database = {
             | null
           city?: string | null
           collections?: string[] | null
+          completion_status?: Json | null
           created_at?: string | null
           data_source?: string | null
+          features?: Json | null
           google_rating?: number | null
           id?: string
           images?: string[] | null
@@ -91,6 +97,8 @@ export type Database = {
           longitude?: number | null
           map_link?: string | null
           max_price?: number | null
+          meta_description?: string | null
+          meta_keywords?: string[] | null
           min_price?: number | null
           name: string
           nearby_places?: Json | null
@@ -115,8 +123,10 @@ export type Database = {
             | null
           city?: string | null
           collections?: string[] | null
+          completion_status?: Json | null
           created_at?: string | null
           data_source?: string | null
+          features?: Json | null
           google_rating?: number | null
           id?: string
           images?: string[] | null
@@ -126,6 +136,8 @@ export type Database = {
           longitude?: number | null
           map_link?: string | null
           max_price?: number | null
+          meta_description?: string | null
+          meta_keywords?: string[] | null
           min_price?: number | null
           name?: string
           nearby_places?: Json | null
@@ -190,6 +202,7 @@ export type Database = {
           status: string | null
           thumbnail_image: string | null
           uds_area: number | null
+          variants: Json[] | null
           visit_fulfiller: Database["public"]["Enums"]["visit_fulfiller"] | null
         }
         Insert: {
@@ -239,6 +252,7 @@ export type Database = {
           status?: string | null
           thumbnail_image?: string | null
           uds_area?: number | null
+          variants?: Json[] | null
           visit_fulfiller?:
             | Database["public"]["Enums"]["visit_fulfiller"]
             | null
@@ -290,6 +304,7 @@ export type Database = {
           status?: string | null
           thumbnail_image?: string | null
           uds_area?: number | null
+          variants?: Json[] | null
           visit_fulfiller?:
             | Database["public"]["Enums"]["visit_fulfiller"]
             | null
@@ -333,6 +348,60 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      property_media: {
+        Row: {
+          building_id: string | null
+          created_at: string
+          display_order: number | null
+          id: string
+          is_thumbnail: boolean | null
+          listing_id: string | null
+          metadata: Json | null
+          type: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          building_id?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_thumbnail?: boolean | null
+          listing_id?: string | null
+          metadata?: Json | null
+          type: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          building_id?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_thumbnail?: boolean | null
+          listing_id?: string | null
+          metadata?: Json | null
+          type?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_media_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_media_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_building_scores: {
         Row: {
