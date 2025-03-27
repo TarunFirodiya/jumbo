@@ -20,9 +20,77 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Json } from "@/integrations/supabase/types";
 
 interface BuildingManagementProps {
   currentUser: Profile;
+}
+
+function parseCompletionStatus(status: Json | null): CompletionStatus {
+  if (!status) {
+    return {
+      basic_info: false,
+      location: false,
+      features: false,
+      media: false,
+      pricing: false
+    };
+  }
+  
+  if (typeof status === 'string') {
+    try {
+      return JSON.parse(status) as CompletionStatus;
+    } catch (e) {
+      console.error("Error parsing completion status:", e);
+      return {
+        basic_info: false,
+        location: false,
+        features: false,
+        media: false,
+        pricing: false
+      };
+    }
+  }
+  
+  return {
+    basic_info: Boolean(status.basic_info),
+    location: Boolean(status.location),
+    features: Boolean(status.features),
+    media: Boolean(status.media),
+    pricing: Boolean(status.pricing)
+  };
+}
+
+function parseBuildingFeatures(features: Json | null): BuildingFeatures {
+  if (!features) {
+    return {
+      amenities: [],
+      security: [],
+      connectivity: [],
+      lifestyle: []
+    };
+  }
+  
+  if (typeof features === 'string') {
+    try {
+      return JSON.parse(features) as BuildingFeatures;
+    } catch (e) {
+      console.error("Error parsing building features:", e);
+      return {
+        amenities: [],
+        security: [],
+        connectivity: [],
+        lifestyle: []
+      };
+    }
+  }
+  
+  return {
+    amenities: Array.isArray(features.amenities) ? features.amenities : [],
+    security: Array.isArray(features.security) ? features.security : [],
+    connectivity: Array.isArray(features.connectivity) ? features.connectivity : [],
+    lifestyle: Array.isArray(features.lifestyle) ? features.lifestyle : []
+  };
 }
 
 export function BuildingManagement({ currentUser }: BuildingManagementProps) {
@@ -328,53 +396,8 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         
       if (error) throw error;
       
-      let formattedCompletionStatus: CompletionStatus;
-      if (typeof data.completion_status === 'string') {
-        try {
-          formattedCompletionStatus = JSON.parse(data.completion_status as string);
-        } catch (e) {
-          formattedCompletionStatus = {
-            basic_info: false,
-            location: false,
-            features: false,
-            media: false,
-            pricing: false
-          };
-        }
-      } else if (!data.completion_status) {
-        formattedCompletionStatus = {
-          basic_info: false,
-          location: false,
-          features: false,
-          media: false,
-          pricing: false
-        };
-      } else {
-        formattedCompletionStatus = data.completion_status as unknown as CompletionStatus;
-      }
-      
-      let formattedFeatures: BuildingFeatures;
-      if (typeof data.features === 'string') {
-        try {
-          formattedFeatures = JSON.parse(data.features as string);
-        } catch (e) {
-          formattedFeatures = {
-            amenities: [],
-            security: [],
-            connectivity: [],
-            lifestyle: []
-          };
-        }
-      } else if (!data.features) {
-        formattedFeatures = {
-          amenities: [],
-          security: [],
-          connectivity: [],
-          lifestyle: []
-        };
-      } else {
-        formattedFeatures = data.features as unknown as BuildingFeatures;
-      }
+      const formattedCompletionStatus = parseCompletionStatus(data.completion_status);
+      const formattedFeatures = parseBuildingFeatures(data.features);
       
       const formattedBuilding: Building = {
         ...data,
