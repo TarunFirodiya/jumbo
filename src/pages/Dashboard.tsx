@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -88,11 +89,17 @@ export default function Dashboard() {
       const completeBuildings = buildings?.filter(b => {
         if (!b.completion_status) return false;
         // Handle different shapes of completion_status
-        const status = typeof b.completion_status === 'string' 
-          ? JSON.parse(b.completion_status) 
-          : b.completion_status;
-        
-        return Object.values(status).every(Boolean);
+        let status;
+        try {
+          status = typeof b.completion_status === 'string' 
+            ? JSON.parse(b.completion_status) 
+            : b.completion_status;
+          
+          return Object.values(status).every(Boolean);
+        } catch (e) {
+          console.error("Error parsing completion status:", e);
+          return false;
+        }
       }).length || 0;
       
       // Process listing completion status

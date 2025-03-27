@@ -51,7 +51,6 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const [listingToDelete, setListingToDelete] = useState<string | null>(null);
   const [uploadedFloorPlan, setUploadedFloorPlan] = useState<File | null>(null);
 
-  // Calculate completion percentage
   const calculateCompletionPercentage = (status: ListingCompletionStatus) => {
     const total = Object.keys(status).length;
     const completed = Object.values(status).filter(Boolean).length;
@@ -91,26 +90,22 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     }
   });
 
-  // Process listing data to handle both old and new schema
   const processListingData = async (data: any[]) => {
     const processedListings: EnhancedListing[] = [];
     
     for (const listing of data) {
       const processedListing = { ...listing } as EnhancedListing;
       
-      // Handle legacy images field
       if (!Array.isArray(processedListing.images)) {
         processedListing.images = processedListing.images ? [processedListing.images as unknown as string] : [];
       }
       
-      // Handle legacy ai_staged_photos field
       if (!processedListing.ai_staged_photos) {
         processedListing.ai_staged_photos = [];
       } else if (!Array.isArray(processedListing.ai_staged_photos)) {
         processedListing.ai_staged_photos = [processedListing.ai_staged_photos as unknown as string];
       }
       
-      // Fetch media from new property_media table
       const { data: mediaData } = await supabase
         .from('property_media')
         .select('*')
@@ -119,7 +114,6 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
       if (mediaData && mediaData.length > 0) {
         processedListing.media = mediaData as PropertyMedia[];
         
-        // If we have media but no legacy images, extract them from media
         if ((!processedListing.images || processedListing.images.length === 0) && mediaData.length > 0) {
           processedListing.images = mediaData
             .filter(item => item.type === 'regular')
@@ -131,7 +125,6 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         }
       }
       
-      // Set default completion status based on data presence
       processedListing.completion_status = {
         basic_info: !!(processedListing.building_id && processedListing.bedrooms),
         floor_plan: !!processedListing.floor_plan_image,
@@ -146,7 +139,6 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     return processedListings;
   };
 
-  // Fetch a single listing with its media
   const fetchListingWithMedia = async (listingId: string) => {
     const { data, error } = await supabase
       .from('listings')
@@ -162,7 +154,6 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
 
   useEffect(() => {
     if (editingListing) {
-      // When editing, initialize the completion status
       setFormCompletion(editingListing.completion_status || {
         basic_info: false,
         floor_plan: false,
@@ -171,7 +162,6 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         media: false
       });
       
-      // Set selected date if availability is provided
       if (editingListing.availability) {
         try {
           setSelectedDate(new Date(editingListing.availability));
@@ -182,7 +172,6 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         setSelectedDate(undefined);
       }
     } else {
-      // Reset form completion when not editing
       setFormCompletion({
         basic_info: false,
         floor_plan: false,
@@ -271,20 +260,15 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
       
       const building = buildings?.find(b => b.id === building_id);
       
-      // Upload regular images
       const imageUrls = await uploadImages(uploadedImages);
-      
-      // Upload AI staged photos
       const aiStagedUrls = await uploadImages(uploadedAIStagedPhotos, 'ai-staged-photos');
-      
-      // Upload floor plan if provided
       let floorPlanUrl = null;
+      
       if (uploadedFloorPlan) {
         const floorPlanUrls = await uploadImages([uploadedFloorPlan], 'floor-plans');
         floorPlanUrl = floorPlanUrls.length > 0 ? floorPlanUrls[0] : null;
       }
       
-      // Prepare completion status as JSON object for database
       const completion_status = {
         basic_info: !!(building_id && formData.get('bedrooms')),
         floor_plan: !!floorPlanUrl,
@@ -323,7 +307,6 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
 
       if (error) throw error;
       
-      // Save media to the new property_media table
       if (data && data.length > 0) {
         const listingId = data[0].id;
         
@@ -386,12 +369,10 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
       let aiStagedUrls = editingListing?.ai_staged_photos || [];
       let floorPlanUrl = editingListing?.floor_plan_image || null;
       
-      // Upload new regular images if provided
       if (uploadedImages.length) {
         const newUrls = await uploadImages(uploadedImages);
         imageUrls = [...(Array.isArray(imageUrls) ? imageUrls : []), ...newUrls];
         
-        // Save new media to the property_media table
         if (newUrls.length) {
           const mediaItems = newUrls.map(url => ({
             type: 'regular' as const,
@@ -403,12 +384,10 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         }
       }
       
-      // Upload new AI staged photos if provided
       if (uploadedAIStagedPhotos.length) {
         const newUrls = await uploadImages(uploadedAIStagedPhotos, 'ai-staged-photos');
         aiStagedUrls = [...(Array.isArray(aiStagedUrls) ? aiStagedUrls : []), ...newUrls];
         
-        // Save new media to the property_media table
         if (newUrls.length) {
           const mediaItems = newUrls.map(url => ({
             type: 'ai_staged' as const,
@@ -420,13 +399,11 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         }
       }
       
-      // Upload new floor plan if provided
       if (uploadedFloorPlan) {
         const floorPlanUrls = await uploadImages([uploadedFloorPlan], 'floor-plans');
         if (floorPlanUrls.length > 0) {
           floorPlanUrl = floorPlanUrls[0];
           
-          // Save new floor plan to the property_media table
           await saveMediaToDatabase(listingId, [{
             type: 'floor_plan' as const,
             url: floorPlanUrl,
@@ -435,7 +412,6 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         }
       }
 
-      // Prepare completion status
       const completion_status = {
         basic_info: !!(editingListing.building_id && (formData.get('bedrooms') || editingListing.bedrooms)),
         floor_plan: !!floorPlanUrl,
@@ -451,11 +427,9 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         completion_status
       };
       
-      // Update fields that were provided in the form
       if (formData.get('building_id')) {
         updatedData.building_id = formData.get('building_id')?.toString() || editingListing.building_id;
         
-        // Update building name if building changed
         if (updatedData.building_id !== editingListing.building_id) {
           const building = buildings?.find(b => b.id === updatedData.building_id);
           if (building) {
@@ -552,7 +526,6 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
 
   const deleteListing = useMutation({
     mutationFn: async (listingId: string) => {
-      // Note: We don't need to delete from property_media table because of the CASCADE constraint
       const { error } = await supabase
         .from('listings')
         .delete()
@@ -914,4 +887,402 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
                   {uploadedFloorPlan && (
                     <div className="mt-4">
                       <h4 className="text-sm font-medium mb-2">New Floor Plan to Upload</h4>
-                      <
+                      <div className="border rounded-md p-2">
+                        <img 
+                          src={URL.createObjectURL(uploadedFloorPlan)} 
+                          alt="Floor Plan Preview" 
+                          className="max-h-60 object-contain mx-auto"
+                        />
+                        <div className="flex justify-end mt-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setUploadedFloorPlan(null)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="pricing" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Pricing Information</CardTitle>
+                <CardDescription>Provide pricing details for this unit</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Price (₹)</Label>
+                    <Input 
+                      id="price" 
+                      name="price" 
+                      type="number"
+                      defaultValue={listing?.price || ''} 
+                      required 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="maintenance">Maintenance (₹)</Label>
+                    <Input 
+                      id="maintenance" 
+                      name="maintenance" 
+                      type="number"
+                      defaultValue={listing?.maintenance || ''} 
+                      required 
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="media" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Media & Photos</CardTitle>
+                <CardDescription>Upload photos of the unit</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="images">Unit Images</Label>
+                  <Input 
+                    id="images" 
+                    name="images" 
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        setUploadedImages(Array.from(e.target.files));
+                      }
+                    }}
+                    className="cursor-pointer"
+                  />
+                  
+                  {listing?.images && listing.images.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium mb-2">Existing Images</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {listing.images.map((image, index) => (
+                          <div key={index} className="relative group rounded-md overflow-hidden">
+                            <img 
+                              src={image} 
+                              alt={`Listing ${index + 1}`} 
+                              className="h-24 w-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="h-8 w-8 rounded-full p-0"
+                                onClick={() => {
+                                  if (editingListing && editingListing.images) {
+                                    const updatedImages = [...editingListing.images];
+                                    updatedImages.splice(index, 1);
+                                    
+                                    setEditingListing({
+                                      ...editingListing,
+                                      images: updatedImages
+                                    });
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {uploadedImages.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium mb-2">New Images to Upload</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {Array.from(uploadedImages).map((file, index) => (
+                          <div key={index} className="relative group rounded-md overflow-hidden">
+                            <img 
+                              src={URL.createObjectURL(file)} 
+                              alt={`Preview ${index + 1}`} 
+                              className="h-24 w-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="h-8 w-8 rounded-full p-0"
+                                onClick={() => {
+                                  const updatedImages = [...uploadedImages];
+                                  updatedImages.splice(index, 1);
+                                  setUploadedImages(updatedImages);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="ai_staged_photos" className="text-base font-medium">AI Staged Photos</Label>
+                  <Input 
+                    id="ai_staged_photos" 
+                    name="ai_staged_photos" 
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        setUploadedAIStagedPhotos(Array.from(e.target.files));
+                      }
+                    }}
+                    className="cursor-pointer"
+                  />
+                  
+                  {listing?.ai_staged_photos && listing.ai_staged_photos.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium mb-2">Existing AI Staged Photos</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {listing.ai_staged_photos.map((image, index) => (
+                          <div key={index} className="relative group rounded-md overflow-hidden">
+                            <img 
+                              src={image} 
+                              alt={`AI Staged ${index + 1}`} 
+                              className="h-24 w-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="h-8 w-8 rounded-full p-0"
+                                onClick={() => {
+                                  if (editingListing && editingListing.ai_staged_photos) {
+                                    const updatedPhotos = [...editingListing.ai_staged_photos];
+                                    updatedPhotos.splice(index, 1);
+                                    
+                                    setEditingListing({
+                                      ...editingListing,
+                                      ai_staged_photos: updatedPhotos
+                                    });
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <Badge className="absolute top-1 left-1 bg-purple-500">AI</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {uploadedAIStagedPhotos.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium mb-2">New AI Staged Photos to Upload</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {Array.from(uploadedAIStagedPhotos).map((file, index) => (
+                          <div key={index} className="relative group rounded-md overflow-hidden">
+                            <img 
+                              src={URL.createObjectURL(file)} 
+                              alt={`AI Staged Preview ${index + 1}`} 
+                              className="h-24 w-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="h-8 w-8 rounded-full p-0"
+                                onClick={() => {
+                                  const updatedPhotos = [...uploadedAIStagedPhotos];
+                                  updatedPhotos.splice(index, 1);
+                                  setUploadedAIStagedPhotos(updatedPhotos);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <Badge className="absolute top-1 left-1 bg-purple-500">AI</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <div className="pt-4 border-t flex justify-end space-x-4">
+            <Button 
+              type="button" 
+              variant="outline"
+              onClick={() => {
+                if (editingListing) {
+                  setEditingListing(null);
+                } else {
+                  setIsCreateOpen(false);
+                }
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isUploading || createListing.isPending || updateListing.isPending}
+            >
+              {isUploading ? 'Uploading...' : 
+               (createListing.isPending || updateListing.isPending) ? 'Saving...' : 
+               listing ? 'Update Listing' : 'Create Listing'}
+            </Button>
+          </div>
+        </form>
+      </Tabs>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Manage Listings</h2>
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Home className="h-4 w-4 mr-2" />
+              Add New Listing
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>Create New Listing</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[calc(90vh-80px)] pr-4">
+              <div className="py-2">
+                <ListingForm />
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Building</TableHead>
+              <TableHead>Unit</TableHead>
+              <TableHead>Area</TableHead>
+              <TableHead>Price</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Completion</TableHead>
+              <TableHead className="w-[100px] text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {listings?.map((listing) => (
+              <TableRow key={listing.id}>
+                <TableCell className="font-medium">{listing.building_name}</TableCell>
+                <TableCell>{listing.bedrooms} BHK, Floor {listing.floor}</TableCell>
+                <TableCell>{listing.built_up_area} sq ft</TableCell>
+                <TableCell>₹{listing.price?.toLocaleString()}</TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      listing.status === 'available' ? 'default' :
+                      listing.status === 'reserved' ? 'secondary' :
+                      'outline'
+                    }
+                  >
+                    {listing.status?.charAt(0).toUpperCase() + listing.status?.slice(1)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Progress 
+                    value={calculateCompletionPercentage(listing.completion_status || formCompletion)} 
+                    className="h-2 w-24"
+                  />
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setEditingListing(listing)}
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => handleDeleteClick(listing.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {!listings?.length && (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  No listings found. Add your first listing to get started.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={!!editingListing} onOpenChange={(open) => !open && setEditingListing(null)}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Edit Listing</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[calc(90vh-80px)] pr-4">
+            <div className="py-2">
+              {editingListing && <ListingForm listing={editingListing} />}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+          </DialogHeader>
+          <p className="py-4">
+            Are you sure you want to delete this listing? This action cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete} disabled={deleteListing.isPending}>
+              {deleteListing.isPending ? 'Deleting...' : 'Delete Listing'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
