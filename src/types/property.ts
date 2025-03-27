@@ -37,9 +37,8 @@ export type Building = Database['public']['Tables']['buildings']['Row'] & {
 // Listing type aligned with Supabase schema
 export type Listing = Database['public']['Tables']['listings']['Row'];
 
-// Make properties optional that are required in the database
+// We need to make all properties optional that are required in the database schema
 type ListingRow = Database['public']['Tables']['listings']['Row'];
-type OptionalKeys = 'ai_staged_photos' | 'availability' | 'balconies' | 'bathrooms' | 'bedrooms' | 'building_id' | 'building_name' | 'built_up_area' | 'carpet_area' | 'floor';
 
 // Media type for the new property_media table
 export interface PropertyMedia {

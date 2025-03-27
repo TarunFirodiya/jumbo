@@ -27,14 +27,16 @@ interface BuildingManagementProps {
 }
 
 function parseCompletionStatus(status: Json | null): CompletionStatus {
+  const defaultStatus: CompletionStatus = {
+    basic_info: false,
+    location: false,
+    features: false,
+    media: false,
+    pricing: false
+  };
+  
   if (!status) {
-    return {
-      basic_info: false,
-      location: false,
-      features: false,
-      media: false,
-      pricing: false
-    };
+    return defaultStatus;
   }
   
   if (typeof status === 'string') {
@@ -42,33 +44,37 @@ function parseCompletionStatus(status: Json | null): CompletionStatus {
       return JSON.parse(status) as CompletionStatus;
     } catch (e) {
       console.error("Error parsing completion status:", e);
-      return {
-        basic_info: false,
-        location: false,
-        features: false,
-        media: false,
-        pricing: false
-      };
+      return defaultStatus;
     }
   }
   
-  return {
-    basic_info: Boolean(status.basic_info),
-    location: Boolean(status.location),
-    features: Boolean(status.features),
-    media: Boolean(status.media),
-    pricing: Boolean(status.pricing)
-  };
+  if (typeof status === 'object') {
+    const result = { ...defaultStatus };
+    
+    if (status && typeof status === 'object' && !Array.isArray(status)) {
+      result.basic_info = status.basic_info === true;
+      result.location = status.location === true;
+      result.features = status.features === true;
+      result.media = status.media === true;
+      result.pricing = status.pricing === true;
+    }
+    
+    return result;
+  }
+  
+  return defaultStatus;
 }
 
 function parseBuildingFeatures(features: Json | null): BuildingFeatures {
+  const defaultFeatures: BuildingFeatures = {
+    amenities: [],
+    security: [],
+    connectivity: [],
+    lifestyle: []
+  };
+  
   if (!features) {
-    return {
-      amenities: [],
-      security: [],
-      connectivity: [],
-      lifestyle: []
-    };
+    return defaultFeatures;
   }
   
   if (typeof features === 'string') {
@@ -76,21 +82,24 @@ function parseBuildingFeatures(features: Json | null): BuildingFeatures {
       return JSON.parse(features) as BuildingFeatures;
     } catch (e) {
       console.error("Error parsing building features:", e);
-      return {
-        amenities: [],
-        security: [],
-        connectivity: [],
-        lifestyle: []
-      };
+      return defaultFeatures;
     }
   }
   
-  return {
-    amenities: Array.isArray(features.amenities) ? features.amenities : [],
-    security: Array.isArray(features.security) ? features.security : [],
-    connectivity: Array.isArray(features.connectivity) ? features.connectivity : [],
-    lifestyle: Array.isArray(features.lifestyle) ? features.lifestyle : []
-  };
+  if (typeof features === 'object') {
+    const result = { ...defaultFeatures };
+    
+    if (features && typeof features === 'object' && !Array.isArray(features)) {
+      result.amenities = Array.isArray(features.amenities) ? features.amenities : [];
+      result.security = Array.isArray(features.security) ? features.security : [];
+      result.connectivity = Array.isArray(features.connectivity) ? features.connectivity : [];
+      result.lifestyle = Array.isArray(features.lifestyle) ? features.lifestyle : [];
+    }
+    
+    return result;
+  }
+  
+  return defaultFeatures;
 }
 
 export function BuildingManagement({ currentUser }: BuildingManagementProps) {
@@ -132,55 +141,14 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
       if (error) throw error;
       
       return data.map(building => {
-        let completionStatus = building.completion_status;
-        if (typeof completionStatus === 'string') {
-          try {
-            completionStatus = JSON.parse(completionStatus);
-          } catch (e) {
-            completionStatus = {
-              basic_info: false,
-              location: false,
-              features: false,
-              media: false,
-              pricing: false
-            };
-          }
-        } else if (!completionStatus) {
-          completionStatus = {
-            basic_info: false,
-            location: false,
-            features: false,
-            media: false,
-            pricing: false
-          };
-        }
-        
-        let features = building.features;
-        if (typeof features === 'string') {
-          try {
-            features = JSON.parse(features);
-          } catch (e) {
-            features = {
-              amenities: [],
-              security: [],
-              connectivity: [],
-              lifestyle: []
-            };
-          }
-        } else if (!features) {
-          features = {
-            amenities: [],
-            security: [],
-            connectivity: [],
-            lifestyle: []
-          };
-        }
+        const completionStatus = parseCompletionStatus(building.completion_status);
+        const features = parseBuildingFeatures(building.features);
         
         return {
           ...building,
           completion_status: completionStatus,
           features: features
-        };
+        } as Building;
       });
     }
   });
@@ -258,18 +226,18 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
   const createBuilding = useMutation({
     mutationFn: async (formData: any) => {
       const completionStatusForDb = {
-        basic_info: formData.completion_status.basic_info,
-        location: formData.completion_status.location,
-        features: formData.completion_status.features,
-        media: formData.completion_status.media,
-        pricing: formData.completion_status.pricing
+        basic_info: Boolean(formData.completion_status.basic_info),
+        location: Boolean(formData.completion_status.location),
+        features: Boolean(formData.completion_status.features),
+        media: Boolean(formData.completion_status.media),
+        pricing: Boolean(formData.completion_status.pricing)
       };
       
       const featuresForDb = {
-        amenities: formData.features.amenities,
-        security: formData.features.security,
-        connectivity: formData.features.connectivity,
-        lifestyle: formData.features.lifestyle
+        amenities: Array.isArray(formData.features.amenities) ? formData.features.amenities : [],
+        security: Array.isArray(formData.features.security) ? formData.features.security : [],
+        connectivity: Array.isArray(formData.features.connectivity) ? formData.features.connectivity : [],
+        lifestyle: Array.isArray(formData.features.lifestyle) ? formData.features.lifestyle : []
       };
       
       const { completion_status, features, ...restOfData } = formData;
@@ -310,18 +278,18 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
   const updateBuilding = useMutation({
     mutationFn: async (formData: any) => {
       const completionStatusForDb = {
-        basic_info: formData.completion_status.basic_info,
-        location: formData.completion_status.location,
-        features: formData.completion_status.features,
-        media: formData.completion_status.media,
-        pricing: formData.completion_status.pricing
+        basic_info: Boolean(formData.completion_status.basic_info),
+        location: Boolean(formData.completion_status.location),
+        features: Boolean(formData.completion_status.features),
+        media: Boolean(formData.completion_status.media),
+        pricing: Boolean(formData.completion_status.pricing)
       };
       
       const featuresForDb = {
-        amenities: formData.features.amenities,
-        security: formData.features.security,
-        connectivity: formData.features.connectivity,
-        lifestyle: formData.features.lifestyle
+        amenities: Array.isArray(formData.features.amenities) ? formData.features.amenities : [],
+        security: Array.isArray(formData.features.security) ? formData.features.security : [],
+        connectivity: Array.isArray(formData.features.connectivity) ? formData.features.connectivity : [],
+        lifestyle: Array.isArray(formData.features.lifestyle) ? formData.features.lifestyle : []
       };
       
       const { completion_status, features, ...restOfData } = formData;
@@ -1034,7 +1002,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => setEditingBuilding(building)}
+                      onClick={() => editBuilding(building.id)}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
