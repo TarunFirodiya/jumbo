@@ -16,6 +16,14 @@ export function useFilteredBuildings(
       building.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
+    if (selectedCollections.length > 0) {
+      filtered = filtered.filter(building => 
+        building.collections?.some(collection => 
+          selectedCollections.includes(collection)
+        )
+      );
+    }
+    
     if (activeFilters.length > 0) {
       filtered = filtered.filter(building => {
         return activeFilters.every(filter => {

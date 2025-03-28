@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Heart, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +15,7 @@ import { Action } from "@/components/ui/action-search-bar";
 import { BUDGET_RANGES } from "@/components/ui/filters";
 import { AnimatedHero } from "@/components/ui/animated-hero";
 import { BuildingCard } from "@/components/buildings/BuildingCard";
+import { useFilteredBuildings } from "@/components/locality/hooks/useFilteredBuildings";
 
 interface Filter {
   type: string;
@@ -109,52 +109,7 @@ export default function Buildings() {
       value: locality
     }));
   }, [buildings]);
-  const filteredBuildings = useMemo(() => {
-    let filtered = buildings || [];
-
-    if (searchTerm) {
-      filtered = filtered.filter(building => 
-        building.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        (building.locality && building.locality.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    }
-
-    if (selectedCollections.length > 0) {
-      filtered = filtered.filter(building => 
-        selectedCollections.every(collection => 
-          building.collections?.includes(collection)
-        )
-      );
-    }
-
-    activeFilters.forEach(filter => {
-      switch (filter.type) {
-        case "Locality":
-          filtered = filtered.filter(building => 
-            filter.value.includes(building.locality)
-          );
-          break;
-        case "BHK":
-          filtered = filtered.filter(building => 
-            filter.value.some(bhk => 
-              building.bhk_types?.includes(parseInt(bhk))
-            )
-          );
-          break;
-        case "Budget":
-          filtered = filtered.filter(building => {
-            const price = building.min_price;
-            return filter.value.some(range => {
-              const { min, max } = BUDGET_RANGES[range];
-              return price >= min && price < max;
-            });
-          });
-          break;
-      }
-    });
-
-    return filtered;
-  }, [buildings, searchTerm, selectedCollections, activeFilters]);
+  const filteredBuildings = useFilteredBuildings(buildings || [], selectedCollections, activeFilters, searchTerm);
 
   const displayedBuildings = useMemo(() => {
     return filteredBuildings.slice(0, visibleCount);
