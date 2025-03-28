@@ -13,10 +13,11 @@ interface Place {
 }
 
 interface NearbyPlacesData {
-  schools?: Place[];
-  hospitals?: Place[];
-  restaurants?: Place[];
-  tech_parks?: Place[];
+  schools?: Place[] | Place;
+  hospitals?: Place[] | Place;
+  restaurants?: Place[] | Place;
+  tech_parks?: Place[] | Place;
+  [key: string]: any; // Allow for other place types
 }
 
 const placeIconMap: Record<string, LucideIcon> = {
@@ -44,13 +45,34 @@ export function NearbyPlaces({ nearbyPlaces }: NearbyPlacesProps) {
     return <p className="text-muted-foreground">No nearby places information available</p>;
   }
 
+  // Normalize the data structure to ensure we always have an array of places
+  const normalizePlaces = (category: string, places: any): Array<{name: string, category: string, displayCategory: string}> => {
+    if (!places) return [];
+    
+    // Handle single object case (non-array)
+    if (!Array.isArray(places)) {
+      // If it's a single object with name property
+      if (places.name) {
+        return [{
+          ...places,
+          category,
+          displayCategory: categoryDisplayNames[category] || category
+        }];
+      }
+      return [];
+    }
+    
+    // Handle array case
+    return places.map(place => ({
+      ...place,
+      category,
+      displayCategory: categoryDisplayNames[category] || category
+    }));
+  };
+
   // Create a flat array of all places with their category
   const allPlaces = Object.entries(nearbyPlaces).flatMap(([category, places]) => 
-    places ? places.map(place => ({ 
-      ...place, 
-      category, 
-      displayCategory: categoryDisplayNames[category] || category
-    })) : []
+    normalizePlaces(category, places)
   );
 
   const ITEMS_PER_ROW = 4; // For desktop view
