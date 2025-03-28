@@ -153,9 +153,14 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
       if (editingBuilding.nearby_places) {
         Object.entries(editingBuilding.nearby_places).forEach(([category, places]) => {
           if (Array.isArray(places)) {
-            initialNearbyPlaces[category] = places.map(place => place.name);
+            initialNearbyPlaces[category] = places.map(place => {
+              if (typeof place === 'object' && place !== null && 'name' in place) {
+                return place.name as string;
+              }
+              return '';
+            }).filter(Boolean);
           } else if (places && typeof places === 'object' && 'name' in places) {
-            initialNearbyPlaces[category] = [places.name];
+            initialNearbyPlaces[category] = [places.name as string];
           }
         });
       }
