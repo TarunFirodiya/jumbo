@@ -45,44 +45,51 @@ export function NearbyPlaces({ nearbyPlaces }: NearbyPlacesProps) {
     return <p className="text-muted-foreground">No nearby places information available</p>;
   }
 
-  // Normalize the data structure to ensure we always have an array of places
-  const normalizePlaces = (category: string, places: any): Array<{name: string, category: string, displayCategory: string}> => {
-    if (!places) return [];
-    
-    // Handle single object case (non-array)
-    if (!Array.isArray(places)) {
-      // If it's a single object with name property
-      if (places.name) {
-        return [{
-          ...places,
-          category,
-          displayCategory: categoryDisplayNames[category] || category
-        }];
-      }
+  // Safely extract all places from the data structure
+  const extractPlaces = () => {
+    try {
+      // Create a flat array of all places with their category
+      return Object.entries(nearbyPlaces).flatMap(([category, places]) => {
+        // Skip if places is null/undefined
+        if (!places) return [];
+        
+        // Handle different potential formats
+        if (Array.isArray(places)) {
+          // If it's already an array, map each place
+          return places.map(place => ({
+            name: place.name || 'Unknown',
+            category,
+            displayCategory: categoryDisplayNames[category] || category
+          }));
+        } 
+        else if (typeof places === 'object' && places !== null) {
+          // If it's a single object (not array), convert to array item
+          return [{
+            name: places.name || 'Unknown',
+            category,
+            displayCategory: categoryDisplayNames[category] || category
+          }];
+        }
+        
+        // Return empty array for any other type
+        return [];
+      });
+    } catch (error) {
+      console.error("Error extracting nearby places:", error);
       return [];
     }
-    
-    // Handle array case
-    return places.map(place => ({
-      ...place,
-      category,
-      displayCategory: categoryDisplayNames[category] || category
-    }));
   };
 
-  // Create a flat array of all places with their category
-  const allPlaces = Object.entries(nearbyPlaces).flatMap(([category, places]) => 
-    normalizePlaces(category, places)
-  );
+  const allPlaces = extractPlaces();
+
+  if (allPlaces.length === 0) {
+    return <p className="text-muted-foreground">No nearby places information available</p>;
+  }
 
   const ITEMS_PER_ROW = 4; // For desktop view
   const INITIAL_ROWS = 2;
   const initialItems = ITEMS_PER_ROW * INITIAL_ROWS;
   const displayedPlaces = showAll ? allPlaces : allPlaces.slice(0, initialItems);
-
-  if (allPlaces.length === 0) {
-    return <p className="text-muted-foreground">No nearby places information available</p>;
-  }
 
   return (
     <div className="space-y-4">
