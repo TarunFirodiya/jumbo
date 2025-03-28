@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PencilIcon, Plus, MapPin, Building, Trash2 } from "lucide-react";
+import { PencilIcon, Plus, MapPin, Building, Trash2, Search } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -88,6 +88,8 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     malls: [],
     metro: []
   });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
     const getSession = async () => {
@@ -126,6 +128,21 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     },
     enabled: !!currentSession?.user?.id
   });
+
+  const filteredBuildings = useMemo(() => {
+    return buildings.filter(building => {
+      const matchesSearch = 
+        searchTerm === "" || 
+        building.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        building.locality.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = 
+        statusFilter === "all" || 
+        building.building_status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [buildings, searchTerm, statusFilter]);
 
   useEffect(() => {
     if (editingBuilding) {
@@ -968,6 +985,28 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         </Dialog>
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name or locality..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="Photos Pending">Photos Pending</SelectItem>
+            <SelectItem value="Publish">Published</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
@@ -981,7 +1020,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {buildings && buildings.length > 0 ? buildings.map((building) => (
+            {filteredBuildings.length > 0 ? filteredBuildings.map((building) => (
               <TableRow key={building.id}>
                 <TableCell className="font-medium">{building.name}</TableCell>
                 <TableCell>
@@ -1045,7 +1084,9 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
             )) : (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
-                  No buildings found
+                  {searchTerm || statusFilter !== "all" ? 
+                    "No buildings match your search criteria" : 
+                    "No buildings found"}
                 </TableCell>
               </TableRow>
             )}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Profile } from "@/types/profile";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { PencilIcon, Home, ImageIcon, X, Video } from "lucide-react";
+import { PencilIcon, Home, ImageIcon, X, Video, Search, Filter } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { ListingWithProcessedImages } from "@/components/building/hooks/useBuildingData";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ListingManagementProps {
   currentUser: Profile;
@@ -36,8 +37,10 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [uploadedAIStagedPhotos, setUploadedAIStagedPhotos] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const { data: buildings } = useQuery({
     queryKey: ['buildings'],
@@ -99,6 +102,23 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
       });
     }
   });
+
+  const filteredListings = useMemo(() => {
+    if (!listings) return [];
+    
+    return listings.filter(listing => {
+      const matchesSearch = 
+        searchTerm === "" || 
+        listing.building_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        String(listing.bedrooms).includes(searchTerm);
+      
+      const matchesStatus = 
+        statusFilter === "all" || 
+        listing.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [listings, searchTerm, statusFilter]);
 
   const uploadImages = async (files: File[], folder: string = 'listing-images') => {
     if (!files.length) return [];
@@ -824,6 +844,29 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
         </Dialog>
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by building name or bedrooms..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="available">Available</SelectItem>
+            <SelectItem value="reserved">Reserved</SelectItem>
+            <SelectItem value="sold">Sold</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
@@ -840,7 +883,7 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {listings?.map((listing) => (
+            {filteredListings.length > 0 ? filteredListings.map((listing) => (
               <TableRow key={listing.id}>
                 <TableCell>{listing.building_name}</TableCell>
                 <TableCell>{listing.bedrooms} BHK</TableCell>
@@ -906,11 +949,12 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
                   </Button>
                 </TableCell>
               </TableRow>
-            ))}
-            {!listings?.length && (
+            )) : (
               <TableRow>
                 <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
-                  No listings found
+                  {searchTerm || statusFilter !== "all" ? 
+                    "No listings match your search criteria" : 
+                    "No listings found"}
                 </TableCell>
               </TableRow>
             )}
@@ -933,4 +977,3 @@ export function ListingManagement({ currentUser }: ListingManagementProps) {
     </div>
   );
 }
-
