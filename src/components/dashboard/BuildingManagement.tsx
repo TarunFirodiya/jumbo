@@ -63,6 +63,7 @@ const featureCategories = {
 };
 const waterSourceOptions = ["Borewell", "Corporation", "Tanker", "Rainwater Harvesting"];
 const nearbyPlaceCategories = ["schools", "hospitals", "tech_parks", "malls", "metro"];
+const BUILDING_STATUS_OPTIONS = ["Photos Pending", "Publish"];
 
 export function BuildingManagement({ currentUser }: BuildingManagementProps) {
   const { toast } = useToast();
@@ -104,39 +105,6 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
       authListener.subscription.unsubscribe();
     };
   }, []);
-
-  const { data: buildingStatusOptions = ["Photos Pending", "Publish"] } = useQuery({
-    queryKey: ['building-status-options'],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('buildings')
-          .select('building_status')
-          .limit(100);
-        
-        if (error) {
-          console.error("Error fetching building status options:", error);
-          return ['Photos Pending', 'Publish'];
-        }
-        
-        const statuses = new Set<string>();
-        data.forEach(item => {
-          if (item.building_status) {
-            statuses.add(String(item.building_status));
-          }
-        });
-        
-        if (statuses.size === 0) {
-          return ['Photos Pending', 'Publish'];
-        }
-        
-        return Array.from(statuses);
-      } catch (error) {
-        console.error("Error in building status query:", error);
-        return ['Photos Pending', 'Publish'];
-      }
-    }
-  });
 
   const { data: buildings = [], isLoading } = useQuery<Building[]>({
     queryKey: ['buildings'],
@@ -648,7 +616,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
                     <SelectValue placeholder="Select building status" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(Array.isArray(buildingStatusOptions) ? buildingStatusOptions : []).map((status) => (
+                    {BUILDING_STATUS_OPTIONS.map((status) => (
                       <SelectItem key={status} value={status}>{status}</SelectItem>
                     ))}
                   </SelectContent>
