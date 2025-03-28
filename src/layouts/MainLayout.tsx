@@ -11,7 +11,6 @@ import { Search, Heart, Route, Settings, User2, LogOut, Menu, LayoutDashboard, H
 import { AuthModal } from "@/components/auth/AuthModal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-
 export default function MainLayout({
   children
 }: {
@@ -30,7 +29,6 @@ export default function MainLayout({
   const [showLogo, setShowLogo] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [notifications, setNotifications] = useState(1);
-
   const {
     data: profile,
     isLoading: profileLoading,
@@ -55,7 +53,6 @@ export default function MainLayout({
       } as Profile;
     }
   });
-
   useEffect(() => {
     const handleAuthTriggerEvent = (e: CustomEvent<{
       action: "shortlist" | "visit" | "notify";
@@ -68,7 +65,6 @@ export default function MainLayout({
       document.removeEventListener('triggerAuthModal', handleAuthTriggerEvent as EventListener);
     };
   }, []);
-
   useEffect(() => {
     let lastScrollY = window.scrollY;
     const handleScroll = () => {
@@ -81,7 +77,6 @@ export default function MainLayout({
     });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
   useEffect(() => {
     const {
       data: {
@@ -125,7 +120,6 @@ export default function MainLayout({
     });
     return () => subscription.unsubscribe();
   }, [navigate, toast, queryClient, refetchProfile]);
-
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -137,12 +131,10 @@ export default function MainLayout({
       });
     }
   };
-
   const openAuthModal = (actionType: "shortlist" | "visit" | "notify") => {
     setAuthActionType(actionType);
     setShowAuthModal(true);
   };
-
   const menuItems = [{
     name: "Shortlist",
     icon: Heart,
@@ -161,7 +153,6 @@ export default function MainLayout({
     path: "https://intercom.help/serai-homes/en",
     isExternal: true
   }];
-
   if (profile && (profile.role === 'admin' || profile.role === 'agent')) {
     menuItems.unshift({
       name: "Dashboard",
@@ -169,19 +160,16 @@ export default function MainLayout({
       path: "/dashboard"
     });
   }
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Search term:", searchTerm);
   };
-
   const getInitials = () => {
     if (!profile || !profile.full_name) return "U";
     const names = profile.full_name.split(" ");
     if (names.length === 1) return names[0].charAt(0).toUpperCase();
     return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
   };
-
   return <div className="min-h-screen bg-background flex flex-col">
       <div className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b ${showLogo ? 'translate-y-0' : '-translate-y-full'}`}>
         <div className="container mx-auto px-4 py-3">
@@ -277,7 +265,7 @@ export default function MainLayout({
               <address className="not-italic text-sm text-gray-600">
                 <p>761 Urban Vault</p>
                 <p>HSR Layout, Bangalore, Karnataka</p>
-                <p className="mt-2">support@jumbohomes.com</p>
+                <p className="mt-2">support@jumbohomes.in</p>
                 <p>+91 9876543210</p>
               </address>
             </div>
