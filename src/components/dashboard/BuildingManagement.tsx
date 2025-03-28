@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -113,21 +112,41 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     };
   }, []);
 
-  // Get building status options
+  // Get building status options - fixed to use string values directly instead of Postgres-specific syntax
   const { data: buildingStatusOptions = [] } = useQuery({
     queryKey: ['building-status-options'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pg_enum')
-        .select('enumlabel')
-        .eq('enumtypid', 'building_status'::regtype);
-      
-      if (error) {
-        console.error("Error fetching building status options:", error);
+      try {
+        // Since we can't use Postgres-specific syntax like '::regtype' in JavaScript,
+        // we'll use a direct RPC call or fall back to default values
+        const { data, error } = await supabase
+          .from('buildings')
+          .select('building_status')
+          .limit(100);
+        
+        if (error) {
+          console.error("Error fetching building status options:", error);
+          return ['Photos Pending', 'Publish']; // Default fallback values
+        }
+        
+        // Extract unique statuses
+        const statuses = new Set<string>();
+        data.forEach(item => {
+          if (item.building_status) {
+            statuses.add(item.building_status);
+          }
+        });
+        
+        // If no statuses found, use defaults
+        if (statuses.size === 0) {
+          return ['Photos Pending', 'Publish'];
+        }
+        
+        return Array.from(statuses);
+      } catch (error) {
+        console.error("Error in building status query:", error);
         return ['Photos Pending', 'Publish']; // Default fallback values
       }
-      
-      return data.map(item => item.enumlabel);
     }
   });
   
@@ -868,241 +887,3 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
                       onCheckedChange={() => toggleWaterSource(source)} 
                     />
                     <Label htmlFor={`water-${source}`} className="cursor-pointer font-normal">{source}</Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="images">Building Images</Label>
-              <Input 
-                id="images" 
-                name="images" 
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleFileChange}
-                className="cursor-pointer"
-              />
-              
-              {building?.images && building.images.length > 0 && (
-                <div className="mt-2">
-                  <Label>Existing Images</Label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {building.images.map((image, index) => (
-                      <img 
-                        key={index} 
-                        src={image} 
-                        alt={`Building ${index + 1}`} 
-                        className="h-16 w-16 object-cover rounded-md"
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {uploadedImages.length > 0 && (
-                <div className="mt-2">
-                  <Label>New Images to Upload</Label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {Array.from(uploadedImages).map((file, index) => (
-                      <div key={index} className="h-16 w-16 relative">
-                        <img 
-                          src={URL.createObjectURL(file)} 
-                          alt={`Preview ${index + 1}`} 
-                          className="h-full w-full object-cover rounded-md"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-        </ScrollArea>
-      </Tabs>
-
-      <div className="flex justify-end gap-2 pt-2">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={() => {
-            if (editingBuilding) {
-              setEditingBuilding(null);
-            } else {
-              setIsCreateOpen(false);
-            }
-            setActiveTab("basic");
-          }}
-        >
-          Cancel
-        </Button>
-        <Button 
-          type="submit" 
-          disabled={isUploading || createBuilding.isPending || updateBuilding.isPending}
-        >
-          {isUploading ? 'Uploading images...' : 
-           (createBuilding.isPending || updateBuilding.isPending) ? 'Saving...' : 
-           building ? 'Update Building' : 'Create Building'}
-        </Button>
-      </div>
-    </form>
-  );
-
-  if (isLoading) {
-    return <div className="flex justify-center py-8">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-    </div>;
-  }
-
-  if (!currentSession) {
-    return (
-      <div className="flex flex-col items-center justify-center py-8 space-y-4">
-        <p className="text-muted-foreground">You need to be logged in to manage buildings.</p>
-        <Button onClick={() => navigate('/auth')}>Sign In</Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Manage Buildings</h2>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add New Building
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[700px]">
-            <DialogHeader>
-              <DialogTitle>Create New Building</DialogTitle>
-              <DialogDescription>
-                Fill in the details for the new building. Use the tabs to navigate between different sections.
-              </DialogDescription>
-            </DialogHeader>
-            <BuildingForm />
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Images</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {buildings && buildings.map((building) => (
-              <TableRow key={building.id}>
-                <TableCell className="font-medium">{building.name}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3 text-muted-foreground" />
-                    <span>
-                      {building.locality}, {building.city}
-                      {building.sub_locality && `, ${building.sub_locality}`}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell>{building.building_status || "Photos Pending"}</TableCell>
-                <TableCell>
-                  {building.min_price ? (
-                    <span>₹{(building.min_price / 100000).toFixed(1)}L</span>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">Not specified</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {building.images && building.images.length > 0 ? (
-                    <div className="flex -space-x-2">
-                      {building.images.slice(0, 3).map((image, index) => (
-                        <img 
-                          key={index} 
-                          src={image} 
-                          alt={`Building ${index + 1}`} 
-                          className="h-8 w-8 rounded-full border border-background object-cover"
-                        />
-                      ))}
-                      {building.images.length > 3 && (
-                        <div className="flex items-center justify-center h-8 w-8 rounded-full bg-muted text-xs">
-                          +{building.images.length - 3}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">No images</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setEditingBuilding(building)}
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteClick(building.id)}
-                      className="text-destructive hover:text-destructive/90"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {!buildings?.length && (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
-                  No buildings found
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      <Dialog open={!!editingBuilding} onOpenChange={(open) => !open && setEditingBuilding(null)}>
-        <DialogContent className="sm:max-w-[700px]">
-          <DialogHeader>
-            <DialogTitle>Edit Building</DialogTitle>
-            <DialogDescription>
-              Update the building details. Use the tabs to navigate between different sections.
-            </DialogDescription>
-          </DialogHeader>
-          {editingBuilding && <BuildingForm building={editingBuilding} />}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Delete</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this building? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmDelete} disabled={deleteBuilding.isPending}>
-              {deleteBuilding.isPending ? 'Deleting...' : 'Delete'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
