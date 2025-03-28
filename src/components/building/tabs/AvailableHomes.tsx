@@ -20,7 +20,12 @@ export function AvailableHomes({ listings }: AvailableHomesProps) {
     });
   };
 
-  if (!listings?.length) {
+  // Filter out sold or churned listings
+  const availableListings = listings?.filter(listing => 
+    listing.status !== 'sold' && listing.status !== 'churned'
+  ) || [];
+
+  if (!availableListings.length) {
     return (
       <div className="flex flex-col items-center justify-center py-12 space-y-4">
         <Button onClick={handleNotifyMe} variant="outline" className="gap-2">
@@ -36,7 +41,7 @@ export function AvailableHomes({ listings }: AvailableHomesProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {listings.map((listing) => (
+      {availableListings.map((listing) => (
         <ListingCard key={listing.id} listing={listing} />
       ))}
     </div>

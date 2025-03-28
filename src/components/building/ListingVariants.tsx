@@ -1,11 +1,13 @@
+
 import { useState, useEffect } from "react";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { IndianRupee, Building2, Compass, Car, Armchair, CalendarClock, Ruler, Image } from "lucide-react";
+import { IndianRupee, Building2, Compass, Car, Armchair, CalendarClock, Ruler, Bell } from "lucide-react";
 import { VisitRequestModal } from "@/components/VisitRequestModal";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ListingVariantsProps {
   listings: Tables<'listings'>[] | null;
@@ -27,20 +29,49 @@ export function ListingVariants({
   const [selectedListing, setSelectedListing] = useState<Tables<'listings'> | null>(null);
   const [showVisitModal, setShowVisitModal] = useState(false);
   const [showFloorPlan, setShowFloorPlan] = useState(false);
+  const { toast } = useToast();
+
+  // Filter out sold or churned listings
+  const availableListings = listings?.filter(listing => 
+    listing.status !== 'sold' && listing.status !== 'churned'
+  ) || [];
 
   useEffect(() => {
-    if (listings?.length && selectedListingId) {
-      const listing = listings.find(l => l.id === selectedListingId);
+    if (availableListings.length && selectedListingId) {
+      const listing = availableListings.find(l => l.id === selectedListingId);
       if (listing) {
         setSelectedListing(listing);
       }
-    } else if (listings?.length) {
-      setSelectedListing(listings[0]);
-      onListingSelect?.(listings[0].id);
+    } else if (availableListings.length) {
+      setSelectedListing(availableListings[0]);
+      onListingSelect?.(availableListings[0].id);
+    } else {
+      setSelectedListing(null);
     }
-  }, [listings, selectedListingId, onListingSelect]);
+  }, [availableListings, selectedListingId, onListingSelect]);
 
-  if (!listings?.length) return null;
+  const handleNotifyMe = () => {
+    toast({
+      title: "Notification Set",
+      description: "We'll notify you when a home becomes available in this building.",
+    });
+  };
+
+  if (!availableListings.length) {
+    return (
+      <Card className="p-6 space-y-6 shadow-lg md:max-w-sm md:sticky md:top-28">
+        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+          <Button onClick={handleNotifyMe} variant="outline" className="gap-2">
+            <Bell className="h-4 w-4" />
+            Notify Me
+          </Button>
+          <p className="text-sm text-muted-foreground">
+            When a home is available in this building
+          </p>
+        </div>
+      </Card>
+    );
+  }
 
   const calculateEMI = (price: number) => {
     const loanAmount = price * 0.8;
@@ -90,7 +121,7 @@ export function ListingVariants({
       <Card className="p-6 space-y-6 shadow-lg md:max-w-sm md:sticky md:top-28">
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
-            {listings.map(listing => (
+            {availableListings.map(listing => (
               <Button 
                 key={listing.id} 
                 variant={selectedListing?.id === listing.id ? "default" : "outline"} 
@@ -156,17 +187,6 @@ export function ListingVariants({
                     </span>
                   </div>}
               </div>
-              
-              {selectedListing.floor_plan_image && (
-                <Button 
-                  variant="outline" 
-                  className="w-full flex items-center gap-2" 
-                  onClick={() => setShowFloorPlan(true)}
-                >
-                  <Image className="h-4 w-4" />
-                  View Floor Plan
-                </Button>
-              )}
 
               {!isMobile && <ActionButtons />}
             </div>
@@ -187,23 +207,6 @@ export function ListingVariants({
         buildingName={buildingName} 
         listingId={selectedListing?.id || ""} 
       />
-      
-      {selectedListing && selectedListing.floor_plan_image && (
-        <Dialog open={showFloorPlan} onOpenChange={setShowFloorPlan}>
-          <DialogContent className="sm:max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>{selectedListing.bedrooms} BHK Floor Plan</DialogTitle>
-            </DialogHeader>
-            <div className="flex justify-center">
-              <img 
-                src={selectedListing.floor_plan_image} 
-                alt="Floor Plan" 
-                className="max-h-[70vh] object-contain" 
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
     </>
   );
 }
