@@ -21,36 +21,44 @@ export function SimilarProperties({
   currentBuildingId, 
   bhkTypes, 
   locality, 
-  minPrice, 
-  maxPrice 
+  minPrice
 }: SimilarPropertiesProps) {
   // Define price range with +/- 20% buffer
   const lowerPrice = minPrice ? minPrice * 0.8 : undefined;
-  const upperPrice = maxPrice ? maxPrice * 1.2 : undefined;
+  const upperPrice = minPrice ? minPrice * 1.2 : undefined;
   
   const { data: similarProperties, isLoading } = useQuery({
     queryKey: ['similar-properties', currentBuildingId, locality, bhkTypes, lowerPrice, upperPrice],
     queryFn: async () => {
-      let query = supabase
-        .from('buildings')
-        .select('id, name, images, min_price, max_price, locality, bhk_types, google_rating')
-        .neq('id', currentBuildingId)
-        .limit(3);
-      
-      // Add filters when available
-      if (locality) {
-        query = query.eq('locality', locality);
+      try {
+        let query = supabase
+          .from('buildings')
+          .select('id, name, images, min_price, locality, bhk_types, google_rating')
+          .neq('id', currentBuildingId)
+          .limit(3);
+        
+        // Add filters when available
+        if (locality) {
+          query = query.eq('locality', locality);
+        }
+        
+        // Add price range filter if available
+        if (lowerPrice && upperPrice) {
+          query = query.or(`min_price.gte.${lowerPrice},min_price.lte.${upperPrice}`);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error('Error fetching similar properties:', error);
+          throw error;
+        }
+        
+        return data;
+      } catch (error) {
+        console.error('Error in similarProperties query:', error);
+        return [];
       }
-      
-      // Add price range filter if available
-      if (lowerPrice && upperPrice) {
-        query = query.or(`min_price.gte.${lowerPrice},min_price.lte.${upperPrice}`);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      return data;
     },
   });
   

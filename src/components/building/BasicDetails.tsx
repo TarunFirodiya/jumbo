@@ -29,7 +29,7 @@ export function BasicDetails({
             <div className="font-medium">{totalFloors}</div>
           </div>
         )}
-        {age !== null && (
+        {age !== null && age !== undefined && (
           <div>
             <div className="text-sm text-muted-foreground flex items-center gap-2">
               <Clock className="h-4 w-4" />

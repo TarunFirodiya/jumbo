@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,33 +55,41 @@ export default function Shortlist() {
   const { data: shortlistedBuildings, isLoading, refetch } = useQuery({
     queryKey: ['shortlistedBuildings'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("User not authenticated");
 
-      const { data, error } = await supabase
-        .from('user_building_scores')
-        .select(`
-          building_id,
-          notes,
-          buildings (
-            id,
-            name,
-            type,
-            locality,
-            sub_locality,
-            min_price,
-            max_price,
-            images,
-            total_floors,
-            age
-          )
-        `)
-        .eq('user_id', user.id)
-        .eq('shortlisted', true)
-        .order('calculated_at', { ascending: false });
+        const { data, error } = await supabase
+          .from('user_building_scores')
+          .select(`
+            building_id,
+            notes,
+            buildings (
+              id,
+              name,
+              locality,
+              sub_locality,
+              min_price,
+              images,
+              total_floors,
+              age
+            )
+          `)
+          .eq('user_id', user.id)
+          .eq('shortlisted', true)
+          .order('calculated_at', { ascending: false });
 
-      if (error) throw error;
-      return data as ShortlistedBuilding[];
+        if (error) {
+          console.error("Error fetching shortlisted buildings:", error);
+          throw error;
+        }
+        
+        // Cast the result to the expected type
+        return data as unknown as ShortlistedBuilding[];
+      } catch (error) {
+        console.error("Error in shortlistedBuildings query:", error);
+        return [];
+      }
     },
   });
 
@@ -197,8 +204,9 @@ export default function Shortlist() {
             </div>
             <div>
               <div className="font-medium">{building.name}</div>
+              {/* Display building type if available */}
               <div className="text-sm text-muted-foreground">
-                {building.type}
+                {building.type || "Residential"}
               </div>
             </div>
           </div>

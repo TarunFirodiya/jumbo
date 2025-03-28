@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -107,13 +106,12 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     };
   }, []);
 
-  // Get building status options - fixed to use string values directly instead of Postgres-specific syntax
+  // Get building status options - fixed to use proper type casting
   const { data: buildingStatusOptions = ["Photos Pending", "Publish"] } = useQuery({
     queryKey: ['building-status-options'],
     queryFn: async () => {
       try {
-        // Since we can't use Postgres-specific syntax like '::regtype' in JavaScript,
-        // we'll use a direct query to fetch building statuses
+        // Since we can't use Postgres-specific syntax, we'll query the actual values
         const { data, error } = await supabase
           .from('buildings')
           .select('building_status')
@@ -124,11 +122,11 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
           return ['Photos Pending', 'Publish']; // Default fallback values
         }
         
-        // Extract unique statuses
+        // Extract unique statuses and ensure they're strings
         const statuses = new Set<string>();
         data.forEach(item => {
           if (item.building_status) {
-            statuses.add(item.building_status);
+            statuses.add(String(item.building_status));
           }
         });
         

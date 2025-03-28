@@ -294,7 +294,12 @@ export default function BuildingDetails() {
             <AmenitiesGrid features={stringFeatures} />
           </motion.div>
           
-          <SimilarProperties currentBuildingId={building.id} bhkTypes={building.bhk_types} locality={building.locality} minPrice={building.min_price} maxPrice={building.max_price} />
+          <SimilarProperties 
+            currentBuildingId={building.id} 
+            bhkTypes={building.bhk_types} 
+            locality={building.locality} 
+            minPrice={building.min_price} 
+          />
         </div>
 
         <div className="hidden md:grid md:grid-cols-[1fr_400px] gap-8">
@@ -336,7 +341,12 @@ export default function BuildingDetails() {
               <AmenitiesGrid features={stringFeatures} />
             </motion.div>
             
-            <SimilarProperties currentBuildingId={building.id} bhkTypes={building.bhk_types} locality={building.locality} minPrice={building.min_price} maxPrice={building.max_price} />
+            <SimilarProperties 
+              currentBuildingId={building.id} 
+              bhkTypes={building.bhk_types} 
+              locality={building.locality} 
+              minPrice={building.min_price} 
+            />
           </div>
 
           <div>
