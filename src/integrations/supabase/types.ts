@@ -40,22 +40,18 @@ export type Database = {
         Row: {
           age: number | null
           amenities: string[] | null
-          bank: string[] | null
           bhk_types: number[] | null
           building_status: Database["public"]["Enums"]["building_status"] | null
           city: string | null
           collections: string[] | null
           created_at: string | null
-          data_source: string | null
           google_rating: number | null
           id: string
           images: string[] | null
           latitude: number | null
-          lifestyle_cohort: number | null
           locality: string | null
           longitude: number | null
           map_link: string | null
-          max_price: number | null
           min_price: number | null
           name: string
           nearby_places: Json | null
@@ -64,7 +60,6 @@ export type Database = {
           sub_locality: string | null
           total_floors: number | null
           total_units: number | null
-          type: string | null
           updated_at: string | null
           user_id: string | null
           video_thumbnail: string | null
@@ -73,7 +68,6 @@ export type Database = {
         Insert: {
           age?: number | null
           amenities?: string[] | null
-          bank?: string[] | null
           bhk_types?: number[] | null
           building_status?:
             | Database["public"]["Enums"]["building_status"]
@@ -81,16 +75,13 @@ export type Database = {
           city?: string | null
           collections?: string[] | null
           created_at?: string | null
-          data_source?: string | null
           google_rating?: number | null
           id?: string
           images?: string[] | null
           latitude?: number | null
-          lifestyle_cohort?: number | null
           locality?: string | null
           longitude?: number | null
           map_link?: string | null
-          max_price?: number | null
           min_price?: number | null
           name: string
           nearby_places?: Json | null
@@ -99,7 +90,6 @@ export type Database = {
           sub_locality?: string | null
           total_floors?: number | null
           total_units?: number | null
-          type?: string | null
           updated_at?: string | null
           user_id?: string | null
           video_thumbnail?: string | null
@@ -108,7 +98,6 @@ export type Database = {
         Update: {
           age?: number | null
           amenities?: string[] | null
-          bank?: string[] | null
           bhk_types?: number[] | null
           building_status?:
             | Database["public"]["Enums"]["building_status"]
@@ -116,16 +105,13 @@ export type Database = {
           city?: string | null
           collections?: string[] | null
           created_at?: string | null
-          data_source?: string | null
           google_rating?: number | null
           id?: string
           images?: string[] | null
           latitude?: number | null
-          lifestyle_cohort?: number | null
           locality?: string | null
           longitude?: number | null
           map_link?: string | null
-          max_price?: number | null
           min_price?: number | null
           name?: string
           nearby_places?: Json | null
@@ -134,7 +120,6 @@ export type Database = {
           sub_locality?: string | null
           total_floors?: number | null
           total_units?: number | null
-          type?: string | null
           updated_at?: string | null
           user_id?: string | null
           video_thumbnail?: string | null

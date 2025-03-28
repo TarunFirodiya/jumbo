@@ -1,7 +1,7 @@
 
 import { 
   School, Hospital, Utensils, Building2, 
-  LucideIcon
+  ShoppingCart, Train, LucideIcon
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -17,6 +17,8 @@ interface NearbyPlacesData {
   hospitals?: Place[] | Place;
   restaurants?: Place[] | Place;
   tech_parks?: Place[] | Place;
+  malls?: Place[] | Place;
+  metro?: Place[] | Place;
   [key: string]: any; // Allow for other place types
 }
 
@@ -25,6 +27,8 @@ const placeIconMap: Record<string, LucideIcon> = {
   "hospital": Hospital,
   "restaurant": Utensils,
   "tech_park": Building2,
+  "mall": ShoppingCart,
+  "metro": Train,
 };
 
 const categoryDisplayNames: Record<string, string> = {
@@ -32,6 +36,8 @@ const categoryDisplayNames: Record<string, string> = {
   "hospitals": "Hospitals",
   "restaurants": "Restaurants",
   "tech_parks": "Tech Parks",
+  "malls": "Malls",
+  "metro": "Metro Stations",
 };
 
 interface NearbyPlacesProps {
