@@ -34,7 +34,8 @@ export function useBuildingsData(user: any, locality: string | undefined, select
     queryFn: async () => {
       let query = supabase
         .from('buildings')
-        .select('*');
+        .select('*')
+        .eq('building_status', 'Publish'); // Only fetch buildings with status "Publish"
       
       if (locality) {
         query = query.eq('locality', decodeURIComponent(locality));

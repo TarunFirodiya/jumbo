@@ -75,18 +75,25 @@ export default function Buildings() {
   } = useQuery({
     queryKey: ['buildings', selectedCollections],
     queryFn: async () => {
-      let query = supabase.from('buildings').select('*');
+      let query = supabase
+        .from('buildings')
+        .select('*')
+        .eq('building_status', 'Publish');
+      
       if (selectedCollections.length > 0) {
         query = query.contains('collections', selectedCollections);
       }
+      
       const {
         data,
         error
       } = await query;
+      
       if (error) {
         console.error('Error fetching buildings:', error);
         throw error;
       }
+      
       return data;
     }
   });
