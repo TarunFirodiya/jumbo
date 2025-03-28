@@ -25,7 +25,6 @@ interface BuildingManagementProps {
   currentUser: Profile;
 }
 
-// Define the Building type more specifically to match the database structure
 interface Building {
   id: string;
   name: string;
@@ -88,7 +87,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     malls: [],
     metro: []
   });
-  
+
   useEffect(() => {
     const getSession = async () => {
       const { data } = await supabase.auth.getSession();
@@ -106,12 +105,10 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     };
   }, []);
 
-  // Get building status options - fixed to use proper type casting
   const { data: buildingStatusOptions = ["Photos Pending", "Publish"] } = useQuery({
     queryKey: ['building-status-options'],
     queryFn: async () => {
       try {
-        // Since we can't use Postgres-specific syntax, we'll query the actual values
         const { data, error } = await supabase
           .from('buildings')
           .select('building_status')
@@ -119,10 +116,9 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         
         if (error) {
           console.error("Error fetching building status options:", error);
-          return ['Photos Pending', 'Publish']; // Default fallback values
+          return ['Photos Pending', 'Publish'];
         }
         
-        // Extract unique statuses and ensure they're strings
         const statuses = new Set<string>();
         data.forEach(item => {
           if (item.building_status) {
@@ -130,7 +126,6 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
           }
         });
         
-        // If no statuses found, use defaults
         if (statuses.size === 0) {
           return ['Photos Pending', 'Publish'];
         }
@@ -138,12 +133,11 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         return Array.from(statuses);
       } catch (error) {
         console.error("Error in building status query:", error);
-        return ['Photos Pending', 'Publish']; // Default fallback values
+        return ['Photos Pending', 'Publish'];
       }
     }
   });
-  
-  // Get buildings data
+
   const { data: buildings = [], isLoading } = useQuery<Building[]>({
     queryKey: ['buildings'],
     queryFn: async () => {
@@ -180,7 +174,6 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
       setSelectedCollections(editingBuilding.collections || []);
       setSelectedWaterSources(editingBuilding.water || []);
       
-      // Initialize nearby places
       const initialNearbyPlaces: {[key: string]: string[]} = {
         schools: [],
         hospitals: [],
@@ -293,7 +286,6 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
       const amenitiesList = prepareAmenities();
       const nearbyPlacesData = prepareNearbyPlaces();
       
-      // Cast building_status to the appropriate type
       const buildingStatus = formData.get('building_status')?.toString() || 'Photos Pending';
       
       const buildingData = {
