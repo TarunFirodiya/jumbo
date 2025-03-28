@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Heart, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -234,19 +235,19 @@ export default function Buildings() {
 
   if (buildingsLoading) {
     return <>
-        <SEO title="Loading Properties | Cozy Dwell Search" />
+        <SEO title="Loading Properties | Jumbo" />
         <div className="min-h-screen flex items-center justify-center">
           <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
         </div>
       </>;
   }
   return <div className="min-h-screen pb-20">
-      <SEO title={selectedCollections.length ? `Properties in ${selectedCollections.join(', ')} | Cozy Dwell Search` : 'Find Your Perfect Home | Cozy Dwell Search'} description={getSEODescription()} canonical="/buildings" structuredData={{
+      <SEO title={selectedCollections.length ? `Properties in ${selectedCollections.join(', ')} | Jumbo` : 'Ready-to-Move Homes | Lowest Price Guarantee'} description={getSEODescription()} canonical="/buildings" structuredData={{
       "@context": "https://schema.org",
       "@type": "RealEstateAgent",
-      "name": "Cozy Dwell Search",
+      "name": "Jumbo",
       "description": getSEODescription(),
-      "url": "https://www.cozydwellsearch.com/buildings",
+      "url": "https://www.jumbohomes.com/buildings",
       "areaServed": selectedCollections.length ? selectedCollections : ["All Areas"],
       "numberOfItems": filteredBuildings.length
     }} />

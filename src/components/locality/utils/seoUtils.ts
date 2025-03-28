@@ -55,9 +55,9 @@ export function getStructuredData(
   return {
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
-    "name": "Cozy Dwell Search",
+    "name": "Jumbo",
     "description": getSEODescription(localityDisplayName, [], [], filteredBuildingsCount),
-    "url": `https://www.cozydwellsearch.com/buildings/locality/${encodeURIComponent(locality || '')}`,
+    "url": `https://www.jumbohomes.com/buildings/locality/${encodeURIComponent(locality || '')}`,
     "areaServed": {
       "@type": "City",
       "name": localityDisplayName
@@ -70,7 +70,7 @@ export function getStructuredData(
     },
     "potentialAction": {
       "@type": "SearchAction",
-      "target": `https://www.cozydwellsearch.com/buildings/locality/${encodeURIComponent(locality || '')}?search={search_term_string}`,
+      "target": `https://www.jumbohomes.com/buildings/locality/${encodeURIComponent(locality || '')}?search={search_term_string}`,
       "query-input": "required name=search_term_string"
     }
   };

@@ -17,7 +17,7 @@ interface SEOProps {
 }
 
 export function SEO({
-  title = 'Cozy Dwell Search | Find Your Perfect Home',
+  title = 'Ready-to-Move Homes | Lowest Price Guarantee',
   description = 'Search for your dream home with personalized recommendations and detailed listings. Find apartments, villas, and houses that match your preferences.',
   canonical,
   ogImage = '/og-image.png',
@@ -26,11 +26,11 @@ export function SEO({
   noindex = false,
   keywords = ['real estate', 'property search', 'apartments', 'homes for sale', 'rental properties'],
   language = 'en',
-  author = 'Cozy Dwell Search',
+  author = 'Jumbo',
   publishedTime,
   modifiedTime,
 }: SEOProps) {
-  const siteUrl = 'https://www.cozydwellsearch.com';
+  const siteUrl = 'https://www.jumbohomes.com';
   
   return (
     <Helmet>
@@ -51,7 +51,7 @@ export function SEO({
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`} />
-      <meta property="og:site_name" content="Cozy Dwell Search" />
+      <meta property="og:site_name" content="Jumbo" />
       <meta property="og:locale" content={language === 'en' ? 'en_US' : language} />
       
       {/* Additional Open Graph article tags */}

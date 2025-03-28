@@ -28,14 +28,14 @@ export function useSEO({
   const location = useLocation();
   
   return useMemo(() => {
-    const siteUrl = 'https://www.cozydwellsearch.com';
+    const siteUrl = 'https://www.jumbohomes.com';
     const canonical = `${siteUrl}${location.pathname}`;
     
     // Default structured data for website
     const defaultStructuredData = {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      "name": "Cozy Dwell Search",
+      "name": "Jumbo",
       "url": siteUrl,
       "potentialAction": {
         "@type": "SearchAction",
@@ -45,7 +45,7 @@ export function useSEO({
     };
     
     return {
-      title: title || 'Cozy Dwell Search | Find Your Perfect Home',
+      title: title || 'Ready-to-Move Homes | Lowest Price Guarantee',
       description: description || 'Search for your dream home with personalized recommendations and detailed listings. Find apartments, villas, and houses that match your preferences.',
       canonical,
       ogImage: image || '/og-image.png',
