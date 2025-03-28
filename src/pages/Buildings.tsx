@@ -16,8 +16,7 @@ import { BUDGET_RANGES, Filter } from "@/components/ui/filters";
 import { AnimatedHero } from "@/components/ui/animated-hero";
 import { BuildingCard } from "@/components/buildings/BuildingCard";
 import { useFilteredBuildings } from "@/components/locality/hooks/useFilteredBuildings";
-
-const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
+import BuildingsMap from "@/components/BuildingsMap";
 
 export default function Buildings() {
   const {
@@ -31,6 +30,7 @@ export default function Buildings() {
   const [authAction, setAuthAction] = useState<"shortlist" | "visit" | "notify">("shortlist");
   const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
   const [visibleCount, setVisibleCount] = useState(20);
+  const [mapError, setMapError] = useState(false);
 
   const {
     data: user
@@ -183,6 +183,16 @@ export default function Buildings() {
     setVisibleCount(prev => prev + 20);
   }, []);
 
+  const handleMapError = () => {
+    setMapError(true);
+    setIsMapView(false);
+    toast({
+      title: "Map Error",
+      description: "There was an error loading the map. Switched to list view.",
+      variant: "destructive"
+    });
+  };
+
   if (buildingsLoading) {
     return <>
         <SEO title="Loading Properties | Jumbo" />
@@ -225,21 +235,30 @@ export default function Buildings() {
           </div>
         </div>
 
-        {!filteredBuildings?.length ? <Card>
+        {!filteredBuildings?.length ? 
+          <Card>
             <CardContent className="pt-6">
               <p className="text-center text-muted-foreground">
                 No properties found matching your criteria.
               </p>
             </CardContent>
-          </Card> : isMapView ? <Suspense fallback={<div className="h-[60vh] flex items-center justify-center">
-            <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
-          </div>}>
+          </Card> 
+        : isMapView ? 
+          <ErrorBoundary fallback={
+            <div className="h-[60vh] flex flex-col items-center justify-center bg-gray-100 rounded-lg">
+              <Building2 className="h-16 w-16 text-gray-400 mb-4" />
+              <h3 className="text-xl font-medium text-gray-700">Map view is currently unavailable</h3>
+              <p className="text-gray-500 mb-6">We've automatically switched to list view</p>
+              <Button onClick={() => setIsMapView(false)} variant="outline">Continue with List View</Button>
+            </div>
+          }>
             <BuildingsMap 
               buildings={displayedBuildings} 
               onShortlist={handleShortlistToggle}
               buildingScores={buildingScores}
             />
-          </Suspense> : <div className="space-y-8">
+          </ErrorBoundary>
+        : <div className="space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {displayedBuildings.map(building => {
                 const isShortlisted = buildingScores?.[building.id]?.shortlisted || false;
@@ -272,7 +291,12 @@ export default function Buildings() {
       </div>
 
       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-        <Button variant="default" onClick={() => setIsMapView(!isMapView)} className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2">
+        <Button 
+          variant="default" 
+          onClick={() => setIsMapView(!isMapView)} 
+          className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2"
+          disabled={mapError && !isMapView}
+        >
           {isMapView ? <>
               <List className="h-4 w-4" />
               Show list
@@ -285,4 +309,24 @@ export default function Buildings() {
 
       <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} actionType={authAction} />
     </div>;
+}
+
+function ErrorBoundary({ children, fallback }) {
+  const [hasError, setHasError] = useState(false);
+  
+  if (hasError) {
+    return fallback;
+  }
+  
+  try {
+    return (
+      <div onError={() => setHasError(true)}>
+        {children}
+      </div>
+    );
+  } catch (error) {
+    console.error('Error in map component:', error);
+    setHasError(true);
+    return fallback;
+  }
 }

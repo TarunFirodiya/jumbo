@@ -1,12 +1,14 @@
 
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useCallback, useMemo, lazy, Suspense } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { SEO } from "@/components/SEO";
 import { Filter } from "@/components/ui/filters";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Building2 } from "lucide-react"; 
+import { Button } from "@/components/ui/button";
 
 // Import new components
 import { SearchHeader } from "@/components/locality/SearchHeader";
@@ -21,7 +23,8 @@ import {
   getStructuredData 
 } from "@/components/locality/utils/seoUtils";
 
-const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
+// Direct import instead of lazy loading
+import BuildingsMap from "@/components/BuildingsMap";
 
 export default function LocalityBuildings() {
   const { locality } = useParams();
@@ -31,6 +34,7 @@ export default function LocalityBuildings() {
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
   const isMobile = useIsMobile();
+  const [mapError, setMapError] = useState(false);
 
   // Get current user
   const { data: user } = useQuery({
@@ -82,8 +86,11 @@ export default function LocalityBuildings() {
   }, [navigate]);
 
   const toggleMapView = useCallback(() => {
+    if (mapError && !isMapView) {
+      return; // Prevent enabling map view if there's an error
+    }
     setIsMapView(prev => !prev);
-  }, []);
+  }, [mapError, isMapView]);
 
   const localityDisplayName = useMemo(() => {
     return locality ? decodeURIComponent(locality) : 'All Locations';
@@ -99,6 +106,16 @@ export default function LocalityBuildings() {
       </>
     );
   }
+
+  // Map error fallback
+  const MapErrorFallback = () => (
+    <div className="h-[60vh] flex flex-col items-center justify-center bg-gray-100 rounded-lg">
+      <Building2 className="h-16 w-16 text-gray-400 mb-4" />
+      <h3 className="text-xl font-medium text-gray-700">Map view is currently unavailable</h3>
+      <p className="text-gray-500 mb-6">We've automatically switched to list view</p>
+      <Button onClick={() => setIsMapView(false)} variant="outline">Continue with List View</Button>
+    </div>
+  );
 
   return (
     <div className="min-h-screen pb-20">
@@ -122,11 +139,20 @@ export default function LocalityBuildings() {
       />
 
       {isMapView ? (
-        <Suspense fallback={<div className="h-[60vh] flex items-center justify-center">
-          <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
-        </div>}>
-          <BuildingsMap buildings={filteredBuildings} />
-        </Suspense>
+        mapError ? (
+          <MapErrorFallback />
+        ) : (
+          <div onError={() => {
+            setMapError(true);
+            setIsMapView(false);
+          }}>
+            <BuildingsMap 
+              buildings={filteredBuildings}
+              buildingScores={buildingScores}
+              onShortlist={handleShortlistToggle}
+            />
+          </div>
+        )
       ) : (
         <BuildingsList
           filteredBuildings={filteredBuildings}
@@ -138,7 +164,8 @@ export default function LocalityBuildings() {
 
       <MapToggleButton 
         isMapView={isMapView} 
-        toggleMapView={toggleMapView} 
+        toggleMapView={toggleMapView}
+        disabled={mapError && !isMapView}
       />
 
       <AuthModal

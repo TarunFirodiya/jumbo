@@ -5,15 +5,17 @@ import { Button } from "@/components/ui/button";
 interface MapToggleButtonProps {
   isMapView: boolean;
   toggleMapView: () => void;
+  disabled?: boolean;
 }
 
-export function MapToggleButton({ isMapView, toggleMapView }: MapToggleButtonProps) {
+export function MapToggleButton({ isMapView, toggleMapView, disabled = false }: MapToggleButtonProps) {
   return (
     <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20">
       <Button
         variant="default"
         onClick={toggleMapView}
         className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2"
+        disabled={disabled}
       >
         {isMapView ? (
           <>
