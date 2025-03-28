@@ -12,15 +12,10 @@ import { AuthModal } from "@/components/auth/AuthModal";
 import { SEO } from "@/components/SEO";
 import { cn } from "@/lib/utils";
 import { Action } from "@/components/ui/action-search-bar";
-import { BUDGET_RANGES } from "@/components/ui/filters";
+import { BUDGET_RANGES, Filter } from "@/components/ui/filters";
 import { AnimatedHero } from "@/components/ui/animated-hero";
 import { BuildingCard } from "@/components/buildings/BuildingCard";
 import { useFilteredBuildings } from "@/components/locality/hooks/useFilteredBuildings";
-
-interface Filter {
-  type: string;
-  value: string[];
-}
 
 const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
 
