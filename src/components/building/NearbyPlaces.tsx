@@ -48,7 +48,7 @@ export function NearbyPlaces({ nearbyPlaces }: NearbyPlacesProps) {
   const [showAll, setShowAll] = useState(false);
   
   if (!nearbyPlaces) {
-    return <p className="text-muted-foreground">No nearby places information available</p>;
+    return <div className="text-muted-foreground">No nearby places information available</div>;
   }
 
   // Safely extract all places from the data structure
@@ -89,7 +89,7 @@ export function NearbyPlaces({ nearbyPlaces }: NearbyPlacesProps) {
   const allPlaces = extractPlaces();
 
   if (allPlaces.length === 0) {
-    return <p className="text-muted-foreground">No nearby places information available</p>;
+    return <div className="text-muted-foreground">No nearby places information available</div>;
   }
 
   const ITEMS_PER_ROW = 4; // For desktop view

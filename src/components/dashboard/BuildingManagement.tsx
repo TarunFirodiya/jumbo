@@ -20,12 +20,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Json } from "@/integrations/supabase/types";
+import { type Database } from "@/integrations/supabase/types";
 
 interface BuildingManagementProps {
   currentUser: Profile;
 }
 
+// Define the Building type more specifically to match the database structure
 interface Building {
   id: string;
   name: string;
@@ -49,15 +50,8 @@ interface Building {
   street_view: string | null;
   video_thumbnail: string | null;
   total_units: number | null;
-  building_status: string | null;
-  nearby_places: {
-    schools?: { name: string }[] | { name: string };
-    hospitals?: { name: string }[] | { name: string };
-    restaurants?: { name: string }[] | { name: string };
-    tech_parks?: { name: string }[] | { name: string };
-    malls?: { name: string }[] | { name: string };
-    metro?: { name: string }[] | { name: string };
-  } | null;
+  building_status: "Photos Pending" | "Publish" | string;
+  nearby_places: any;
 }
 
 const collectionOptions = ["Affordable", "Gated Apartment", "New Construction", "Child Friendly", "Luxury Community", "Spacious Layout", "Vastu Compliant"];
@@ -114,12 +108,12 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
   }, []);
 
   // Get building status options - fixed to use string values directly instead of Postgres-specific syntax
-  const { data: buildingStatusOptions = [] } = useQuery({
+  const { data: buildingStatusOptions = ["Photos Pending", "Publish"] } = useQuery({
     queryKey: ['building-status-options'],
     queryFn: async () => {
       try {
         // Since we can't use Postgres-specific syntax like '::regtype' in JavaScript,
-        // we'll use a direct RPC call or fall back to default values
+        // we'll use a direct query to fetch building statuses
         const { data, error } = await supabase
           .from('buildings')
           .select('building_status')
@@ -151,7 +145,8 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     }
   });
   
-  const { data: buildings, isLoading } = useQuery<Building[]>({
+  // Get buildings data
+  const { data: buildings = [], isLoading } = useQuery<Building[]>({
     queryKey: ['buildings'],
     queryFn: async () => {
       if (!currentSession?.user?.id) {
@@ -167,7 +162,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         throw error;
       }
       
-      return data || [];
+      return (data || []) as Building[];
     },
     enabled: !!currentSession?.user?.id
   });
@@ -300,6 +295,9 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
       const amenitiesList = prepareAmenities();
       const nearbyPlacesData = prepareNearbyPlaces();
       
+      // Cast building_status to the appropriate type
+      const buildingStatus = formData.get('building_status')?.toString() || 'Photos Pending';
+      
       const buildingData = {
         name: formData.get('name')?.toString() || '',
         city: formData.get('city')?.toString() || 'Bengaluru',
@@ -322,13 +320,13 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         images: uploadedUrls.length ? uploadedUrls : null,
         user_id: currentSession.user.id,
         total_units: formData.get('total_units') ? Number(formData.get('total_units')) : null,
-        building_status: formData.get('building_status')?.toString() || 'Photos Pending',
+        building_status: buildingStatus,
         nearby_places: nearbyPlacesData
       };
 
       const { data, error } = await supabase
         .from('buildings')
-        .insert(buildingData)
+        .insert(buildingData as any)
         .select();
 
       if (error) {
@@ -373,9 +371,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
       const amenitiesList = prepareAmenities();
       const nearbyPlacesData = prepareNearbyPlaces();
       
-      const buildingData = {
-        ...editingBuilding,
-      };
+      const buildingData: Partial<Building> = {};
 
       const name = formData.get('name')?.toString();
       if (name) buildingData.name = name;
@@ -437,7 +433,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
 
       const { error } = await supabase
         .from('buildings')
-        .update(buildingData)
+        .update(buildingData as any)
         .eq('id', buildingId);
 
       if (error) throw error;
@@ -573,401 +569,403 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     });
   };
 
-  const BuildingForm = ({ building }: { building?: Building }) => (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {building && <input type="hidden" name="buildingId" value={building.id} />}
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-5 w-full">
-          <TabsTrigger value="basic">Basic</TabsTrigger>
-          <TabsTrigger value="pricing">Pricing</TabsTrigger>
-          <TabsTrigger value="features">Features</TabsTrigger>
-          <TabsTrigger value="nearby">Nearby Places</TabsTrigger>
-          <TabsTrigger value="links">Links & Media</TabsTrigger>
-        </TabsList>
+  const BuildingForm = ({ building }: { building?: Building }) => {
+    return (
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {building && <input type="hidden" name="buildingId" value={building.id} />}
         
-        <ScrollArea className="h-[500px] pr-4 mt-4">
-          <TabsContent value="basic" className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Building Name*</Label>
-              <Input 
-                id="name" 
-                name="name" 
-                defaultValue={building?.name || ''} 
-                required 
-                className="w-full"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
-                <Input 
-                  id="city" 
-                  name="city" 
-                  defaultValue={building?.city || 'Bengaluru'} 
-                  required 
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="locality">Locality*</Label>
-                <Input 
-                  id="locality" 
-                  name="locality" 
-                  defaultValue={building?.locality || ''} 
-                  required 
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="sub_locality">Sub Locality</Label>
-              <Input 
-                id="sub_locality" 
-                name="sub_locality" 
-                defaultValue={building?.sub_locality || ''} 
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="latitude">Latitude</Label>
-                <Input 
-                  id="latitude" 
-                  name="latitude" 
-                  type="number" 
-                  step="any" 
-                  defaultValue={building?.latitude || ''} 
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="longitude">Longitude</Label>
-                <Input 
-                  id="longitude" 
-                  name="longitude" 
-                  type="number" 
-                  step="any" 
-                  defaultValue={building?.longitude || ''} 
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="building_status">Status</Label>
-              <Select name="building_status" defaultValue={building?.building_status || 'Photos Pending'}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select building status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {buildingStatusOptions.map(status => (
-                    <SelectItem key={status} value={status}>{status}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="age">Age (in years)</Label>
-                <Input 
-                  id="age" 
-                  name="age" 
-                  type="number" 
-                  min="0" 
-                  step="0.1" 
-                  defaultValue={building?.age || ''} 
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="total_floors">Total Floors</Label>
-                <Input 
-                  id="total_floors" 
-                  name="total_floors" 
-                  type="number" 
-                  min="1" 
-                  defaultValue={building?.total_floors || ''} 
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="total_units">Total Units</Label>
-                <Input 
-                  id="total_units" 
-                  name="total_units" 
-                  type="number" 
-                  min="1" 
-                  defaultValue={building?.total_units || ''} 
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>BHK Types Available</Label>
-              <div className="flex flex-wrap gap-2">
-                {[1, 2, 3, 4, 5].map(bhk => (
-                  <div 
-                    key={bhk} 
-                    className={`px-3 py-1 rounded-full border cursor-pointer select-none transition-colors ${
-                      selectedBHKTypes.includes(bhk) 
-                        ? 'bg-primary text-white border-primary' 
-                        : 'bg-background border-muted-foreground/20 text-muted-foreground'
-                    }`}
-                    onClick={() => toggleBHKType(bhk)}
-                  >
-                    {bhk} BHK
-                  </div>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-5 w-full">
+            <TabsTrigger value="basic">Basic</TabsTrigger>
+            <TabsTrigger value="pricing">Pricing</TabsTrigger>
+            <TabsTrigger value="features">Features</TabsTrigger>
+            <TabsTrigger value="nearby">Nearby Places</TabsTrigger>
+            <TabsTrigger value="links">Links & Media</TabsTrigger>
+          </TabsList>
           
-          <TabsContent value="pricing" className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="min_price">Price (₹)</Label>
-              <Input 
-                id="min_price" 
-                name="min_price" 
-                type="number" 
-                min="0" 
-                step="1000" 
-                defaultValue={building?.min_price || ''} 
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="price_psqft">Price per Sq. ft. (₹) (Jumbo Fair Price Estimate)</Label>
-              <Input 
-                id="price_psqft" 
-                name="price_psqft" 
-                type="number" 
-                min="0" 
-                step="1" 
-                defaultValue={building?.price_psqft || ''} 
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="collections">Collections</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {collectionOptions.map(collection => (
-                  <div key={collection} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`collection-${collection}`} 
-                      checked={selectedCollections.includes(collection)} 
-                      onCheckedChange={() => toggleCollection(collection)} 
-                    />
-                    <Label htmlFor={`collection-${collection}`} className="cursor-pointer font-normal">{collection}</Label>
-                  </div>
-                ))}
+          <ScrollArea className="h-[500px] pr-4 mt-4">
+            <TabsContent value="basic" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Building Name*</Label>
+                <Input 
+                  id="name" 
+                  name="name" 
+                  defaultValue={building?.name || ''} 
+                  required 
+                  className="w-full"
+                />
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="google_rating">Google Rating (0-5)</Label>
-              <Input 
-                id="google_rating" 
-                name="google_rating" 
-                type="number" 
-                min="0" 
-                max="5" 
-                step="0.1" 
-                defaultValue={building?.google_rating || ''} 
-              />
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="features" className="space-y-4">
-            {Object.entries(featureCategories).map(([category, features]) => (
-              <div key={category} className="space-y-2">
-                <h3 className="font-medium text-sm">{category}</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {features.map(feature => (
-                    <div key={feature} className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`feature-${feature}`} 
-                        checked={selectedFeatures[feature] || false} 
-                        onCheckedChange={(checked) => toggleFeature(feature, !!checked)} 
-                      />
-                      <Label htmlFor={`feature-${feature}`} className="cursor-pointer font-normal">{feature}</Label>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="city">City</Label>
+                  <Input 
+                    id="city" 
+                    name="city" 
+                    defaultValue={building?.city || 'Bengaluru'} 
+                    required 
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="locality">Locality*</Label>
+                  <Input 
+                    id="locality" 
+                    name="locality" 
+                    defaultValue={building?.locality || ''} 
+                    required 
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="sub_locality">Sub Locality</Label>
+                <Input 
+                  id="sub_locality" 
+                  name="sub_locality" 
+                  defaultValue={building?.sub_locality || ''} 
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="latitude">Latitude</Label>
+                  <Input 
+                    id="latitude" 
+                    name="latitude" 
+                    type="number" 
+                    step="any" 
+                    defaultValue={building?.latitude || ''} 
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="longitude">Longitude</Label>
+                  <Input 
+                    id="longitude" 
+                    name="longitude" 
+                    type="number" 
+                    step="any" 
+                    defaultValue={building?.longitude || ''} 
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="building_status">Status</Label>
+                <Select name="building_status" defaultValue={building?.building_status || 'Photos Pending'}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select building status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.isArray(buildingStatusOptions) && buildingStatusOptions.map(status => (
+                      <SelectItem key={status} value={status}>{status}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="age">Age (in years)</Label>
+                  <Input 
+                    id="age" 
+                    name="age" 
+                    type="number" 
+                    min="0" 
+                    step="0.1" 
+                    defaultValue={building?.age || ''} 
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="total_floors">Total Floors</Label>
+                  <Input 
+                    id="total_floors" 
+                    name="total_floors" 
+                    type="number" 
+                    min="1" 
+                    defaultValue={building?.total_floors || ''} 
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="total_units">Total Units</Label>
+                  <Input 
+                    id="total_units" 
+                    name="total_units" 
+                    type="number" 
+                    min="1" 
+                    defaultValue={building?.total_units || ''} 
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>BHK Types Available</Label>
+                <div className="flex flex-wrap gap-2">
+                  {[1, 2, 3, 4, 5].map(bhk => (
+                    <div 
+                      key={bhk} 
+                      className={`px-3 py-1 rounded-full border cursor-pointer select-none transition-colors ${
+                        selectedBHKTypes.includes(bhk) 
+                          ? 'bg-primary text-white border-primary' 
+                          : 'bg-background border-muted-foreground/20 text-muted-foreground'
+                      }`}
+                      onClick={() => toggleBHKType(bhk)}
+                    >
+                      {bhk} BHK
                     </div>
                   ))}
                 </div>
-                <Separator className="my-2" />
               </div>
-            ))}
-          </TabsContent>
-          
-          <TabsContent value="nearby" className="space-y-4">
-            {nearbyPlaceCategories.map(category => (
-              <div key={category} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label className="capitalize">{category.replace('_', ' ')}</Label>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => addNearbyPlace(category)}
-                  >
-                    Add
-                  </Button>
-                </div>
-                
-                {nearbyPlaces[category].map((place, index) => (
-                  <div key={`${category}-${index}`} className="flex gap-2">
-                    <Input 
-                      value={place} 
-                      onChange={(e) => handleNearbyPlaceChange(category, index, e.target.value)} 
-                      placeholder={`Enter ${category.replace('_', ' ')} name`}
-                    />
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => removeNearbyPlace(category, index)}
-                      className="shrink-0"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                
-                {nearbyPlaces[category].length === 0 && (
-                  <p className="text-sm text-muted-foreground">No {category.replace('_', ' ')} added yet.</p>
-                )}
-                
-                <Separator className="my-2" />
-              </div>
-            ))}
-          </TabsContent>
-          
-          <TabsContent value="links" className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="map_link">Google Maps Link</Label>
-              <Input 
-                id="map_link" 
-                name="map_link" 
-                type="url" 
-                defaultValue={building?.map_link || ''} 
-                placeholder="https://maps.google.com/..."
-              />
-            </div>
+            </TabsContent>
             
-            <div className="space-y-2">
-              <Label htmlFor="street_view">Street View Link</Label>
-              <Input 
-                id="street_view" 
-                name="street_view" 
-                type="url" 
-                defaultValue={building?.street_view || ''} 
-                placeholder="https://maps.google.com/..."
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="video_thumbnail">Video Thumbnail URL</Label>
-              <Input 
-                id="video_thumbnail" 
-                name="video_thumbnail" 
-                type="url" 
-                defaultValue={building?.video_thumbnail || ''} 
-                placeholder="https://example.com/thumbnail.jpg"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="water">Water Sources</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {waterSourceOptions.map(source => (
-                  <div key={source} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`water-${source}`} 
-                      checked={selectedWaterSources.includes(source)} 
-                      onCheckedChange={() => toggleWaterSource(source)} 
-                    />
-                    <Label htmlFor={`water-${source}`} className="cursor-pointer font-normal">{source}</Label>
-                  </div>
-                ))}
+            <TabsContent value="pricing" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="min_price">Price (₹)</Label>
+                <Input 
+                  id="min_price" 
+                  name="min_price" 
+                  type="number" 
+                  min="0" 
+                  step="1000" 
+                  defaultValue={building?.min_price || ''} 
+                />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="images">Building Images</Label>
-              <Input 
-                id="images" 
-                name="images" 
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleFileChange}
-                className="cursor-pointer"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="price_psqft">Price per Sq. ft. (₹) (Jumbo Fair Price Estimate)</Label>
+                <Input 
+                  id="price_psqft" 
+                  name="price_psqft" 
+                  type="number" 
+                  min="0" 
+                  step="1" 
+                  defaultValue={building?.price_psqft || ''} 
+                />
+              </div>
               
-              {building?.images && building.images.length > 0 && (
-                <div className="mt-2">
-                  <Label>Existing Images</Label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {building.images.map((image, index) => (
-                      <img 
-                        key={index} 
-                        src={image} 
-                        alt={`Building ${index + 1}`} 
-                        className="h-16 w-16 object-cover rounded-md"
+              <div className="space-y-2">
+                <Label htmlFor="collections">Collections</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {collectionOptions.map(collection => (
+                    <div key={collection} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`collection-${collection}`} 
+                        checked={selectedCollections.includes(collection)} 
+                        onCheckedChange={() => toggleCollection(collection)} 
                       />
-                    ))}
-                  </div>
+                      <Label htmlFor={`collection-${collection}`} className="cursor-pointer font-normal">{collection}</Label>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
               
-              {uploadedImages.length > 0 && (
-                <div className="mt-2">
-                  <Label>New Images to Upload</Label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {Array.from(uploadedImages).map((file, index) => (
-                      <div key={index} className="h-16 w-16 relative">
-                        <img 
-                          src={URL.createObjectURL(file)} 
-                          alt={`Preview ${index + 1}`} 
-                          className="h-full w-full object-cover rounded-md"
+              <div className="space-y-2">
+                <Label htmlFor="google_rating">Google Rating (0-5)</Label>
+                <Input 
+                  id="google_rating" 
+                  name="google_rating" 
+                  type="number" 
+                  min="0" 
+                  max="5" 
+                  step="0.1" 
+                  defaultValue={building?.google_rating || ''} 
+                />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="features" className="space-y-4">
+              {Object.entries(featureCategories).map(([category, features]) => (
+                <div key={category} className="space-y-2">
+                  <h3 className="font-medium text-sm">{category}</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {features.map(feature => (
+                      <div key={feature} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`feature-${feature}`} 
+                          checked={selectedFeatures[feature] || false} 
+                          onCheckedChange={(checked) => toggleFeature(feature, !!checked)} 
                         />
+                        <Label htmlFor={`feature-${feature}`} className="cursor-pointer font-normal">{feature}</Label>
                       </div>
                     ))}
                   </div>
+                  <Separator className="my-2" />
                 </div>
-              )}
-            </div>
-          </TabsContent>
-        </ScrollArea>
-      </Tabs>
+              ))}
+            </TabsContent>
+            
+            <TabsContent value="nearby" className="space-y-4">
+              {nearbyPlaceCategories.map(category => (
+                <div key={category} className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label className="capitalize">{category.replace('_', ' ')}</Label>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => addNearbyPlace(category)}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                  
+                  {nearbyPlaces[category].map((place, index) => (
+                    <div key={`${category}-${index}`} className="flex gap-2">
+                      <Input 
+                        value={place} 
+                        onChange={(e) => handleNearbyPlaceChange(category, index, e.target.value)} 
+                        placeholder={`Enter ${category.replace('_', ' ')} name`}
+                      />
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => removeNearbyPlace(category, index)}
+                        className="shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  
+                  {nearbyPlaces[category].length === 0 && (
+                    <p className="text-sm text-muted-foreground">No {category.replace('_', ' ')} added yet.</p>
+                  )}
+                  
+                  <Separator className="my-2" />
+                </div>
+              ))}
+            </TabsContent>
+            
+            <TabsContent value="links" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="map_link">Google Maps Link</Label>
+                <Input 
+                  id="map_link" 
+                  name="map_link" 
+                  type="url" 
+                  defaultValue={building?.map_link || ''} 
+                  placeholder="https://maps.google.com/..."
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="street_view">Street View Link</Label>
+                <Input 
+                  id="street_view" 
+                  name="street_view" 
+                  type="url" 
+                  defaultValue={building?.street_view || ''} 
+                  placeholder="https://maps.google.com/..."
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="video_thumbnail">Video Thumbnail URL</Label>
+                <Input 
+                  id="video_thumbnail" 
+                  name="video_thumbnail" 
+                  type="url" 
+                  defaultValue={building?.video_thumbnail || ''} 
+                  placeholder="https://example.com/thumbnail.jpg"
+                />
+              </div>
 
-      <div className="flex justify-end gap-2 pt-2">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={() => {
-            if (editingBuilding) {
-              setEditingBuilding(null);
-            } else {
-              setIsCreateOpen(false);
-            }
-            setActiveTab("basic");
-          }}
-        >
-          Cancel
-        </Button>
-        <Button 
-          type="submit" 
-          disabled={isUploading || createBuilding.isPending || updateBuilding.isPending}
-        >
-          {isUploading ? 'Uploading images...' : 
-           (createBuilding.isPending || updateBuilding.isPending) ? 'Saving...' : 
-           building ? 'Update Building' : 'Create Building'}
-        </Button>
-      </div>
-    </form>
-  );
+              <div className="space-y-2">
+                <Label htmlFor="water">Water Sources</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {waterSourceOptions.map(source => (
+                    <div key={source} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`water-${source}`} 
+                        checked={selectedWaterSources.includes(source)} 
+                        onCheckedChange={() => toggleWaterSource(source)} 
+                      />
+                      <Label htmlFor={`water-${source}`} className="cursor-pointer font-normal">{source}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="images">Building Images</Label>
+                <Input 
+                  id="images" 
+                  name="images" 
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="cursor-pointer"
+                />
+                
+                {building?.images && building.images.length > 0 && (
+                  <div className="mt-2">
+                    <Label>Existing Images</Label>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {building.images.map((image, index) => (
+                        <img 
+                          key={index} 
+                          src={image} 
+                          alt={`Building ${index + 1}`} 
+                          className="h-16 w-16 object-cover rounded-md"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {uploadedImages.length > 0 && (
+                  <div className="mt-2">
+                    <Label>New Images to Upload</Label>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {Array.from(uploadedImages).map((file, index) => (
+                        <div key={index} className="h-16 w-16 relative">
+                          <img 
+                            src={URL.createObjectURL(file)} 
+                            alt={`Preview ${index + 1}`} 
+                            className="h-full w-full object-cover rounded-md"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </ScrollArea>
+        </Tabs>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => {
+              if (editingBuilding) {
+                setEditingBuilding(null);
+              } else {
+                setIsCreateOpen(false);
+              }
+              setActiveTab("basic");
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={isUploading || createBuilding.isPending || updateBuilding.isPending}
+          >
+            {isUploading ? 'Uploading images...' : 
+             (createBuilding.isPending || updateBuilding.isPending) ? 'Saving...' : 
+             building ? 'Update Building' : 'Create Building'}
+          </Button>
+        </div>
+      </form>
+    );
+  };
 
   if (isLoading) {
     return <div className="flex justify-center py-8">
@@ -1020,7 +1018,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {buildings && buildings.map((building) => (
+            {buildings && buildings.length > 0 ? buildings.map((building) => (
               <TableRow key={building.id}>
                 <TableCell className="font-medium">{building.name}</TableCell>
                 <TableCell>
@@ -1081,8 +1079,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
-            {!buildings?.length && (
+            )) : (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
                   No buildings found
