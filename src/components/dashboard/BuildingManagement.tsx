@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -649,7 +648,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
                     <SelectValue placeholder="Select building status" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(Array.isArray(buildingStatusOptions) ? buildingStatusOptions : []).map((status: string) => (
+                    {(Array.isArray(buildingStatusOptions) ? buildingStatusOptions : []).map((status) => (
                       <SelectItem key={status} value={status}>{status}</SelectItem>
                     ))}
                   </SelectContent>
