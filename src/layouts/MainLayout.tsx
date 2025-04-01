@@ -266,7 +266,7 @@ export default function MainLayout({
                 <p>761 Urban Vault</p>
                 <p>HSR Layout, Bangalore, Karnataka</p>
                 <p className="mt-2">support@jumbohomes.in</p>
-                <p>+91 9876543210</p>
+                <p>+91 890 4279 890</p>
               </address>
             </div>
           </div>
