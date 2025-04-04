@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PropertyGallery } from "@/components/building/PropertyGallery";
@@ -85,20 +86,34 @@ export default function BuildingDetails() {
     return Math.min(...listings.map(l => Number(l.price || 0)));
   }, [listings, building?.min_price]);
 
-  const displayImages = useMemo(() => {
-    if (selectedListing && listings) {
-      const selectedListingImages = listings.find(l => l.id === selectedListing)?.images;
-      return selectedListingImages?.length ? selectedListingImages : building?.images || [];
-    }
-    return building?.images || [];
-  }, [selectedListing, listings, building?.images]);
-
+  // Get the selected listing's media content (either new format or legacy)
   const selectedListingData = useMemo(() => {
     if (selectedListing && listings) {
       return listings.find(l => l.id === selectedListing);
     }
     return null;
   }, [selectedListing, listings]);
+  
+  // Determine which images to display based on selected listing
+  const displayImages = useMemo(() => {
+    if (selectedListingData?.images?.length) {
+      return selectedListingData.images;
+    }
+    return building?.images || [];
+  }, [selectedListingData, building?.images]);
+
+  // Get media content from either selected listing or building
+  const mediaContent = useMemo(() => {
+    // First try to get from selected listing
+    if (selectedListingData?.media_content) {
+      return selectedListingData.media_content as Record<string, string[]>;
+    }
+    // If not available in listing, try to get from building
+    if (building?.media_content) {
+      return building.media_content as Record<string, string[]>;
+    }
+    return null;
+  }, [selectedListingData, building]);
 
   const handleListingSelect = useCallback((id: string) => {
     setSelectedListing(id);
@@ -251,7 +266,14 @@ export default function BuildingDetails() {
         </div>
       </div>
 
-      <PropertyGallery images={displayImages} videoThumbnail={building.video_thumbnail} streetView={building.street_view} floorPlanImage={selectedListingData?.floor_plan_image || null} />
+      <PropertyGallery 
+        images={displayImages} 
+        videoThumbnail={building.video_thumbnail} 
+        streetView={building.street_view} 
+        floorPlanImage={selectedListingData?.floor_plan_image || null}
+        aiStagedPhotos={selectedListingData?.ai_staged_photos || null}
+        mediaContent={mediaContent}
+      />
 
       <div className="container mx-auto px-4 py-8">
         <div className="md:hidden space-y-8 pb-24">

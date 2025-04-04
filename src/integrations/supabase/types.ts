@@ -52,6 +52,7 @@ export type Database = {
           locality: string | null
           longitude: number | null
           map_link: string | null
+          media_content: Json | null
           min_price: number | null
           name: string
           nearby_places: Json | null
@@ -82,6 +83,7 @@ export type Database = {
           locality?: string | null
           longitude?: number | null
           map_link?: string | null
+          media_content?: Json | null
           min_price?: number | null
           name: string
           nearby_places?: Json | null
@@ -112,6 +114,7 @@ export type Database = {
           locality?: string | null
           longitude?: number | null
           map_link?: string | null
+          media_content?: Json | null
           min_price?: number | null
           name?: string
           nearby_places?: Json | null
@@ -157,6 +160,7 @@ export type Database = {
           loan_bank: string | null
           magicbricks_price: number | null
           maintenance: number | null
+          media_content: Json | null
           media_metadata: Json | null
           nobroker_price: number | null
           occupancy_status:
@@ -207,6 +211,7 @@ export type Database = {
           loan_bank?: string | null
           magicbricks_price?: number | null
           maintenance?: number | null
+          media_content?: Json | null
           media_metadata?: Json | null
           nobroker_price?: number | null
           occupancy_status?:
@@ -259,6 +264,7 @@ export type Database = {
           loan_bank?: string | null
           magicbricks_price?: number | null
           maintenance?: number | null
+          media_content?: Json | null
           media_metadata?: Json | null
           nobroker_price?: number | null
           occupancy_status?:

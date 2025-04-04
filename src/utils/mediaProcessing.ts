@@ -297,3 +297,112 @@ export const createMediaMetadata = (
     lastUpdated: new Date().toISOString()
   };
 };
+
+/**
+ * New function to process the flat JSON media content structure
+ * @param mediaContent The flat JSON media content object
+ * @returns Categorized media content by type
+ */
+export const processMediaContent = (mediaContent: Record<string, string[]> | null | undefined) => {
+  if (!mediaContent) {
+    return {
+      photos: {},
+      aiStagedPhotos: {},
+      video: null,
+      streetView: null,
+      floorPlan: null,
+      thumbnail: null
+    };
+  }
+  
+  console.log("Processing media content:", mediaContent);
+  
+  const result = {
+    photos: {} as Record<string, string[]>,
+    aiStagedPhotos: {} as Record<string, string[]>,
+    video: null as string | null,
+    streetView: null as string | null,
+    floorPlan: null as string | null,
+    thumbnail: null as string | null
+  };
+  
+  // Process each key in the media content
+  Object.entries(mediaContent).forEach(([key, urls]) => {
+    // Process special keys first
+    const lowerKey = key.toLowerCase();
+    
+    if (lowerKey.includes('video') || lowerKey.includes('30sec')) {
+      if (Array.isArray(urls) && urls.length > 0) {
+        result.video = processMediaUrl(urls[0]);
+      }
+      return;
+    }
+    
+    if (lowerKey.includes('floorplan') || lowerKey === 'floor plan') {
+      if (Array.isArray(urls) && urls.length > 0) {
+        result.floorPlan = processMediaUrl(urls[0]);
+      }
+      return;
+    }
+    
+    if (lowerKey.includes('streetview') || lowerKey === 'street view') {
+      if (Array.isArray(urls) && urls.length > 0) {
+        result.streetView = processMediaUrl(urls[0]);
+      }
+      return;
+    }
+    
+    if (lowerKey === 'thumbnail') {
+      if (Array.isArray(urls) && urls.length > 0) {
+        result.thumbnail = processMediaUrl(urls[0]);
+      }
+      return;
+    }
+    
+    // Process room-based imagery
+    // If key ends with _Imagine or contains imagine, it's AI staged
+    if (lowerKey.endsWith('_imagine') || lowerKey.includes('imagine')) {
+      const roomName = key.replace('_Imagine', '').replace('_imagine', '');
+      result.aiStagedPhotos[roomName] = normalizeImageArray(urls);
+      return;
+    }
+    
+    // All other keys are treated as regular photos with room names
+    result.photos[key] = normalizeImageArray(urls);
+  });
+  
+  console.log("Processed media content results:", result);
+  return result;
+};
+
+/**
+ * Extracts regular photos array from categorized media content
+ * @param processedContent Processed media content from processMediaContent
+ * @returns Array of regular photo URLs
+ */
+export const extractRegularPhotos = (processedContent: ReturnType<typeof processMediaContent>): string[] => {
+  const photos: string[] = [];
+  
+  // Flatten all room photos into a single array
+  Object.values(processedContent.photos).forEach(roomPhotos => {
+    photos.push(...roomPhotos);
+  });
+  
+  return photos;
+};
+
+/**
+ * Extracts AI staged photos array from categorized media content
+ * @param processedContent Processed media content from processMediaContent
+ * @returns Array of AI staged photo URLs
+ */
+export const extractAiStagedPhotos = (processedContent: ReturnType<typeof processMediaContent>): string[] => {
+  const aiPhotos: string[] = [];
+  
+  // Flatten all AI staged room photos into a single array
+  Object.values(processedContent.aiStagedPhotos).forEach(roomPhotos => {
+    aiPhotos.push(...roomPhotos);
+  });
+  
+  return aiPhotos;
+};

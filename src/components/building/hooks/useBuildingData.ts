@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tables } from "@/integrations/supabase/types";
-import { normalizeImageArray } from "@/utils/mediaProcessing";
+import { normalizeImageArray, processMediaContent, extractRegularPhotos, extractAiStagedPhotos } from "@/utils/mediaProcessing";
 
 // Define a type that includes the proper properties
 export type BuildingWithFeatures = Tables<"buildings">;
@@ -12,13 +12,13 @@ export type BuildingWithFeatures = Tables<"buildings">;
 export type ListingWithProcessedImages = Tables<"listings"> & {
   images: string[] | null;
   ai_staged_photos: string[] | null;
-  media_metadata?: {
-    regularImages: string[];
-    aiStagedPhotos: string[];
-    floorPlan: string | null;
+  processedMediaContent?: {
+    photos: Record<string, string[]>;
+    aiStagedPhotos: Record<string, string[]>;
     video: string | null;
     streetView: string | null;
-    lastUpdated: string;
+    floorPlan: string | null;
+    thumbnail: string | null;
   } | null;
 };
 
@@ -54,9 +54,27 @@ export function useBuildingData(id: string) {
         if (data) {
           const buildingWithFeatures = data as BuildingWithFeatures;
           
-          // Normalize images to array format
-          buildingWithFeatures.images = normalizeImageArray(buildingWithFeatures.images);
-          console.log("Building with normalized images:", buildingWithFeatures.images);
+          // Check if we have the new media_content field
+          if (buildingWithFeatures.media_content) {
+            console.log("Building has new media_content format:", buildingWithFeatures.media_content);
+            const processedContent = processMediaContent(buildingWithFeatures.media_content as Record<string, string[]>);
+            
+            // Use processed content to set legacy fields for backward compatibility
+            buildingWithFeatures.images = extractRegularPhotos(processedContent);
+            buildingWithFeatures.video_thumbnail = processedContent.video;
+            buildingWithFeatures.street_view = processedContent.streetView;
+            // We don't save floor plan at building level typically
+            
+            console.log("Building with processed media content:", {
+              regularImages: buildingWithFeatures.images,
+              video: buildingWithFeatures.video_thumbnail,
+              streetView: buildingWithFeatures.street_view
+            });
+          } else {
+            // Normalize legacy images
+            buildingWithFeatures.images = normalizeImageArray(buildingWithFeatures.images);
+            console.log("Building with normalized legacy images:", buildingWithFeatures.images);
+          }
           
           return buildingWithFeatures;
         }
@@ -102,65 +120,44 @@ export function useBuildingData(id: string) {
           // Create a safe copy of the listing to modify with properly typed fields
           const processedListing = { ...listing } as ListingWithProcessedImages;
           
-          // Process regular images - be very verbose for tracking
           console.log(`Processing listing ${listing.id}:`);
-          console.log(`- Original images:`, listing.images);
-          console.log(`- Original AI staged photos:`, listing.ai_staged_photos);
-          console.log(`- Thumbnail image:`, listing.thumbnail_image);
           
-          // Process regular images
-          processedListing.images = normalizeImageArray(listing.images);
-          
-          // Process AI staged photos
-          const aiPhotos = listing.ai_staged_photos;
-          console.log(`- Raw AI staged photos before processing:`, aiPhotos);
-          
-          // Handle different potential formats of AI staged photos
-          if (aiPhotos === null || aiPhotos === undefined) {
-            processedListing.ai_staged_photos = [];
-          } else if (typeof aiPhotos === 'string') {
-            // If it's a string, try to parse as JSON or split by comma
-            try {
-              const aiPhotosString = aiPhotos as string;
-              if (aiPhotosString.trim().startsWith('[')) {
-                // Looks like JSON array
-                const parsed = JSON.parse(aiPhotosString);
-                processedListing.ai_staged_photos = Array.isArray(parsed) ? parsed.filter(Boolean) : [aiPhotosString];
-              } else if (aiPhotosString.includes(',')) {
-                // Comma-separated string
-                processedListing.ai_staged_photos = aiPhotosString.split(',').map(url => url.trim()).filter(Boolean);
-              } else {
-                // Single URL
-                processedListing.ai_staged_photos = [aiPhotosString];
-              }
-            } catch (e) {
-              console.error(`Error parsing AI staged photos for listing ${listing.id}:`, e);
-              processedListing.ai_staged_photos = [aiPhotos as string]; // Use as single string
-            }
-          } else if (Array.isArray(aiPhotos)) {
-            // If it's already an array, filter out nulls/empty strings
-            processedListing.ai_staged_photos = aiPhotos.filter(Boolean);
+          // Check if we have the new media_content field
+          if (processedListing.media_content) {
+            console.log(`- Listing has new media_content format:`, processedListing.media_content);
+            const processedContent = processMediaContent(processedListing.media_content as Record<string, string[]>);
+            
+            // Store the processed content for easy access
+            processedListing.processedMediaContent = processedContent;
+            
+            // Set legacy fields for backward compatibility
+            processedListing.images = extractRegularPhotos(processedContent);
+            processedListing.ai_staged_photos = extractAiStagedPhotos(processedContent);
+            processedListing.floor_plan_image = processedContent.floorPlan;
+            processedListing.thumbnail_image = processedContent.thumbnail || 
+              (extractAiStagedPhotos(processedContent)[0] || extractRegularPhotos(processedContent)[0] || null);
+            
+            console.log(`- Processed from media_content:`, {
+              regularImages: processedListing.images,
+              aiStagedPhotos: processedListing.ai_staged_photos,
+              floorPlan: processedListing.floor_plan_image,
+              thumbnail: processedListing.thumbnail_image
+            });
           } else {
-            // Fallback - convert to string and use as single item
-            processedListing.ai_staged_photos = [String(aiPhotos)];
-          }
-          
-          // Ensure all URLs are properly processed
-          processedListing.ai_staged_photos = normalizeImageArray(processedListing.ai_staged_photos);
-          
-          console.log(`- Processed regular images:`, processedListing.images);
-          console.log(`- Processed AI staged photos:`, processedListing.ai_staged_photos);
-          
-          // Use media_metadata if available, otherwise generate a default structure
-          if (!processedListing.media_metadata) {
-            processedListing.media_metadata = {
-              regularImages: processedListing.images || [],
-              aiStagedPhotos: processedListing.ai_staged_photos || [],
-              floorPlan: listing.floor_plan_image || null,
-              video: null,
-              streetView: null,
-              lastUpdated: new Date().toISOString()
-            };
+            // Using legacy format, normalize the arrays
+            console.log(`- Using legacy format for listing ${listing.id}`);
+            console.log(`- Original images:`, listing.images);
+            console.log(`- Original AI staged photos:`, listing.ai_staged_photos);
+            console.log(`- Thumbnail image:`, listing.thumbnail_image);
+            
+            // Process regular images
+            processedListing.images = normalizeImageArray(listing.images);
+            
+            // Process AI staged photos
+            processedListing.ai_staged_photos = normalizeImageArray(listing.ai_staged_photos);
+            
+            console.log(`- Processed regular images:`, processedListing.images);
+            console.log(`- Processed AI staged photos:`, processedListing.ai_staged_photos);
           }
           
           return processedListing;

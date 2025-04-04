@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BadgeIndianRupee, Bed, Square, Compass, Layers } from "lucide-react";
@@ -7,7 +8,7 @@ import { VisitRequestModal } from "./VisitRequestModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCardCarousel } from "./building/ListingCardCarousel";
-import { normalizeImageArray } from "@/utils/mediaProcessing";
+import { normalizeImageArray, processMediaContent, extractRegularPhotos, extractAiStagedPhotos } from "@/utils/mediaProcessing";
 
 type ListingCardProps = {
   listing: Tables<"listings">;
@@ -38,17 +39,32 @@ export default function ListingCard({ listing }: ListingCardProps) {
     setShowVisitModal(true);
   };
 
-  // Process images to ensure they are arrays
-  const images = normalizeImageArray(listing.images);
-  const aiStagedPhotos = normalizeImageArray(listing.ai_staged_photos);
+  // Use either new format (media_content) or legacy format
+  const processedContent = listing.media_content ? processMediaContent(listing.media_content as Record<string, string[]>) : null;
+  const useNewFormat = !!processedContent && (
+    Object.keys(processedContent.photos).length > 0 || 
+    Object.keys(processedContent.aiStagedPhotos).length > 0
+  );
+  
+  // Process images based on the format available
+  const images = useNewFormat 
+    ? extractRegularPhotos(processedContent!)
+    : normalizeImageArray(listing.images);
+  
+  const aiStagedPhotos = useNewFormat
+    ? extractAiStagedPhotos(processedContent!)
+    : normalizeImageArray(listing.ai_staged_photos);
   
   console.log("[ListingCard] Processing images for listing:", listing.id);
+  console.log("[ListingCard] Using format:", useNewFormat ? "New JSON" : "Legacy");
   console.log("[ListingCard] Thumbnail:", listing.thumbnail_image);
   console.log("[ListingCard] Images:", images);
   console.log("[ListingCard] AI Images:", aiStagedPhotos);
   
   // Clear distinction between the thumbnail source and image sources
-  const thumbnailImage = listing.thumbnail_image || null;
+  const thumbnailImage = useNewFormat 
+    ? processedContent?.thumbnail || listing.thumbnail_image || null
+    : listing.thumbnail_image || null;
 
   return (
     <Card className="overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow">
