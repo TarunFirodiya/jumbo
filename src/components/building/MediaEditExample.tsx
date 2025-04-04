@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { MediaUploader } from "./MediaUploader";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { BuildingWithMedia, ListingWithMedia } from "@/types/mediaTypes";
 
 interface MediaEditExampleProps {
   buildingId?: string;
@@ -33,7 +34,7 @@ export function MediaEditExample({
           .from('buildings')
           .update({
             media_content: buildingMediaContent
-          })
+          } as Partial<BuildingWithMedia>)
           .eq('id', buildingId);
           
         if (buildingError) throw buildingError;
@@ -45,7 +46,7 @@ export function MediaEditExample({
           .from('listings')
           .update({
             media_content: listingMediaContent
-          })
+          } as Partial<ListingWithMedia>)
           .eq('id', listingId);
           
         if (listingError) throw listingError;

@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BadgeIndianRupee, Bed, Square, Compass, Layers } from "lucide-react";
@@ -9,9 +8,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCardCarousel } from "./building/ListingCardCarousel";
 import { normalizeImageArray, processMediaContent, extractRegularPhotos, extractAiStagedPhotos } from "@/utils/mediaProcessing";
+import { ListingWithMedia } from "@/types/mediaTypes";
 
 type ListingCardProps = {
-  listing: Tables<"listings">;
+  listing: Tables<"listings"> & { media_content?: Record<string, string[]> | null };
 };
 
 export default function ListingCard({ listing }: ListingCardProps) {

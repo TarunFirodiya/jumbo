@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PropertyGallery } from "@/components/building/PropertyGallery";
@@ -19,7 +18,6 @@ import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 import { AmenitiesGrid } from "@/components/building/AmenitiesGrid";
 import { LocationTab } from "@/components/building/tabs/LocationTab";
 import { generateBuildingSlug, extractIdFromSlug } from "@/utils/slugUtils";
-import { supabase } from "@/integrations/supabase/client";
 
 export default function BuildingDetails() {
   const { id, slug } = useParams();

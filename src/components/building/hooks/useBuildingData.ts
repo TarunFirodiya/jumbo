@@ -1,15 +1,15 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tables } from "@/integrations/supabase/types";
 import { normalizeImageArray, processMediaContent, extractRegularPhotos, extractAiStagedPhotos } from "@/utils/mediaProcessing";
+import { BuildingWithMedia, ListingWithMedia } from "@/types/mediaTypes";
 
 // Define a type that includes the proper properties
-export type BuildingWithFeatures = Tables<"buildings">;
+export type BuildingWithFeatures = BuildingWithMedia;
 
 // Define a type for listings with properly typed images that extends the base listing type
-export type ListingWithProcessedImages = Tables<"listings"> & {
+export type ListingWithProcessedImages = ListingWithMedia & {
   images: string[] | null;
   ai_staged_photos: string[] | null;
   processedMediaContent?: {
