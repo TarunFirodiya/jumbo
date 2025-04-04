@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +60,7 @@ export function ListingVariants({
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">
-                        ₹{formatPrice(listing.price || 0)}
+                        ₹{listing.price ? formatPrice(listing.price) : "On Request"}
                       </span>
                       <Badge variant="secondary">
                         {listing.bedrooms} BHK Apartment

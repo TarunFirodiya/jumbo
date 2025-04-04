@@ -1,17 +1,21 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BadgeIndianRupee, Bed, Square, Compass, Layers } from "lucide-react";
-import { Tables } from "@/integrations/supabase/types";
 import { useState } from "react";
 import { VisitRequestModal } from "./VisitRequestModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCardCarousel } from "./building/ListingCardCarousel";
-import { normalizeImageArray, processMediaContent, extractRegularPhotos, extractAiStagedPhotos } from "@/utils/mediaProcessing";
+import { 
+  processMediaContent, 
+  extractRegularPhotos, 
+  extractAiStagedPhotos 
+} from "@/utils/mediaUtils";
+import { formatPrice } from "@/lib/utils";
 import { ListingWithMedia } from "@/types/mediaTypes";
 
 type ListingCardProps = {
-  listing: Tables<"listings"> & { media_content?: Record<string, string[]> | null };
+  listing: ListingWithMedia;
 };
 
 export default function ListingCard({ listing }: ListingCardProps) {
@@ -39,32 +43,17 @@ export default function ListingCard({ listing }: ListingCardProps) {
     setShowVisitModal(true);
   };
 
-  // Use either new format (media_content) or legacy format
-  const processedContent = listing.media_content ? processMediaContent(listing.media_content as Record<string, string[]>) : null;
-  const useNewFormat = !!processedContent && (
-    Object.keys(processedContent.photos).length > 0 || 
-    Object.keys(processedContent.aiStagedPhotos).length > 0
-  );
+  // Process media content
+  const content = processMediaContent(listing.media_content);
+  const images = extractRegularPhotos(content);
+  const aiStagedPhotos = extractAiStagedPhotos(content);
   
-  // Process images based on the format available
-  const images = useNewFormat 
-    ? extractRegularPhotos(processedContent!)
-    : normalizeImageArray(listing.images);
-  
-  const aiStagedPhotos = useNewFormat
-    ? extractAiStagedPhotos(processedContent!)
-    : normalizeImageArray(listing.ai_staged_photos);
-  
-  console.log("[ListingCard] Processing images for listing:", listing.id);
-  console.log("[ListingCard] Using format:", useNewFormat ? "New JSON" : "Legacy");
-  console.log("[ListingCard] Thumbnail:", listing.thumbnail_image);
-  console.log("[ListingCard] Images:", images);
+  console.log("[ListingCard] Processing media for listing:", listing.id);
+  console.log("[ListingCard] Regular images:", images);
   console.log("[ListingCard] AI Images:", aiStagedPhotos);
   
-  // Clear distinction between the thumbnail source and image sources
-  const thumbnailImage = useNewFormat 
-    ? processedContent?.thumbnail || listing.thumbnail_image || null
-    : listing.thumbnail_image || null;
+  // Use thumbnail from content or fall back to first image
+  const thumbnailImage = content.thumbnail || (images.length > 0 ? images[0] : null);
 
   return (
     <Card className="overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow">
@@ -81,7 +70,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
       <div className="p-6 space-y-4">
         <div className="flex items-center gap-2 text-lg font-semibold">
           <BadgeIndianRupee className="h-5 w-5 text-muted-foreground" />
-          <span>{listing.price?.toLocaleString()}</span>
+          <span>{listing.price ? formatPrice(listing.price) : 'Price on request'}</span>
         </div>
         
         <div className="grid grid-cols-2 gap-2 text-sm">
