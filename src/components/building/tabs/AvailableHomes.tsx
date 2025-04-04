@@ -43,7 +43,7 @@ export function AvailableHomes({ listings }: AvailableHomesProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {availableListings.map((listing) => (
-        <ListingCard key={listing.id} listing={listing as ListingWithMedia} />
+        <ListingCard key={listing.id} listing={listing as unknown as ListingWithMedia} />
       ))}
     </div>
   );
