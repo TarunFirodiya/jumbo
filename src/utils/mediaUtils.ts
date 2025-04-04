@@ -36,13 +36,36 @@ export const processMediaUrl = (url: string): string => {
 export const safeJsonToRecord = (jsonData: SafeJsonObject): Record<string, string[]> => {
   if (!jsonData) return {};
   
-  // If it's already a proper Record<string, string[]>, return it
-  if (typeof jsonData === 'object' && !Array.isArray(jsonData)) {
-    return jsonData as Record<string, string[]>;
+  // If it's a string, number, boolean, or array, return empty object
+  if (typeof jsonData !== 'object' || Array.isArray(jsonData)) {
+    return {};
   }
   
-  // Otherwise return empty object
-  return {};
+  // If it's already a proper Record<string, string[]>, return it
+  const result: Record<string, string[]> = {};
+  
+  try {
+    // Attempt to convert the JSON object to our expected format
+    Object.entries(jsonData).forEach(([key, value]) => {
+      // Skip null/undefined values
+      if (value == null) return;
+      
+      // If the value is already an array of strings, use it
+      if (Array.isArray(value) && value.every(item => typeof item === 'string')) {
+        result[key] = value;
+      }
+      // If the value is a string, wrap it in an array
+      else if (typeof value === 'string') {
+        result[key] = [value];
+      }
+      // Otherwise skip this entry
+    });
+    
+    return result;
+  } catch (error) {
+    console.error("Error processing JSON data:", error);
+    return {};
+  }
 };
 
 /**

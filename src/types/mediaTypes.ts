@@ -21,8 +21,8 @@ export interface MediaContent {
   thumbnail: string | null;
 }
 
-// Helper type for safely managing Supabase JSON field
-export type SafeJsonObject = Record<string, string[]> | Record<string, any> | null;
+// Helper type for safely managing Supabase JSON field - expanded to accept all possible JSON values
+export type SafeJsonObject = Json | Record<string, string[]> | Record<string, any> | null;
 
 // Type for buildings with media_content field
 export interface BuildingWithMedia extends Tables<"buildings"> {
