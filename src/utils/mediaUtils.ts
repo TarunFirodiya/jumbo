@@ -1,3 +1,4 @@
+
 import { MediaContent, SafeJsonObject } from "@/types/mediaTypes";
 
 /**
@@ -22,6 +23,13 @@ export const processMediaUrl = (url: string): string => {
     if (match && match[1]) {
       return `https://www.youtube.com/embed/${match[1]}`;
     }
+  }
+  
+  // For HEIC formats, we might want to convert or handle them specially
+  // For now, just log that we're processing a HEIC file
+  if (url.toLowerCase().endsWith('.heic')) {
+    console.log("Processing HEIC image:", url);
+    // In the future, we might want to use a conversion service here
   }
   
   // Return the URL as is if no special processing is needed
@@ -74,9 +82,11 @@ export const safeJsonToRecord = (jsonData: SafeJsonObject): Record<string, strin
  * @returns Categorized media content
  */
 export const processMediaContent = (mediaContent: SafeJsonObject): MediaContent => {
+  console.log("Processing media content:", mediaContent);
   const safeContent = safeJsonToRecord(mediaContent);
   
   if (!safeContent || Object.keys(safeContent).length === 0) {
+    console.log("No safe content found in media_content");
     return {
       photos: {},
       aiStagedPhotos: {},
@@ -101,6 +111,7 @@ export const processMediaContent = (mediaContent: SafeJsonObject): MediaContent 
     if (!Array.isArray(urls) || urls.length === 0) return;
     
     const lowerKey = key.toLowerCase();
+    console.log(`Processing media key: ${key} with ${urls.length} URLs`);
     
     // Process special categories first
     if (lowerKey.includes('video')) {
@@ -134,6 +145,7 @@ export const processMediaContent = (mediaContent: SafeJsonObject): MediaContent 
     result.photos[key] = urls.map(processMediaUrl);
   });
   
+  console.log("Processed media content result:", result);
   return result;
 };
 
@@ -183,7 +195,7 @@ export const getPlaceholderImage = (): string => {
  * @returns True if the URL appears to be a valid image
  */
 export const isImageUrl = (url: string): boolean => {
-  return !!url && /\.(jpeg|jpg|gif|png|webp|avif|svg)(\?.*)?$/i.test(url);
+  return !!url && /\.(jpeg|jpg|gif|png|webp|avif|svg|heic)(\?.*)?$/i.test(url);
 };
 
 /**

@@ -10,8 +10,7 @@ import { ListingCardCarousel } from "./building/ListingCardCarousel";
 import { 
   processMediaContent, 
   extractRegularPhotos, 
-  extractAiStagedPhotos,
-  safeJsonToRecord 
+  extractAiStagedPhotos
 } from "@/utils/mediaUtils";
 import { formatPrice } from "@/lib/utils";
 import { ListingWithMedia } from "@/types/mediaTypes";
@@ -51,6 +50,8 @@ export default function ListingCard({ listing }: ListingCardProps) {
   const aiStagedPhotos = extractAiStagedPhotos(content);
   
   console.log("[ListingCard] Processing media for listing:", listing.id);
+  console.log("[ListingCard] Media content:", listing.media_content);
+  console.log("[ListingCard] Processed content:", content);
   console.log("[ListingCard] Regular images:", images);
   console.log("[ListingCard] AI Images:", aiStagedPhotos);
   

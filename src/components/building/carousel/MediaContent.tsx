@@ -1,7 +1,7 @@
 
 import { memo, useState, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
-import { isYoutubeUrl, isGoogleMapsUrl, getMediaType } from '@/utils/mediaProcessing';
+import { isYoutubeUrl, isGoogleMapsUrl } from '@/utils/mediaUtils';
 
 interface MediaContentProps {
   activeTab: string;
@@ -61,8 +61,15 @@ export const MediaContent = memo(function MediaContent({
         />
         <p>The image could not be loaded</p>
         <p className="text-sm mt-2">The source may be unavailable or in an unsupported format</p>
+        <p className="text-xs mt-4 text-gray-400 break-all">{imageUrl}</p>
       </div>
     );
+  }
+  
+  // Check if image is HEIC
+  const isHeicImage = imageUrl && imageUrl.toLowerCase().endsWith('.heic');
+  if (isHeicImage) {
+    console.log(`[MediaContent] Detected HEIC image: ${imageUrl}`);
   }
   
   // Render different content based on active tab
@@ -77,6 +84,12 @@ export const MediaContent = memo(function MediaContent({
           className="max-h-full max-w-full object-contain"
           onError={() => handleImageError(imageUrl)}
         />
+        
+        {isHeicImage && (
+          <div className="absolute top-8 right-8 bg-red-500 text-white px-3 py-1 rounded-full text-sm">
+            HEIC format may not display correctly
+          </div>
+        )}
         
         {activeTab === "imagine" && (
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm flex items-center gap-1">

@@ -24,6 +24,7 @@ export function ListingCardCarousel({
   className
 }: ListingCardCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   
   // Debug logs to trace image availability
   console.log("[ListingCardCarousel] Props received:", { 
@@ -106,11 +107,19 @@ export function ListingCardCarousel({
     }
   };
   
+  const handleImageError = (url: string) => {
+    console.error(`[ListingCardCarousel] Image failed to load:`, url);
+    setImageErrors(prev => ({ ...prev, [url]: true }));
+  };
+  
   // Check if current image is from AI staged photos
   const isAIImage = aiStagedPhotos?.includes(displayImages[currentIndex]);
   
   // Check if current image is the thumbnail
   const isThumbnail = thumbnailImage && displayImages[currentIndex] === thumbnailImage;
+  
+  // Check if current image has an error
+  const currentImageHasError = imageErrors[displayImages[currentIndex]];
 
   return (
     <div
@@ -121,20 +130,24 @@ export function ListingCardCarousel({
       )}
     >
       {/* Current image */}
-      <img
-        src={displayImages[currentIndex]}
-        alt={`${alt} ${currentIndex + 1}`}
-        onClick={handleImageClick}
-        className="h-full w-full object-cover transition-all duration-500 group-hover:scale-105"
-        onError={(e) => {
-          console.error(`[ListingCardCarousel] Image failed to load:`, displayImages[currentIndex]);
-          // Fallback to placeholder on error
-          (e.target as HTMLImageElement).src = "/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png";
-        }}
-      />
+      {currentImageHasError ? (
+        <img
+          src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
+          alt="Image not available"
+          className="h-full w-full object-cover transition-all"
+        />
+      ) : (
+        <img
+          src={displayImages[currentIndex]}
+          alt={`${alt} ${currentIndex + 1}`}
+          onClick={handleImageClick}
+          className="h-full w-full object-cover transition-all duration-500 group-hover:scale-105"
+          onError={() => handleImageError(displayImages[currentIndex])}
+        />
+      )}
 
       {/* AI staged badge */}
-      {isAIImage && (
+      {isAIImage && !currentImageHasError && (
         <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
           <Sparkles className="h-3 w-3" />
           <span>AI Staged</span>
@@ -142,7 +155,7 @@ export function ListingCardCarousel({
       )}
       
       {/* Thumbnail badge */}
-      {isThumbnail && (
+      {isThumbnail && !currentImageHasError && (
         <div className="absolute bottom-2 right-2 bg-yellow-500 text-black text-xs px-2 py-1 rounded-full">
           Featured
         </div>

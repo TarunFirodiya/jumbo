@@ -23,10 +23,11 @@ export function PropertyGallery({ mediaContent }: PropertyGalleryProps) {
   
   // Log processed content for debugging
   useEffect(() => {
+    console.log("PropertyGallery - Original mediaContent:", mediaContent);
     console.log("PropertyGallery - Processed Content:", content);
     console.log("PropertyGallery - Regular Photos:", regularPhotos);
     console.log("PropertyGallery - AI Staged Photos:", aiStagedPhotos);
-  }, [content, regularPhotos, aiStagedPhotos]);
+  }, [content, regularPhotos, aiStagedPhotos, mediaContent]);
     
   return (
     <div className="w-full rounded-lg overflow-hidden bg-muted">
