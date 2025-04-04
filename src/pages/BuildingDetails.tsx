@@ -101,10 +101,10 @@ export default function BuildingDetails() {
 
   const mediaContent = useMemo(() => {
     if (selectedListingData?.media_content) {
-      return selectedListingData.media_content as Record<string, string[]>;
+      return selectedListingData.media_content;
     }
     if (building?.media_content) {
-      return building.media_content as Record<string, string[]>;
+      return building.media_content;
     }
     return null;
   }, [selectedListingData, building]);
@@ -260,14 +260,7 @@ export default function BuildingDetails() {
         </div>
       </div>
 
-      <PropertyGallery 
-        images={displayImages} 
-        videoThumbnail={building.video_thumbnail} 
-        streetView={building.street_view} 
-        floorPlanImage={selectedListingData?.floor_plan_image || null}
-        aiStagedPhotos={selectedListingData?.ai_staged_photos || null}
-        mediaContent={mediaContent}
-      />
+      <PropertyGallery mediaContent={mediaContent} />
 
       <div className="container mx-auto px-4 py-8">
         <div className="md:hidden space-y-8 pb-24">

@@ -1,9 +1,15 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tables } from "@/integrations/supabase/types";
-import { normalizeImageArray, processMediaContent, extractRegularPhotos, extractAiStagedPhotos } from "@/utils/mediaProcessing";
-import { BuildingWithMedia, ListingWithMedia } from "@/types/mediaTypes";
+import { 
+  processMediaContent, 
+  extractRegularPhotos, 
+  extractAiStagedPhotos, 
+  safeJsonToRecord 
+} from "@/utils/mediaUtils";
+import { BuildingWithMedia, ListingWithMedia, SafeJsonObject } from "@/types/mediaTypes";
 
 // Define a type that includes the proper properties
 export type BuildingWithFeatures = BuildingWithMedia;
@@ -57,13 +63,12 @@ export function useBuildingData(id: string) {
           // Check if we have the new media_content field
           if (buildingWithFeatures.media_content) {
             console.log("Building has new media_content format:", buildingWithFeatures.media_content);
-            const processedContent = processMediaContent(buildingWithFeatures.media_content as Record<string, string[]>);
+            const processedContent = processMediaContent(buildingWithFeatures.media_content);
             
             // Use processed content to set legacy fields for backward compatibility
             buildingWithFeatures.images = extractRegularPhotos(processedContent);
             buildingWithFeatures.video_thumbnail = processedContent.video;
             buildingWithFeatures.street_view = processedContent.streetView;
-            // We don't save floor plan at building level typically
             
             console.log("Building with processed media content:", {
               regularImages: buildingWithFeatures.images,
@@ -71,8 +76,8 @@ export function useBuildingData(id: string) {
               streetView: buildingWithFeatures.street_view
             });
           } else {
-            // Normalize legacy images
-            buildingWithFeatures.images = normalizeImageArray(buildingWithFeatures.images);
+            // Ensure images is an array even if null or undefined
+            buildingWithFeatures.images = buildingWithFeatures.images || [];
             console.log("Building with normalized legacy images:", buildingWithFeatures.images);
           }
           
@@ -125,7 +130,7 @@ export function useBuildingData(id: string) {
           // Check if we have the new media_content field
           if (processedListing.media_content) {
             console.log(`- Listing has new media_content format:`, processedListing.media_content);
-            const processedContent = processMediaContent(processedListing.media_content as Record<string, string[]>);
+            const processedContent = processMediaContent(processedListing.media_content);
             
             // Store the processed content for easy access
             processedListing.processedMediaContent = processedContent;
@@ -144,17 +149,12 @@ export function useBuildingData(id: string) {
               thumbnail: processedListing.thumbnail_image
             });
           } else {
-            // Using legacy format, normalize the arrays
+            // Using legacy format, ensure arrays
             console.log(`- Using legacy format for listing ${listing.id}`);
-            console.log(`- Original images:`, listing.images);
-            console.log(`- Original AI staged photos:`, listing.ai_staged_photos);
-            console.log(`- Thumbnail image:`, listing.thumbnail_image);
             
-            // Process regular images
-            processedListing.images = normalizeImageArray(listing.images);
-            
-            // Process AI staged photos
-            processedListing.ai_staged_photos = normalizeImageArray(listing.ai_staged_photos);
+            // Ensure arrays even if null or undefined
+            processedListing.images = processedListing.images || [];
+            processedListing.ai_staged_photos = processedListing.ai_staged_photos || [];
             
             console.log(`- Processed regular images:`, processedListing.images);
             console.log(`- Processed AI staged photos:`, processedListing.ai_staged_photos);

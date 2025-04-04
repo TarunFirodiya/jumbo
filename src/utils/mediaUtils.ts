@@ -1,5 +1,4 @@
-
-import { MediaContent } from "@/types/mediaTypes";
+import { MediaContent, SafeJsonObject } from "@/types/mediaTypes";
 
 /**
  * Processes a media URL to ensure it's in a format that can be displayed
@@ -30,12 +29,31 @@ export const processMediaUrl = (url: string): string => {
 };
 
 /**
- * Processes the flat JSON media content structure
- * @param mediaContent The flat JSON media content object
+ * Safely converts the Supabase JSON field to a Record<string, string[]>
+ * @param jsonData The JSON data from Supabase
+ * @returns A safe Record or empty object
+ */
+export const safeJsonToRecord = (jsonData: SafeJsonObject): Record<string, string[]> => {
+  if (!jsonData) return {};
+  
+  // If it's already a proper Record<string, string[]>, return it
+  if (typeof jsonData === 'object' && !Array.isArray(jsonData)) {
+    return jsonData as Record<string, string[]>;
+  }
+  
+  // Otherwise return empty object
+  return {};
+};
+
+/**
+ * Processes the media content structure
+ * @param mediaContent The media content object from Supabase
  * @returns Categorized media content
  */
-export const processMediaContent = (mediaContent: Record<string, string[]> | null | undefined): MediaContent => {
-  if (!mediaContent) {
+export const processMediaContent = (mediaContent: SafeJsonObject): MediaContent => {
+  const safeContent = safeJsonToRecord(mediaContent);
+  
+  if (!safeContent || Object.keys(safeContent).length === 0) {
     return {
       photos: {},
       aiStagedPhotos: {},
@@ -56,7 +74,7 @@ export const processMediaContent = (mediaContent: Record<string, string[]> | nul
   };
   
   // Process each key in the media content
-  Object.entries(mediaContent).forEach(([key, urls]) => {
+  Object.entries(safeContent).forEach(([key, urls]) => {
     if (!Array.isArray(urls) || urls.length === 0) return;
     
     const lowerKey = key.toLowerCase();

@@ -3,12 +3,14 @@ import { ImageCarousel } from "./ImageCarousel";
 import { 
   processMediaContent, 
   extractRegularPhotos, 
-  extractAiStagedPhotos 
+  extractAiStagedPhotos,
+  safeJsonToRecord
 } from "@/utils/mediaUtils";
 import { useEffect } from "react";
+import { SafeJsonObject } from "@/types/mediaTypes";
 
 interface PropertyGalleryProps {
-  mediaContent?: Record<string, string[]> | null;
+  mediaContent?: SafeJsonObject;
 }
 
 export function PropertyGallery({ mediaContent }: PropertyGalleryProps) {

@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BadgeIndianRupee, Bed, Square, Compass, Layers } from "lucide-react";
@@ -9,7 +10,8 @@ import { ListingCardCarousel } from "./building/ListingCardCarousel";
 import { 
   processMediaContent, 
   extractRegularPhotos, 
-  extractAiStagedPhotos 
+  extractAiStagedPhotos,
+  safeJsonToRecord 
 } from "@/utils/mediaUtils";
 import { formatPrice } from "@/lib/utils";
 import { ListingWithMedia } from "@/types/mediaTypes";
@@ -43,7 +45,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
     setShowVisitModal(true);
   };
 
-  // Process media content
+  // Process media content with our safe utility function
   const content = processMediaContent(listing.media_content);
   const images = extractRegularPhotos(content);
   const aiStagedPhotos = extractAiStagedPhotos(content);
