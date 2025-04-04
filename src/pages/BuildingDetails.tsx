@@ -18,6 +18,7 @@ import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 import { AmenitiesGrid } from "@/components/building/AmenitiesGrid";
 import { LocationTab } from "@/components/building/tabs/LocationTab";
 import { generateBuildingSlug, extractIdFromSlug } from "@/utils/slugUtils";
+import { ListingWithMedia } from "@/types/mediaTypes";
 
 export default function BuildingDetails() {
   const { id, slug } = useParams();
@@ -84,7 +85,6 @@ export default function BuildingDetails() {
     return Math.min(...listings.map(l => Number(l.price || 0)));
   }, [listings, building?.min_price]);
 
-  // Get the selected listing's media content (either new format or legacy)
   const selectedListingData = useMemo(() => {
     if (selectedListing && listings) {
       return listings.find(l => l.id === selectedListing);
@@ -92,7 +92,6 @@ export default function BuildingDetails() {
     return null;
   }, [selectedListing, listings]);
   
-  // Determine which images to display based on selected listing
   const displayImages = useMemo(() => {
     if (selectedListingData?.images?.length) {
       return selectedListingData.images;
@@ -100,13 +99,10 @@ export default function BuildingDetails() {
     return building?.images || [];
   }, [selectedListingData, building?.images]);
 
-  // Get media content from either selected listing or building
   const mediaContent = useMemo(() => {
-    // First try to get from selected listing
     if (selectedListingData?.media_content) {
       return selectedListingData.media_content as Record<string, string[]>;
     }
-    // If not available in listing, try to get from building
     if (building?.media_content) {
       return building.media_content as Record<string, string[]>;
     }
@@ -275,7 +271,14 @@ export default function BuildingDetails() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="md:hidden space-y-8 pb-24">
-          <ListingVariants listings={listings} buildingId={building.id} buildingName={building.name} isMobile={true} onListingSelect={handleListingSelect} selectedListingId={selectedListing} />
+          <ListingVariants 
+            listings={listings as ListingWithMedia[]} 
+            buildingId={building.id} 
+            buildingName={building.name} 
+            isMobile={true} 
+            onListingSelect={handleListingSelect} 
+            selectedListingId={selectedListing} 
+          />
           
           <PropertyDetailsSection totalFloors={building.total_floors} age={building.age?.toString()} pricePsqft={building.price_psqft} water={building.water} bhkTypes={building.bhk_types} totalUnits={building.total_units} />
           
@@ -371,7 +374,13 @@ export default function BuildingDetails() {
 
           <div>
             <div className="md:sticky md:top-28">
-              <ListingVariants listings={listings} buildingId={building.id} buildingName={building.name} onListingSelect={handleListingSelect} selectedListingId={selectedListing} />
+              <ListingVariants 
+                listings={listings as ListingWithMedia[]} 
+                buildingId={building.id} 
+                buildingName={building.name} 
+                onListingSelect={handleListingSelect} 
+                selectedListingId={selectedListing} 
+              />
             </div>
           </div>
         </div>

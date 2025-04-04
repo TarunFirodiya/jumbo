@@ -5,6 +5,7 @@ import ListingCard from "@/components/ListingCard";
 import { Tables } from "@/integrations/supabase/types";
 import { Bell } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { ListingWithMedia } from "@/types/mediaTypes";
 
 interface AvailableHomesProps {
   listings: Tables<'listings'>[] | null;
@@ -42,7 +43,7 @@ export function AvailableHomes({ listings }: AvailableHomesProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {availableListings.map((listing) => (
-        <ListingCard key={listing.id} listing={listing} />
+        <ListingCard key={listing.id} listing={listing as ListingWithMedia} />
       ))}
     </div>
   );
