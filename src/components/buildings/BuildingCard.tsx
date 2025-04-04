@@ -1,125 +1,97 @@
 
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Star, MapPin, CalendarDays, Building2, Home, Heart } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { generateBuildingSlug } from "@/utils/slugUtils";
+import { Heart } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Building2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Tables } from "@/integrations/supabase/types";
+import { useNavigate } from "react-router-dom";
+import { ListingCardCarousel } from "@/components/building/ListingCardCarousel";
+import { formatPrice } from "@/lib/utils";
+import { processMediaContent, extractRegularPhotos, extractAiStagedPhotos } from "@/utils/mediaUtils";
 
 interface BuildingCardProps {
-  building: Tables<"buildings">; // Using the correct type from Supabase types
+  building: Tables<"buildings">;
   onNavigate: (path: string) => void;
   onShortlist: (buildingId: string) => void;
   isShortlisted: boolean;
 }
 
-export function BuildingCard({
-  building,
-  onNavigate,
-  onShortlist,
-  isShortlisted
-}: BuildingCardProps) {
-  const [isShortlisting, setIsShortlisting] = useState(false);
+export function BuildingCard({ building, onNavigate, onShortlist, isShortlisted }: BuildingCardProps) {
+  const navigate = useNavigate();
   
-  const handleShortlist = (e: React.MouseEvent, buildingId: string) => {
-    e.stopPropagation();
-    setIsShortlisting(true);
-    onShortlist(buildingId);
+  // Process media content for images
+  const content = processMediaContent(building.media_content);
+  const images = extractRegularPhotos(content);
+  const aiStagedPhotos = extractAiStagedPhotos(content);
+  const thumbnailImage = content.thumbnail;
+
+  console.log(`[BuildingCard ${building.id}] Processing media content:`, building.media_content);
+  console.log(`[BuildingCard ${building.id}] Extracted images:`, images);
+  console.log(`[BuildingCard ${building.id}] AI staged photos:`, aiStagedPhotos);
+  console.log(`[BuildingCard ${building.id}] Thumbnail:`, thumbnailImage);
+  
+  const handleClick = () => {
+    const slug = building.name
+      ? `${building.bedrooms ? `${building.bedrooms}-bhk-` : ''}${building.name.toLowerCase().replace(/\s+/g, '-')}-${building.locality ? building.locality.toLowerCase().replace(/\s+/g, '-') : 'location'}-${building.id}`
+      : `property-${building.id}`;
     
-    setTimeout(() => {
-      setIsShortlisting(false);
-    }, 800);
+    onNavigate(`/property/${slug}`);
   };
 
-  // Generate SEO-friendly URL slug
-  const slug = generateBuildingSlug(
-    building.name,
-    building.locality,
-    building.bhk_types,
-    building.id
-  );
-  
+  const handleShortlistClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onShortlist(building.id);
+  };
+
   return (
     <Card 
-      key={building.id} 
-      className="overflow-hidden cursor-pointer group hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-      onClick={() => onNavigate(`/property/${slug}`)}
+      className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow flex flex-col h-full" 
+      onClick={handleClick}
     >
-      <div className="relative bg-muted">
-        {building.images && building.images.length > 0 ? (
-          <div className="aspect-[4/3]">
-            <img 
-              src={building.images[0]} 
-              alt={building.name}
-              className="w-full h-full object-cover" 
-            />
-          </div>
+      <div className="relative">
+        {images.length > 0 || thumbnailImage ? (
+          <ListingCardCarousel 
+            images={images}
+            thumbnailImage={thumbnailImage}
+            aiStagedPhotos={aiStagedPhotos}
+            alt={`${building.name || 'Building'} in ${building.locality || 'Location'}`}
+          />
         ) : (
-          <div className="aspect-[4/3] flex items-center justify-center bg-slate-100">
-            <Building2 className="h-12 w-12 text-slate-300" />
+          <div className="aspect-video bg-gray-200 flex items-center justify-center">
+            <Building2 className="h-12 w-12 text-gray-400" />
           </div>
         )}
-        <button
-          onClick={(e) => handleShortlist(e, building.id)}
-          className={cn(
-            "absolute top-2 right-2 p-2 z-10 transition-all",
-            isShortlisting ? "scale-125" : "hover:scale-110"
-          )}
+        
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`absolute top-2 right-2 h-8 w-8 rounded-full ${
+            isShortlisted ? 'bg-primary text-white' : 'bg-white/80 text-gray-600'
+          } hover:scale-110 transition-all shadow-sm`}
+          onClick={handleShortlistClick}
         >
-          <Heart
-            className={cn(
-              "h-6 w-6 transition-all duration-300",
-              isShortlisted 
-                ? "fill-red-500 stroke-red-500" 
-                : "stroke-white fill-black/20 group-hover:fill-black/30",
-              isShortlisting && !isShortlisted && "animate-pulse fill-red-500 stroke-red-500"
-            )}
-          />
-        </button>
+          <Heart className={`h-4 w-4 ${isShortlisted ? 'fill-white' : ''}`} />
+          <span className="sr-only">Shortlist</span>
+        </Button>
       </div>
-      <CardContent className="p-4 group-hover:bg-slate-50 transition-colors duration-300">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold line-clamp-1">{building.name}</h3>
-            {building.google_rating && (
-              <div className="flex items-center gap-1 text-sm">
-                <Star className="h-4 w-4 fill-yellow-400 stroke-yellow-400" />
-                <span className="font-medium">{building.google_rating}</span>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4" />
-            <span>{building.locality}</span>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            {building.age && (
-              <div className="flex items-center gap-1">
-                <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{building.age} years</span>
-              </div>
-            )}
-            {building.total_floors && (
-              <div className="flex items-center gap-1">
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{building.total_floors} floors</span>
-              </div>
-            )}
-            {building.bhk_types && (
-              <div className="flex items-center gap-1">
-                <Home className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{building.bhk_types.join(", ")} BHK</span>
-              </div>
-            )}
-          </div>
-          <div className="flex items-baseline">
-            <span className="text-xs text-muted-foreground mr-1">Starting at</span>
-            <span className="text-lg font-semibold">
-              ₹{(building.min_price/10000000).toFixed(1)} Cr
-            </span>
-          </div>
+      
+      <div className="p-4 flex-grow flex flex-col justify-between">
+        <div>
+          <h3 className="font-semibold text-lg line-clamp-1">{building.name}</h3>
+          <p className="text-muted-foreground text-sm line-clamp-1">
+            {building.locality}
+            {building.sub_locality ? `, ${building.sub_locality}` : ''}
+          </p>
         </div>
-      </CardContent>
+        
+        <div className="mt-4">
+          {building.min_price ? (
+            <p className="font-medium">From {formatPrice(building.min_price)}</p>
+          ) : (
+            <p className="text-muted-foreground text-sm">Price on request</p>
+          )}
+        </div>
+      </div>
     </Card>
   );
 }
