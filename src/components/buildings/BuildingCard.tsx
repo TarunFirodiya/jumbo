@@ -31,8 +31,13 @@ export function BuildingCard({ building, onNavigate, onShortlist, isShortlisted 
   console.log(`[BuildingCard ${building.id}] Thumbnail:`, thumbnailImage);
   
   const handleClick = () => {
+    // Get bedrooms from bhk_types if available
+    const bedroomText = building.bhk_types && building.bhk_types.length > 0 
+      ? `${building.bhk_types.join('-')}-bhk-` 
+      : '';
+    
     const slug = building.name
-      ? `${building.bedrooms ? `${building.bedrooms}-bhk-` : ''}${building.name.toLowerCase().replace(/\s+/g, '-')}-${building.locality ? building.locality.toLowerCase().replace(/\s+/g, '-') : 'location'}-${building.id}`
+      ? `${bedroomText}${building.name.toLowerCase().replace(/\s+/g, '-')}-${building.locality ? building.locality.toLowerCase().replace(/\s+/g, '-') : 'location'}-${building.id}`
       : `property-${building.id}`;
     
     onNavigate(`/property/${slug}`);
