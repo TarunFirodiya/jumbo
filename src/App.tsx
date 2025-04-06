@@ -2,7 +2,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
 import MainLayout from "./layouts/MainLayout";
@@ -28,18 +28,16 @@ const PageLoader = () => (
   </div>
 );
 
-// Create a query client
-const queryClient = new QueryClientProvider({
-  client: new (require("@tanstack/react-query").QueryClient)({
-    defaultOptions: {
-      queries: {
-        retry: 1,
-        refetchOnWindowFocus: false,
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        gcTime: 10 * 60 * 1000, // 10 minutes - previously cacheTime
-      },
+// Create a query client properly
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes - previously cacheTime
     },
-  }),
+  },
 });
 
 // Analytics wrapper component to track route changes
