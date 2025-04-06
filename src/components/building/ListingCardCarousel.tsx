@@ -40,8 +40,8 @@ export function ListingCardCarousel({
   
   // Build display images array with priority order:
   // 1. Thumbnail (if provided)
-  // 2. AI staged photos (if available)
-  // 3. Regular images
+  // 2. Regular images (if available)
+  // 3. AI staged photos (if available)
   // 4. Fallback image
   const displayImages = (() => {
     let result: string[] = [];
@@ -52,25 +52,24 @@ export function ListingCardCarousel({
       result.push(thumbnailImage);
     }
     
-    // Then add AI staged photos if available
-    if (aiStagedPhotos && aiStagedPhotos.length > 0) {
-      console.log("[ListingCardCarousel] Adding AI staged photos:", aiStagedPhotos);
-      // Avoid duplicating the thumbnail if it's also the first AI staged photo
-      const filteredAiPhotos = aiStagedPhotos.filter(photo => 
-        photo !== thumbnailImage && photo
-      );
-      result = [...result, ...filteredAiPhotos];
-    }
-    
-    // Then add regular images, avoiding duplicates
+    // Then add regular images, avoiding duplicates of the thumbnail
     if (images && images.length > 0) {
       console.log("[ListingCardCarousel] Adding regular images:", images);
       const filteredImages = images.filter(img => 
-        img !== thumbnailImage && 
-        !(aiStagedPhotos || []).includes(img) &&
-        img // Ensure it's not empty
+        img !== thumbnailImage && img // Ensure it's not empty
       );
       result = [...result, ...filteredImages];
+    }
+    
+    // Then add AI staged photos if available, avoiding duplicates
+    if (aiStagedPhotos && aiStagedPhotos.length > 0) {
+      console.log("[ListingCardCarousel] Adding AI staged photos:", aiStagedPhotos);
+      const filteredAiPhotos = aiStagedPhotos.filter(photo => 
+        photo !== thumbnailImage && 
+        !images.includes(photo) &&
+        photo // Ensure it's not empty
+      );
+      result = [...result, ...filteredAiPhotos];
     }
     
     // Filter out any empty strings, null, or undefined values
