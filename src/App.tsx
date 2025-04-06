@@ -2,23 +2,23 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
 import MainLayout from "./layouts/MainLayout";
 import { HelmetProvider } from 'react-helmet-async';
 import { trackPageView } from "./utils/analytics";
 
-// Import directly to ensure it works
+// Import critical components directly
 import Buildings from "./pages/Buildings";
+import Dashboard from "./pages/Dashboard";
 
-// Lazy load other components with explicit paths
+// Lazy load other components
 const BuildingDetails = lazy(() => import("./pages/BuildingDetails"));
 const LocalityBuildings = lazy(() => import("./pages/LocalityBuildings"));
 const Shortlist = lazy(() => import("./pages/Shortlist"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Visits = lazy(() => import("./pages/Visits"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Create a loading component
@@ -28,15 +28,18 @@ const PageLoader = () => (
   </div>
 );
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes - previously cacheTime
+// Create a query client
+const queryClient = new QueryClientProvider({
+  client: new (require("@tanstack/react-query").QueryClient)({
+    defaultOptions: {
+      queries: {
+        retry: 1,
+        refetchOnWindowFocus: false,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        gcTime: 10 * 60 * 1000, // 10 minutes - previously cacheTime
+      },
     },
-  },
+  }),
 });
 
 // Analytics wrapper component to track route changes
