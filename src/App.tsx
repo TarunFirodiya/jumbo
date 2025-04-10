@@ -11,10 +11,10 @@ import { trackPageView } from "./utils/analytics";
 
 // Import directly to ensure it works
 import Buildings from "./pages/Buildings";
+import LocalityBuildings from "./pages/LocalityBuildings";
 
 // Lazy load other components with explicit paths
 const BuildingDetails = lazy(() => import("./pages/BuildingDetails"));
-const LocalityBuildings = lazy(() => import("./pages/LocalityBuildings"));
 const Shortlist = lazy(() => import("./pages/Shortlist"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Visits = lazy(() => import("./pages/Visits"));

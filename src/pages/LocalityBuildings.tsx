@@ -99,7 +99,7 @@ export default function LocalityBuildings() {
   if (buildingsLoading) {
     return (
       <>
-        <SEO title={`Loading Properties in ${localityDisplayName} | Cozy Dwell Search`} />
+        <SEO title={`Loading Properties in ${localityDisplayName} | Jumbo Homes`} />
         <div className="min-h-screen flex items-center justify-center">
           <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
         </div>
@@ -120,7 +120,7 @@ export default function LocalityBuildings() {
   return (
     <div className="min-h-screen pb-20">
       <SEO
-        title={`Properties in ${localityDisplayName} ${selectedCollections.length ? `| ${selectedCollections.join(', ')}` : ''} | Cozy Dwell Search`}
+        title={`Properties in ${localityDisplayName} ${selectedCollections.length ? `| ${selectedCollections.join(', ')}` : ''} | Jumbo Homes`}
         description={getSEODescription(localityDisplayName, selectedCollections, activeFilters, filteredBuildings.length)}
         canonical={`/buildings/locality/${encodeURIComponent(locality || '')}`}
         structuredData={getStructuredData(localityDisplayName, locality, filteredBuildings.length)}
