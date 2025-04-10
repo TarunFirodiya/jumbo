@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Star, Heart, Building2, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -120,7 +121,7 @@ export function BuildingCard({
         <div className="flex items-center gap-1.5">
           <SquareFootage className="h-5 w-5 text-gray-600" />
           <span className="text-gray-800 font-medium">
-            {building.min_builtup_area || "--"} sq ft
+            {building.min_builtup_area || building.total_units || "--"} sq ft
           </span>
         </div>
         
@@ -128,7 +129,7 @@ export function BuildingCard({
         <div className="flex items-center gap-1.5">
           <ArrowUpDown className="h-5 w-5 text-gray-600" />
           <span className="text-gray-800 font-medium">
-            4th floor
+            {building.total_floors ? `${building.total_floors} floors` : "4th floor"}
           </span>
         </div>
         
