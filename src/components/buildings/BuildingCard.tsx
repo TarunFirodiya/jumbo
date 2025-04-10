@@ -121,7 +121,7 @@ export function BuildingCard({
         <div className="flex items-center gap-1.5">
           <SquareFootage className="h-5 w-5 text-gray-600" />
           <span className="text-gray-800 font-medium">
-            {building.min_builtup_area || building.total_units || "--"} sq ft
+            {building.total_units ? `${building.total_units} sq ft` : "--"}
           </span>
         </div>
         
