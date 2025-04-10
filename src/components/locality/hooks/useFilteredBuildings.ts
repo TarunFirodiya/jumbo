@@ -1,7 +1,7 @@
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { Tables } from "@/integrations/supabase/types";
-import { Filter, FilterType, FilterOperator } from "@/components/ui/filters";
+import { Filter, FilterType } from "@/components/ui/filters";
 
 export function useFilteredBuildings(
   buildings: Tables<"buildings">[] | undefined,
@@ -31,7 +31,7 @@ export function useFilteredBuildings(
           
           switch (type) {
             case FilterType.LOCALITY:
-              return value.includes(building.locality);
+              return value.includes(building.locality || '');
               
             case FilterType.BHK:
               const bhkValues = value.map(v => parseInt(v.split(' ')[0]));
@@ -39,8 +39,10 @@ export function useFilteredBuildings(
               
             case FilterType.BUDGET:
               const { min_price } = building;
+              if (min_price === undefined || min_price === null) return true;
+              
               return value.some(range => {
-                const ranges = {
+                const ranges: Record<string, { min: number, max: number }> = {
                   "Under 50L": { min: 0, max: 5000000 },
                   "50L - 1Cr": { min: 5000000, max: 10000000 },
                   "1Cr - 1.5Cr": { min: 10000000, max: 15000000 },

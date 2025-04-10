@@ -34,8 +34,8 @@ export function BuildingCard({
   // Generate SEO-friendly URL slug
   const slug = generateBuildingSlug(
     building.name,
-    building.locality,
-    building.bhk_types,
+    building.locality || '',
+    building.bhk_types || [],
     building.id
   );
   
@@ -90,7 +90,7 @@ export function BuildingCard({
           </div>
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
             <MapPin className="h-4 w-4" />
-            <span>{building.locality}</span>
+            <span>{building.locality || 'Unknown location'}</span>
           </div>
           <div className="grid grid-cols-3 gap-2 text-sm">
             {building.age && (
@@ -105,7 +105,7 @@ export function BuildingCard({
                 <span className="font-medium">{building.total_floors} floors</span>
               </div>
             )}
-            {building.bhk_types && (
+            {building.bhk_types && building.bhk_types.length > 0 && (
               <div className="flex items-center gap-1">
                 <Home className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">{building.bhk_types.join(", ")} BHK</span>
@@ -115,7 +115,7 @@ export function BuildingCard({
           <div className="flex items-baseline">
             <span className="text-xs text-muted-foreground mr-1">Starting at</span>
             <span className="text-lg font-semibold">
-              ₹{(building.min_price/10000000).toFixed(1)} Cr
+              ₹{(building.min_price ? (building.min_price/10000000).toFixed(1) : "N/A")} Cr
             </span>
           </div>
         </div>
