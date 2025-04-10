@@ -9,16 +9,16 @@ import MainLayout from "./layouts/MainLayout";
 import { HelmetProvider } from 'react-helmet-async';
 import { trackPageView } from "./utils/analytics";
 
-// Import critical components directly
+// Import directly to ensure it works
 import Buildings from "./pages/Buildings";
-import Dashboard from "./pages/Dashboard";
 
-// Lazy load other components
+// Lazy load other components with explicit paths
 const BuildingDetails = lazy(() => import("./pages/BuildingDetails"));
 const LocalityBuildings = lazy(() => import("./pages/LocalityBuildings"));
 const Shortlist = lazy(() => import("./pages/Shortlist"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Visits = lazy(() => import("./pages/Visits"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Create a loading component
@@ -28,7 +28,6 @@ const PageLoader = () => (
   </div>
 );
 
-// Create a query client properly
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
