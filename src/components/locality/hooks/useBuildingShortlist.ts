@@ -1,17 +1,18 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
 
 export function useBuildingShortlist(
   user: any, 
-  buildingScores: Record<string, any> | null,
-  refetchBuildingScores: () => void
+  buildingScores: Record<string, any> | null, 
+  refetchBuildingScores: () => Promise<any>
 ) {
+  const { toast } = useToast();
+  const [authAction, setAuthAction] = useState<"shortlist" | "visit" | "notify">("shortlist");
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authAction, setAuthAction] = useState<"shortlist" | "visit" | "login">("login");
 
-  const handleShortlistToggle = async (buildingId: string) => {
+  const handleShortlistToggle = useCallback(async (buildingId: string) => {
     if (!user) {
       setAuthAction("shortlist");
       setShowAuthModal(true);
@@ -19,77 +20,41 @@ export function useBuildingShortlist(
     }
 
     try {
-      const isCurrentlyShortlisted = buildingScores?.[buildingId]?.shortlisted || false;
-      
-      if (isCurrentlyShortlisted) {
-        // If already shortlisted, remove from shortlist
-        const { error } = await supabase
-          .from('user_building_scores')
-          .update({ shortlisted: false })
-          .eq('user_id', user.id)
-          .eq('building_id', buildingId);
+      const currentShortlistStatus = buildingScores?.[buildingId]?.shortlisted || false;
+      const { error } = await supabase
+        .from('user_building_scores')
+        .upsert({
+          user_id: user.id,
+          building_id: buildingId,
+          shortlisted: !currentShortlistStatus,
+        }, {
+          onConflict: 'user_id,building_id',
+        });
 
-        if (error) throw error;
-        
-        toast({
-          title: "Removed from shortlist",
-          description: "Property has been removed from your shortlist.",
-          variant: "default",
-        });
-      } else {
-        // Check if record exists
-        const { data: existingRecord } = await supabase
-          .from('user_building_scores')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('building_id', buildingId)
-          .single();
-        
-        if (existingRecord) {
-          // Update existing record
-          const { error } = await supabase
-            .from('user_building_scores')
-            .update({ shortlisted: true })
-            .eq('user_id', user.id)
-            .eq('building_id', buildingId);
-            
-          if (error) throw error;
-        } else {
-          // Create new record
-          const { error } = await supabase
-            .from('user_building_scores')
-            .insert([{ 
-              user_id: user.id, 
-              building_id: buildingId,
-              shortlisted: true
-            }]);
-            
-          if (error) throw error;
-        }
-        
-        toast({
-          title: "Added to shortlist",
-          description: "Property has been added to your shortlist.",
-          variant: "default",
-        });
-      }
+      if (error) throw error;
       
-      // Refetch the building scores to update UI
-      refetchBuildingScores();
+      await refetchBuildingScores();
+      
+      toast({
+        title: currentShortlistStatus ? "Removed from shortlist" : "Added to shortlist",
+        description: currentShortlistStatus 
+          ? "Building has been removed from your shortlist"
+          : "Building has been added to your shortlist",
+      });
     } catch (error) {
       console.error('Error toggling shortlist:', error);
       toast({
         title: "Error",
-        description: "There was an error updating your shortlist. Please try again.",
+        description: "Could not update shortlist",
         variant: "destructive",
       });
     }
-  };
+  }, [user, buildingScores, toast, supabase, refetchBuildingScores]);
 
   return {
     handleShortlistToggle,
+    authAction,
     showAuthModal,
-    setShowAuthModal,
-    authAction
+    setShowAuthModal
   };
 }
