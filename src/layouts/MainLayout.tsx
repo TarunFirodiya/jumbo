@@ -186,7 +186,7 @@ export default function MainLayout({
       <div className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b ${showLogo ? 'translate-y-0' : '-translate-y-full'}`}>
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
-            <img src="/lovable-uploads/5bf0afa9-589a-4956-a3d9-f06c59dcd99a.png" alt="Jumbo Homes" className="h-9 md:h-10 w-auto cursor-pointer transition-transform duration-300 hover:scale-105" onClick={() => navigate('/buildings')} />
+            <img src="/lovable-uploads/26059069-49b6-40ee-a507-a55f4589f7f4.png" alt="Jumbo Homes" className="h-9 md:h-10 w-auto cursor-pointer transition-transform duration-300 hover:scale-105" onClick={() => navigate('/buildings')} />
             
             {!isAuthPage && !isPreferencesPage && <>
                 <form onSubmit={handleSearch} className="hidden md:flex items-center flex-1 max-w-xl mx-auto">
@@ -246,7 +246,7 @@ export default function MainLayout({
         <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <img src="/lovable-uploads/5bf0afa9-589a-4956-a3d9-f06c59dcd99a.png" alt="Jumbo Homes" className="h-10 w-auto mb-4" />
+              <img src="/lovable-uploads/26059069-49b6-40ee-a507-a55f4589f7f4.png" alt="Jumbo Homes" className="h-10 w-auto mb-4" />
               <p className="text-sm text-gray-600">
                 Making home search simpler and more personalized for everyone.
               </p>
