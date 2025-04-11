@@ -1,11 +1,11 @@
-
 import { ImageCarousel } from "./ImageCarousel";
 import { 
   processMediaContent, 
   extractRegularPhotos, 
   extractAiStagedPhotos,
   getPlaceholderImage,
-  isHeicUrl
+  isHeicUrl,
+  convertHeicToJpeg
 } from "@/utils/mediaUtils";
 import { useEffect, useState } from "react";
 import { SafeJsonObject } from "@/types/mediaTypes";
@@ -20,6 +20,7 @@ export function PropertyGallery({ mediaContent }: PropertyGalleryProps) {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [streetViewUrl, setStreetViewUrl] = useState<string | null>(null);
   const [floorPlanUrl, setFloorPlanUrl] = useState<string | null>(null);
+  const [processingHeic, setProcessingHeic] = useState(false);
   
   // Process media content when it changes
   useEffect(() => {
@@ -34,27 +35,24 @@ export function PropertyGallery({ mediaContent }: PropertyGalleryProps) {
       const photos = extractRegularPhotos(processedContent);
       const aiPhotos = extractAiStagedPhotos(processedContent);
       
-      // Filter out any HEIC images and replace with placeholders
-      const filteredPhotos = photos.map(url => 
-        isHeicUrl(url) ? getPlaceholderImage() : url
-      );
-      
-      const filteredAiPhotos = aiPhotos.map(url => 
-        isHeicUrl(url) ? getPlaceholderImage() : url
-      );
-      
-      // Set the state values
-      setRegularPhotos(filteredPhotos);
-      setAiStagedPhotos(filteredAiPhotos);
+      // Now we keep HEIC images but convert them when displayed
+      setRegularPhotos(photos);
+      setAiStagedPhotos(aiPhotos);
       setVideoUrl(processedContent.video);
       setStreetViewUrl(processedContent.streetView);
       setFloorPlanUrl(processedContent.floorPlan);
       
-      console.log("PropertyGallery - Regular Photos (Filtered):", filteredPhotos);
-      console.log("PropertyGallery - AI Staged Photos (Filtered):", filteredAiPhotos);
+      console.log("PropertyGallery - Regular Photos:", photos);
+      console.log("PropertyGallery - AI Staged Photos:", aiPhotos);
       console.log("PropertyGallery - Video URL:", processedContent.video);
       console.log("PropertyGallery - Street View URL:", processedContent.streetView);
       console.log("PropertyGallery - Floor Plan URL:", processedContent.floorPlan);
+      
+      // Check if we need to handle HEIC conversions
+      const hasHeicImages = [...photos, ...aiPhotos].some(url => isHeicUrl(url));
+      if (hasHeicImages) {
+        console.log("PropertyGallery - HEIC images detected, they will be converted on display");
+      }
     } catch (error) {
       console.error("PropertyGallery - Error processing media content:", error);
       // Set fallback values

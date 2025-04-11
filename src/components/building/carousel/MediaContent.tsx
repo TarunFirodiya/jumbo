@@ -1,7 +1,7 @@
 
 import { memo, useState, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
-import { isYoutubeUrl, isGoogleMapsUrl, getPlaceholderImage, isHeicUrl } from '@/utils/mediaUtils';
+import { isYoutubeUrl, isGoogleMapsUrl, getPlaceholderImage, isHeicUrl, convertHeicToJpeg } from '@/utils/mediaUtils';
 
 interface MediaContentProps {
   activeTab: string;
@@ -23,6 +23,31 @@ export const MediaContent = memo(function MediaContent({
   buildingName = "Property"
 }: MediaContentProps) {
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [convertedImages, setConvertedImages] = useState<Record<string, string>>({});
+  const [isConverting, setIsConverting] = useState(false);
+  
+  // Convert HEIC images when they're displayed
+  useEffect(() => {
+    const currentImage = displayImages[currentSlide];
+    
+    if (currentImage && isHeicUrl(currentImage) && !convertedImages[currentImage]) {
+      setIsConverting(true);
+      
+      convertHeicToJpeg(currentImage)
+        .then(convertedUrl => {
+          setConvertedImages(prev => ({
+            ...prev,
+            [currentImage]: convertedUrl
+          }));
+          setIsConverting(false);
+        })
+        .catch(error => {
+          console.error("Error converting HEIC image:", error);
+          setImageErrors(prev => ({ ...prev, [currentImage]: true }));
+          setIsConverting(false);
+        });
+    }
+  }, [currentSlide, displayImages, convertedImages]);
   
   // Debug log for active tab and images
   useEffect(() => {
@@ -71,31 +96,29 @@ export const MediaContent = memo(function MediaContent({
     );
   }
   
-  // Check if image is HEIC
-  const isHeicImage = imageUrl && isHeicUrl(imageUrl);
-  if (isHeicImage) {
-    console.log(`[MediaContent] Detected HEIC image: ${imageUrl}`);
+  // If image is currently converting, show loading state
+  if (isConverting) {
     return (
       <div className="flex flex-col items-center justify-center text-white/80 p-6 text-center">
-        <img 
-          src={getPlaceholderImage()}
-          alt="HEIC format not supported"
-          className="w-64 h-64 object-contain opacity-50 mb-4"
-        />
-        <p>HEIC image format is not supported by browsers</p>
-        <p className="text-sm mt-2">Using placeholder image instead</p>
+        <div className="w-16 h-16 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mb-4"></div>
+        <p>Converting HEIC image...</p>
+        <p className="text-sm mt-2">This may take a moment</p>
       </div>
     );
   }
   
+  // Check if image is HEIC and we have a converted version
+  const isHeicImage = imageUrl && isHeicUrl(imageUrl);
+  const displayUrl = isHeicImage && convertedImages[imageUrl] ? convertedImages[imageUrl] : imageUrl;
+  
   // Render different content based on active tab
   if (activeTab === "photos" || activeTab === "imagine") {
-    console.log(`[MediaContent] Rendering image: ${imageUrl} for ${activeTab} tab`);
+    console.log(`[MediaContent] Rendering image: ${displayUrl} for ${activeTab} tab`);
     
     return (
       <>
         <img
-          src={imageUrl}
+          src={displayUrl}
           alt={`${activeTab === "imagine" ? "AI Staged Image" : "Property view"} ${currentSlide + 1}`}
           className="max-h-full max-w-full object-contain"
           onError={() => handleImageError(imageUrl)}

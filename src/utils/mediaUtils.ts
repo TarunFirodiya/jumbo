@@ -1,5 +1,55 @@
-
 import { MediaContent, SafeJsonObject } from "@/types/mediaTypes";
+import heic2any from 'heic2any';
+
+// Cache for converted HEIC images
+const heicConversionCache: Record<string, string> = {};
+
+/**
+ * Converts a HEIC image to JPEG format using the heic2any library
+ * @param url The URL of the HEIC image
+ * @returns A Promise that resolves to a blob URL of the converted image
+ */
+export const convertHeicToJpeg = async (url: string): Promise<string> => {
+  // Check if we already converted this image
+  if (heicConversionCache[url]) {
+    console.log(`Using cached conversion for HEIC image: ${url}`);
+    return heicConversionCache[url];
+  }
+  
+  try {
+    console.log(`Converting HEIC image to JPEG: ${url}`);
+    
+    // Fetch the HEIC image
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      console.error(`Failed to fetch HEIC image: ${url}`, response.status);
+      throw new Error(`Failed to fetch HEIC image: ${response.status}`);
+    }
+    
+    // Get the image data as an ArrayBuffer
+    const arrayBuffer = await response.arrayBuffer();
+    
+    // Convert the HEIC image to JPEG using heic2any
+    const jpegBlob = await heic2any({
+      blob: new Blob([arrayBuffer]),
+      toType: 'image/jpeg',
+      quality: 0.8
+    }) as Blob;
+    
+    // Create a blob URL for the converted image
+    const jpegUrl = URL.createObjectURL(jpegBlob);
+    
+    // Cache the conversion result
+    heicConversionCache[url] = jpegUrl;
+    
+    console.log(`HEIC conversion successful: ${url} -> ${jpegUrl}`);
+    return jpegUrl;
+  } catch (error) {
+    console.error(`HEIC conversion failed for ${url}:`, error);
+    return getPlaceholderImage();
+  }
+};
 
 /**
  * Processes a media URL to ensure it's in a format that can be displayed
@@ -11,17 +61,11 @@ export const processMediaUrl = (url: string): string => {
   
   console.log(`Processing media URL: ${url}`);
   
-  // Handle HEIC format images
+  // Handle HEIC format images - we'll return the original URL
+  // but the component will use convertHeicToJpeg to display it
   if (url.toLowerCase().endsWith('.heic')) {
-    console.log("Converting HEIC image to fallback:", url);
-    // For HEIC images, we'll use an image proxy service or a placeholder
-    // Since browsers can't directly display HEIC, we need an alternative
-    
-    // Option 1: Return a standard placeholder image
-    return "/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png";
-    
-    // Option 2: In a production environment, you might want to use an image conversion service like:
-    // return `https://your-conversion-service.com/convert?url=${encodeURIComponent(url)}&format=jpg`;
+    console.log("Found HEIC image, will be converted on display:", url);
+    return url;
   }
   
   // Handle Google Drive URLs

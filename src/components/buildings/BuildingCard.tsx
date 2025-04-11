@@ -1,11 +1,16 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Star, Heart, Building2, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateBuildingSlug } from "@/utils/slugUtils";
 import { Tables } from "@/integrations/supabase/types";
 import { SquareFootage } from "@/components/icons/SquareFootage";
-import { extractImageArrayFromObject, getPlaceholderImage, isHeicUrl } from "@/utils/mediaUtils";
+import { 
+  extractImageArrayFromObject, 
+  getPlaceholderImage, 
+  isHeicUrl, 
+  convertHeicToJpeg 
+} from "@/utils/mediaUtils";
 
 interface BuildingCardProps {
   building: Tables<"buildings">; 
@@ -22,6 +27,8 @@ export function BuildingCard({
 }: BuildingCardProps) {
   const [isShortlisting, setIsShortlisting] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [mainImage, setMainImage] = useState('');
+  const [isConvertingHeic, setIsConvertingHeic] = useState(false);
   
   const handleShortlist = (e: React.MouseEvent, buildingId: string) => {
     e.stopPropagation();
@@ -36,7 +43,43 @@ export function BuildingCard({
   const handleImageError = () => {
     console.log(`BuildingCard: Image error for building ${building.id}`);
     setImageError(true);
+    setMainImage(getPlaceholderImage());
   };
+
+  // Set up the main image when component mounts or building changes
+  useEffect(() => {
+    // Get building images
+    const buildingImages = extractImageArrayFromObject(building);
+    
+    // Use the first image or a placeholder
+    let imageToUse = imageError || buildingImages.length === 0 
+      ? getPlaceholderImage()
+      : buildingImages[0];
+    
+    // Check if it's a HEIC image
+    if (isHeicUrl(imageToUse)) {
+      console.log(`BuildingCard: Found HEIC image, will convert: ${imageToUse}`);
+      setIsConvertingHeic(true);
+      
+      // First set the placeholder while we convert
+      setMainImage(getPlaceholderImage());
+      
+      // Convert the HEIC image
+      convertHeicToJpeg(imageToUse)
+        .then(convertedUrl => {
+          console.log(`BuildingCard: HEIC conversion successful: ${convertedUrl}`);
+          setMainImage(convertedUrl);
+          setIsConvertingHeic(false);
+        })
+        .catch(error => {
+          console.error(`BuildingCard: HEIC conversion failed:`, error);
+          setMainImage(getPlaceholderImage());
+          setIsConvertingHeic(false);
+        });
+    } else {
+      setMainImage(imageToUse);
+    }
+  }, [building, imageError]);
 
   // Generate SEO-friendly URL slug
   const slug = generateBuildingSlug(
@@ -61,22 +104,6 @@ export function BuildingCard({
     ? building.bhk_types[0] 
     : "";
   
-  // Get building images
-  const buildingImages = extractImageArrayFromObject(building);
-  
-  // Use the first image or a placeholder
-  let mainImage = imageError || buildingImages.length === 0 
-    ? getPlaceholderImage()
-    : buildingImages[0];
-    
-  // Check if it's a HEIC image and replace with placeholder if needed
-  if (isHeicUrl(mainImage)) {
-    console.log(`BuildingCard: Found HEIC image, replacing with placeholder: ${mainImage}`);
-    mainImage = getPlaceholderImage();
-  }
-  
-  console.log(`BuildingCard: ${building.id} - Using image:`, mainImage);
-  
   return (
     <div 
       key={building.id} 
@@ -86,12 +113,19 @@ export function BuildingCard({
       <div className="relative">
         {/* Property Image */}
         <div className="relative aspect-square overflow-hidden">
-          <img 
-            src={mainImage} 
-            alt={building.name}
-            className="w-full h-full object-cover"
-            onError={handleImageError}
-          />
+          {isConvertingHeic ? (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100">
+              <div className="w-12 h-12 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mb-2"></div>
+              <p className="text-sm text-gray-500">Converting image...</p>
+            </div>
+          ) : (
+            <img 
+              src={mainImage} 
+              alt={building.name}
+              className="w-full h-full object-cover"
+              onError={handleImageError}
+            />
+          )}
           
           {/* Rating Pill */}
           {building.google_rating && (
