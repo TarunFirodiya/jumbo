@@ -14,7 +14,6 @@ import { trackPageView } from "./utils/analytics";
 import Buildings from "./pages/Buildings";
 import LocalityBuildings from "./pages/LocalityBuildings";
 import Dashboard from "./pages/Dashboard";
-import Index from "./pages/Index";
 
 // Lazy load other components with explicit paths
 const BuildingDetails = lazy(() => import("./pages/BuildingDetails"));
@@ -65,7 +64,7 @@ const App = () => (
             <MainLayout>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
-                  <Route path="/" element={<Index />} />
+                  <Route path="/" element={<Navigate to="/buildings" replace />} />
                   <Route path="/buildings" element={<Buildings />} />
                   <Route path="/buildings/locality/:locality" element={<LocalityBuildings />} />
                   
