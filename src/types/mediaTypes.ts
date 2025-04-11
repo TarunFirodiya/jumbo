@@ -1,6 +1,6 @@
 
 // Type for safe JSON objects from Supabase that might be strings, objects, or null
-export type SafeJsonObject = Record<string, any> | string | null | undefined;
+export type SafeJsonObject = Record<string, any> | string | null | undefined | number | boolean | any[];
 
 // Type for processed media content
 export interface MediaContent {

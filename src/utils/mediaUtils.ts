@@ -1,3 +1,4 @@
+
 import { MediaContent, SafeJsonObject } from "@/types/mediaTypes";
 
 /**
@@ -58,7 +59,7 @@ export const safeJsonToRecord = (jsonData: SafeJsonObject): Record<string, strin
   }
   
   // If it's a number, boolean, or array, return empty object
-  if (typeof jsonData !== 'object' || Array.isArray(jsonData)) {
+  if (typeof jsonData !== 'object' || Array.isArray(jsonData) || jsonData === null) {
     console.error("Invalid JSON structure, expected object but got:", typeof jsonData);
     return {};
   }
