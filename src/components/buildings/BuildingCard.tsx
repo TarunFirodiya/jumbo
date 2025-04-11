@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Star, Heart, Building2, ArrowUpDown } from "lucide-react";
+import { Star, Heart, Building2, ArrowUpDown, Bed } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateBuildingSlug } from "@/utils/slugUtils";
 import { Tables } from "@/integrations/supabase/types";
@@ -10,9 +10,13 @@ import {
   getPlaceholderImage,
   isHeicUrl 
 } from "@/utils/mediaUtils";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { formatPrice } from "@/lib/utils";
 
 interface BuildingCardProps {
   building: Tables<"buildings">; 
+  listing?: Tables<"listings">;
   onNavigate: (path: string) => void;
   onShortlist: (buildingId: string) => void;
   isShortlisted: boolean;
@@ -20,6 +24,7 @@ interface BuildingCardProps {
 
 export function BuildingCard({
   building,
+  listing,
   onNavigate,
   onShortlist,
   isShortlisted
@@ -27,6 +32,32 @@ export function BuildingCard({
   const [isShortlisting, setIsShortlisting] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [mainImage, setMainImage] = useState('');
+  
+  // Fetch first available listing if not provided
+  const { data: fetchedListing } = useQuery({
+    queryKey: ['first-listing', building.id],
+    queryFn: async () => {
+      if (listing) return null; // Skip if listing is already provided
+      
+      const { data, error } = await supabase
+        .from('listings')
+        .select('*')
+        .eq('building_id', building.id)
+        .eq('status', 'available')
+        .limit(1);
+      
+      if (error) {
+        console.error('Error fetching listing:', error);
+        return null;
+      }
+      
+      return data?.[0] || null;
+    },
+    enabled: !listing
+  });
+  
+  // Use provided listing or the fetched one
+  const activeListing = listing || fetchedListing;
   
   const handleShortlist = (e: React.MouseEvent, buildingId: string) => {
     e.stopPropagation();
@@ -71,24 +102,16 @@ export function BuildingCard({
     building.id
   );
   
-  // Format price to Indian format (e.g. 1,60,00,000)
-  const formatIndianPrice = (price: number) => {
-    if (!price) return "";
-    
-    const crore = (price/10000000).toFixed(2);
-    return crore.endsWith('.00') 
-      ? crore.slice(0, -3) 
-      : crore;
-  };
-  
   // Get the main BHK type for the card title
-  const mainBhkType = building.bhk_types && building.bhk_types.length > 0 
-    ? building.bhk_types[0] 
-    : "";
+  const mainBhkType = activeListing?.bedrooms 
+    ? `${activeListing.bedrooms}BHK` 
+    : (building.bhk_types && building.bhk_types.length > 0 
+        ? building.bhk_types[0] 
+        : "");
   
   return (
     <div 
-      key={building.id} 
+      key={building.id + (listing?.id || '')}
       className="overflow-hidden cursor-pointer group rounded-3xl bg-white shadow-md hover:shadow-xl transition-all duration-300"
       onClick={() => onNavigate(`/property/${slug}`)}
     >
@@ -143,30 +166,59 @@ export function BuildingCard({
       </div>
       
       {/* Property details in footer */}
-      <div className="p-3 flex items-center justify-between bg-white">
+      <div className="p-3 flex items-center justify-between bg-black/90 text-white">
         {/* Area */}
         <div className="flex items-center gap-1.5">
-          <SquareFootage className="h-5 w-5 text-gray-600" />
-          <span className="text-gray-800 font-medium">
-            {building.total_units ? `${building.total_units} sq ft` : "--"}
+          <SquareFootage className="h-5 w-5 text-white" />
+          <span className="font-medium">
+            {activeListing?.built_up_area ? `${activeListing.built_up_area} sq ft` : "--"}
           </span>
         </div>
         
         {/* Floor */}
         <div className="flex items-center gap-1.5">
-          <ArrowUpDown className="h-5 w-5 text-gray-600" />
-          <span className="text-gray-800 font-medium">
-            {building.total_floors ? `${building.total_floors} floors` : "4th floor"}
+          <Building2 className="h-5 w-5 text-white" />
+          <span className="font-medium">
+            {activeListing?.floor ? `${activeListing.floor}${getOrdinalSuffix(activeListing.floor)} floor` : "--"}
           </span>
         </div>
         
         {/* Price */}
         <div className="text-xl font-bold">
-          {building.min_price 
-            ? `${formatIndianPrice(building.min_price)} Cr` 
-            : "Price on request"}
+          {activeListing?.price 
+            ? `${formatIndianCrore(activeListing.price)} Crore` 
+            : (building.min_price 
+              ? `${formatIndianCrore(building.min_price)} Cr` 
+              : "Price on request")}
         </div>
       </div>
     </div>
   );
+}
+
+// Helper function to format price in Indian Crore format (e.g., 1.60 Crore)
+function formatIndianCrore(price: number): string {
+  if (!price) return "";
+  
+  const crore = (price/10000000).toFixed(2);
+  return crore.endsWith('.00') 
+    ? crore.slice(0, -3) 
+    : crore;
+}
+
+// Helper function to get ordinal suffix (e.g., 1st, 2nd, 3rd, 4th)
+function getOrdinalSuffix(num: number): string {
+  const j = num % 10;
+  const k = num % 100;
+  
+  if (j === 1 && k !== 11) {
+    return 'st';
+  }
+  if (j === 2 && k !== 12) {
+    return 'nd';
+  }
+  if (j === 3 && k !== 13) {
+    return 'rd';
+  }
+  return 'th';
 }
