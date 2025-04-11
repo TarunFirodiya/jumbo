@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { generateBuildingSlug } from "@/utils/slugUtils";
 import { Tables } from "@/integrations/supabase/types";
 import { SquareFootage } from "@/components/icons/SquareFootage";
-import { extractImageArrayFromObject, getPlaceholderImage } from "@/utils/mediaUtils";
+import { extractImageArrayFromObject, getPlaceholderImage, isHeicUrl } from "@/utils/mediaUtils";
 
 interface BuildingCardProps {
   building: Tables<"buildings">; 
@@ -65,9 +65,15 @@ export function BuildingCard({
   const buildingImages = extractImageArrayFromObject(building);
   
   // Use the first image or a placeholder
-  const mainImage = imageError || buildingImages.length === 0 
+  let mainImage = imageError || buildingImages.length === 0 
     ? getPlaceholderImage()
     : buildingImages[0];
+    
+  // Check if it's a HEIC image and replace with placeholder if needed
+  if (isHeicUrl(mainImage)) {
+    console.log(`BuildingCard: Found HEIC image, replacing with placeholder: ${mainImage}`);
+    mainImage = getPlaceholderImage();
+  }
   
   console.log(`BuildingCard: ${building.id} - Using image:`, mainImage);
   

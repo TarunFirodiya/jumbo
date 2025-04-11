@@ -1,7 +1,7 @@
 
 import { memo, useState, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
-import { isYoutubeUrl, isGoogleMapsUrl, getPlaceholderImage } from '@/utils/mediaUtils';
+import { isYoutubeUrl, isGoogleMapsUrl, getPlaceholderImage, isHeicUrl } from '@/utils/mediaUtils';
 
 interface MediaContentProps {
   activeTab: string;
@@ -72,7 +72,7 @@ export const MediaContent = memo(function MediaContent({
   }
   
   // Check if image is HEIC
-  const isHeicImage = imageUrl && imageUrl.toLowerCase().endsWith('.heic');
+  const isHeicImage = imageUrl && isHeicUrl(imageUrl);
   if (isHeicImage) {
     console.log(`[MediaContent] Detected HEIC image: ${imageUrl}`);
     return (
@@ -82,8 +82,8 @@ export const MediaContent = memo(function MediaContent({
           alt="HEIC format not supported"
           className="w-64 h-64 object-contain opacity-50 mb-4"
         />
-        <p>HEIC image format is not supported</p>
-        <p className="text-sm mt-2">This image needs to be converted to JPG or PNG format</p>
+        <p>HEIC image format is not supported by browsers</p>
+        <p className="text-sm mt-2">Using placeholder image instead</p>
       </div>
     );
   }

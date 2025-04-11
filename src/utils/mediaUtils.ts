@@ -11,6 +11,19 @@ export const processMediaUrl = (url: string): string => {
   
   console.log(`Processing media URL: ${url}`);
   
+  // Handle HEIC format images
+  if (url.toLowerCase().endsWith('.heic')) {
+    console.log("Converting HEIC image to fallback:", url);
+    // For HEIC images, we'll use an image proxy service or a placeholder
+    // Since browsers can't directly display HEIC, we need an alternative
+    
+    // Option 1: Return a standard placeholder image
+    return "/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png";
+    
+    // Option 2: In a production environment, you might want to use an image conversion service like:
+    // return `https://your-conversion-service.com/convert?url=${encodeURIComponent(url)}&format=jpg`;
+  }
+  
   // Handle Google Drive URLs
   if (url.includes('drive.google.com')) {
     const match = url.match(/drive\.google\.com\/[^\/]+\/d\/([^\/]+)/);
@@ -25,14 +38,6 @@ export const processMediaUrl = (url: string): string => {
     if (match && match[1]) {
       return `https://www.youtube.com/embed/${match[1]}`;
     }
-  }
-  
-  // For HEIC formats, we might want to convert or handle them specially
-  if (url.toLowerCase().endsWith('.heic')) {
-    console.log("Processing HEIC image:", url);
-    // In the future, we might want to use a conversion service here
-    // For now, we'll return a placeholder image instead
-    return "/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png";
   }
   
   // Check for relative URLs without http or https
@@ -253,6 +258,15 @@ export const getPlaceholderImage = (): string => {
  */
 export const isImageUrl = (url: string): boolean => {
   return !!url && /\.(jpeg|jpg|gif|png|webp|avif|svg)(\?.*)?$/i.test(url);
+};
+
+/**
+ * Determines if a URL points to an HEIC image
+ * @param url The URL to check
+ * @returns True if the URL appears to be an HEIC image
+ */
+export const isHeicUrl = (url: string): boolean => {
+  return !!url && /\.heic(\?.*)?$/i.test(url);
 };
 
 /**

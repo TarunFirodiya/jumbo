@@ -4,7 +4,8 @@ import {
   processMediaContent, 
   extractRegularPhotos, 
   extractAiStagedPhotos,
-  getPlaceholderImage
+  getPlaceholderImage,
+  isHeicUrl
 } from "@/utils/mediaUtils";
 import { useEffect, useState } from "react";
 import { SafeJsonObject } from "@/types/mediaTypes";
@@ -33,15 +34,24 @@ export function PropertyGallery({ mediaContent }: PropertyGalleryProps) {
       const photos = extractRegularPhotos(processedContent);
       const aiPhotos = extractAiStagedPhotos(processedContent);
       
+      // Filter out any HEIC images and replace with placeholders
+      const filteredPhotos = photos.map(url => 
+        isHeicUrl(url) ? getPlaceholderImage() : url
+      );
+      
+      const filteredAiPhotos = aiPhotos.map(url => 
+        isHeicUrl(url) ? getPlaceholderImage() : url
+      );
+      
       // Set the state values
-      setRegularPhotos(photos);
-      setAiStagedPhotos(aiPhotos);
+      setRegularPhotos(filteredPhotos);
+      setAiStagedPhotos(filteredAiPhotos);
       setVideoUrl(processedContent.video);
       setStreetViewUrl(processedContent.streetView);
       setFloorPlanUrl(processedContent.floorPlan);
       
-      console.log("PropertyGallery - Regular Photos:", photos);
-      console.log("PropertyGallery - AI Staged Photos:", aiPhotos);
+      console.log("PropertyGallery - Regular Photos (Filtered):", filteredPhotos);
+      console.log("PropertyGallery - AI Staged Photos (Filtered):", filteredAiPhotos);
       console.log("PropertyGallery - Video URL:", processedContent.video);
       console.log("PropertyGallery - Street View URL:", processedContent.streetView);
       console.log("PropertyGallery - Floor Plan URL:", processedContent.floorPlan);
