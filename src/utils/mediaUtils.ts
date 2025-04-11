@@ -9,6 +9,8 @@ import { MediaContent, SafeJsonObject } from "@/types/mediaTypes";
 export const processMediaUrl = (url: string): string => {
   if (!url) return '';
   
+  console.log(`Processing media URL: ${url}`);
+  
   // Handle Google Drive URLs
   if (url.includes('drive.google.com')) {
     const match = url.match(/drive\.google\.com\/[^\/]+\/d\/([^\/]+)/);
@@ -26,12 +28,17 @@ export const processMediaUrl = (url: string): string => {
   }
   
   // For HEIC formats, we might want to convert or handle them specially
-  // For now, just log that we're processing a HEIC file
   if (url.toLowerCase().endsWith('.heic')) {
     console.log("Processing HEIC image:", url);
     // In the future, we might want to use a conversion service here
     // For now, we'll return a placeholder image instead
     return "/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png";
+  }
+  
+  // Check for relative URLs without http or https
+  if (!url.startsWith('http') && !url.startsWith('/')) {
+    console.log("Converting relative URL to absolute:", url);
+    return `/${url}`;
   }
   
   // Return the URL as is if no special processing is needed
@@ -44,23 +51,27 @@ export const processMediaUrl = (url: string): string => {
  * @returns A safe Record or empty object
  */
 export const safeJsonToRecord = (jsonData: SafeJsonObject): Record<string, string[]> => {
-  if (!jsonData) return {};
+  if (!jsonData) {
+    console.log("safeJsonToRecord: Input is null or undefined, returning empty object");
+    return {};
+  }
   
-  console.log("Processing JSON data:", jsonData);
+  console.log("safeJsonToRecord: Processing JSON data type:", typeof jsonData);
   
   // If it's a string, parse it as JSON
   if (typeof jsonData === 'string') {
     try {
+      console.log("safeJsonToRecord: Input is a string, attempting to parse as JSON");
       jsonData = JSON.parse(jsonData);
     } catch (e) {
-      console.error("Error parsing JSON string:", e);
+      console.error("safeJsonToRecord: Error parsing JSON string:", e);
       return {};
     }
   }
   
-  // If it's a number, boolean, or array, return empty object
+  // If it's a number, boolean, or array, or null, return empty object
   if (typeof jsonData !== 'object' || Array.isArray(jsonData) || jsonData === null) {
-    console.error("Invalid JSON structure, expected object but got:", typeof jsonData);
+    console.error("safeJsonToRecord: Invalid JSON structure, expected object but got:", typeof jsonData);
     return {};
   }
   
@@ -69,11 +80,11 @@ export const safeJsonToRecord = (jsonData: SafeJsonObject): Record<string, strin
   
   try {
     // Attempt to convert the JSON object to our expected format
-    Object.entries(jsonData).forEach(([key, value]) => {
+    Object.entries(jsonData as Record<string, any>).forEach(([key, value]) => {
       // Skip null/undefined values
       if (value == null) return;
       
-      console.log(`Processing key: ${key}, value type: ${typeof value}, isArray: ${Array.isArray(value)}`);
+      console.log(`safeJsonToRecord: Processing key: ${key}, value type: ${typeof value}, isArray: ${Array.isArray(value)}`);
       
       // If the value is already an array of strings, use it
       if (Array.isArray(value) && value.every(item => typeof item === 'string' || item === null)) {
@@ -96,14 +107,14 @@ export const safeJsonToRecord = (jsonData: SafeJsonObject): Record<string, strin
       }
       // Otherwise skip this entry
       else {
-        console.warn(`Skipping unprocessable value for key ${key}:`, value);
+        console.warn(`safeJsonToRecord: Skipping unprocessable value for key ${key}:`, value);
       }
     });
     
-    console.log("Processed result:", result);
+    console.log("safeJsonToRecord: Processed result:", result);
     return result;
   } catch (error) {
-    console.error("Error processing JSON data:", error);
+    console.error("safeJsonToRecord: Error processing JSON data:", error);
     return {};
   }
 };
@@ -114,21 +125,9 @@ export const safeJsonToRecord = (jsonData: SafeJsonObject): Record<string, strin
  * @returns Categorized media content
  */
 export const processMediaContent = (mediaContent: SafeJsonObject): MediaContent => {
-  console.log("Processing media content:", mediaContent);
-  const safeContent = safeJsonToRecord(mediaContent);
+  console.log("processMediaContent: Processing media content type:", typeof mediaContent);
   
-  if (!safeContent || Object.keys(safeContent).length === 0) {
-    console.log("No safe content found in media_content");
-    return {
-      photos: {},
-      aiStagedPhotos: {},
-      video: null,
-      streetView: null,
-      floorPlan: null,
-      thumbnail: null
-    };
-  }
-  
+  // Create an empty result structure
   const result: MediaContent = {
     photos: {},
     aiStagedPhotos: {},
@@ -138,12 +137,26 @@ export const processMediaContent = (mediaContent: SafeJsonObject): MediaContent 
     thumbnail: null
   };
   
+  // If there's no media content, return the empty structure
+  if (!mediaContent) {
+    console.log("processMediaContent: No media content provided");
+    return result;
+  }
+  
+  // Convert to a safe record for processing
+  const safeContent = safeJsonToRecord(mediaContent);
+  
+  if (Object.keys(safeContent).length === 0) {
+    console.log("processMediaContent: No safe content found in media_content");
+    return result;
+  }
+  
   // Process each key in the media content
   Object.entries(safeContent).forEach(([key, urls]) => {
     if (!Array.isArray(urls) || urls.length === 0) return;
     
     const lowerKey = key.toLowerCase();
-    console.log(`Processing media key: ${key} with ${urls.length} URLs`);
+    console.log(`processMediaContent: Processing media key: ${key} with ${urls.length} URLs`);
     
     // Process special categories first
     if (lowerKey.includes('video')) {
@@ -177,7 +190,7 @@ export const processMediaContent = (mediaContent: SafeJsonObject): MediaContent 
     result.photos[key] = urls.map(processMediaUrl);
   });
   
-  console.log("Processed media content result:", result);
+  console.log("processMediaContent: Processed result:", result);
   return result;
 };
 
@@ -199,7 +212,12 @@ export const extractRegularPhotos = (content: MediaContent): string[] => {
     photos.push(content.thumbnail);
   }
   
-  console.log("Extracted regular photos:", photos);
+  // Add a fallback image if there are no images at all
+  if (photos.length === 0) {
+    photos.push("/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png");
+  }
+  
+  console.log("extractRegularPhotos: Extracted regular photos:", photos);
   return photos;
 };
 
@@ -216,7 +234,7 @@ export const extractAiStagedPhotos = (content: MediaContent): string[] => {
     aiPhotos.push(...roomPhotos.filter(url => url && url.trim() !== ''));
   });
   
-  console.log("Extracted AI staged photos:", aiPhotos);
+  console.log("extractAiStagedPhotos: Extracted AI staged photos:", aiPhotos);
   return aiPhotos;
 };
 
@@ -264,16 +282,22 @@ export const isGoogleMapsUrl = (url: string): boolean => {
 export const extractImageArrayFromObject = (obj: any): string[] => {
   if (!obj) return [];
   
+  console.log("extractImageArrayFromObject: Processing object:", obj.id);
+  
   // First check if there's a proper images array
   if (Array.isArray(obj.images) && obj.images.length > 0) {
-    return obj.images.filter(Boolean);
+    console.log("extractImageArrayFromObject: Using existing images array");
+    return obj.images.filter(Boolean).map((url: string) => processMediaUrl(url));
   }
   
   // Then check for media_content
   if (obj.media_content) {
+    console.log("extractImageArrayFromObject: Using media_content");
     const processed = processMediaContent(obj.media_content);
     return extractRegularPhotos(processed);
   }
   
-  return [];
+  // Fallback to placeholder
+  console.log("extractImageArrayFromObject: No images found, using placeholder");
+  return [getPlaceholderImage()];
 };

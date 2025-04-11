@@ -6,8 +6,8 @@ import { Tables } from "@/integrations/supabase/types";
 import { 
   processMediaContent, 
   extractRegularPhotos, 
-  extractAiStagedPhotos, 
-  safeJsonToRecord 
+  extractAiStagedPhotos,
+  getPlaceholderImage
 } from "@/utils/mediaUtils";
 import { BuildingWithMedia, ListingWithMedia, SafeJsonObject } from "@/types/mediaTypes";
 
@@ -60,24 +60,33 @@ export function useBuildingData(id: string) {
         if (data) {
           const buildingWithFeatures = data as BuildingWithFeatures;
           
+          console.log("Raw building data:", buildingWithFeatures);
+          
           // Check if we have the new media_content field
           if (buildingWithFeatures.media_content) {
-            console.log("Building has new media_content format:", buildingWithFeatures.media_content);
-            const processedContent = processMediaContent(buildingWithFeatures.media_content);
+            console.log("Building has media_content field:", buildingWithFeatures.media_content);
             
-            // Use processed content to set legacy fields for backward compatibility
-            buildingWithFeatures.images = extractRegularPhotos(processedContent);
-            buildingWithFeatures.video_thumbnail = processedContent.video;
-            buildingWithFeatures.street_view = processedContent.streetView;
-            
-            console.log("Building with processed media content:", {
-              regularImages: buildingWithFeatures.images,
-              video: buildingWithFeatures.video_thumbnail,
-              streetView: buildingWithFeatures.street_view
-            });
+            try {
+              const processedContent = processMediaContent(buildingWithFeatures.media_content);
+              
+              // Use processed content to set legacy fields for backward compatibility
+              buildingWithFeatures.images = extractRegularPhotos(processedContent);
+              buildingWithFeatures.video_thumbnail = processedContent.video;
+              buildingWithFeatures.street_view = processedContent.streetView;
+              
+              console.log("Building with processed media content:", {
+                images: buildingWithFeatures.images,
+                video: buildingWithFeatures.video_thumbnail,
+                streetView: buildingWithFeatures.street_view
+              });
+            } catch (error) {
+              console.error("Error processing building media content:", error);
+              // Set default values if processing fails
+              buildingWithFeatures.images = [getPlaceholderImage()];
+            }
           } else {
             // Ensure images is an array even if null or undefined
-            buildingWithFeatures.images = buildingWithFeatures.images || [];
+            buildingWithFeatures.images = buildingWithFeatures.images || [getPlaceholderImage()];
             console.log("Building with normalized legacy images:", buildingWithFeatures.images);
           }
           
@@ -129,31 +138,39 @@ export function useBuildingData(id: string) {
           
           // Check if we have the new media_content field
           if (processedListing.media_content) {
-            console.log(`- Listing has new media_content format:`, processedListing.media_content);
-            const processedContent = processMediaContent(processedListing.media_content);
+            console.log(`- Listing has media_content field:`, processedListing.media_content);
             
-            // Store the processed content for easy access
-            processedListing.processedMediaContent = processedContent;
-            
-            // Set legacy fields for backward compatibility
-            processedListing.images = extractRegularPhotos(processedContent);
-            processedListing.ai_staged_photos = extractAiStagedPhotos(processedContent);
-            processedListing.floor_plan_image = processedContent.floorPlan;
-            processedListing.thumbnail_image = processedContent.thumbnail || 
-              (extractAiStagedPhotos(processedContent)[0] || extractRegularPhotos(processedContent)[0] || null);
-            
-            console.log(`- Processed from media_content:`, {
-              regularImages: processedListing.images,
-              aiStagedPhotos: processedListing.ai_staged_photos,
-              floorPlan: processedListing.floor_plan_image,
-              thumbnail: processedListing.thumbnail_image
-            });
+            try {
+              const processedContent = processMediaContent(processedListing.media_content);
+              
+              // Store the processed content for easy access
+              processedListing.processedMediaContent = processedContent;
+              
+              // Set legacy fields for backward compatibility
+              processedListing.images = extractRegularPhotos(processedContent);
+              processedListing.ai_staged_photos = extractAiStagedPhotos(processedContent);
+              processedListing.floor_plan_image = processedContent.floorPlan;
+              processedListing.thumbnail_image = processedContent.thumbnail || 
+                (extractAiStagedPhotos(processedContent)[0] || extractRegularPhotos(processedContent)[0] || getPlaceholderImage());
+              
+              console.log(`- Processed from media_content:`, {
+                regularImages: processedListing.images,
+                aiStagedPhotos: processedListing.ai_staged_photos,
+                floorPlan: processedListing.floor_plan_image,
+                thumbnail: processedListing.thumbnail_image
+              });
+            } catch (error) {
+              console.error(`Error processing listing media content:`, error);
+              // Set default values if processing fails
+              processedListing.images = [getPlaceholderImage()];
+              processedListing.ai_staged_photos = [];
+            }
           } else {
             // Using legacy format, ensure arrays
             console.log(`- Using legacy format for listing ${listing.id}`);
             
             // Ensure arrays even if null or undefined
-            processedListing.images = processedListing.images || [];
+            processedListing.images = processedListing.images || [getPlaceholderImage()];
             processedListing.ai_staged_photos = processedListing.ai_staged_photos || [];
             
             console.log(`- Processed regular images:`, processedListing.images);

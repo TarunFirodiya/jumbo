@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { generateBuildingSlug } from "@/utils/slugUtils";
 import { Tables } from "@/integrations/supabase/types";
 import { SquareFootage } from "@/components/icons/SquareFootage";
-import { extractImageArrayFromObject } from "@/utils/mediaUtils";
+import { extractImageArrayFromObject, getPlaceholderImage } from "@/utils/mediaUtils";
 
 interface BuildingCardProps {
   building: Tables<"buildings">; 
@@ -21,6 +21,7 @@ export function BuildingCard({
   isShortlisted
 }: BuildingCardProps) {
   const [isShortlisting, setIsShortlisting] = useState(false);
+  const [imageError, setImageError] = useState(false);
   
   const handleShortlist = (e: React.MouseEvent, buildingId: string) => {
     e.stopPropagation();
@@ -30,6 +31,11 @@ export function BuildingCard({
     setTimeout(() => {
       setIsShortlisting(false);
     }, 800);
+  };
+
+  const handleImageError = () => {
+    console.log(`BuildingCard: Image error for building ${building.id}`);
+    setImageError(true);
   };
 
   // Generate SEO-friendly URL slug
@@ -58,6 +64,13 @@ export function BuildingCard({
   // Get building images
   const buildingImages = extractImageArrayFromObject(building);
   
+  // Use the first image or a placeholder
+  const mainImage = imageError || buildingImages.length === 0 
+    ? getPlaceholderImage()
+    : buildingImages[0];
+  
+  console.log(`BuildingCard: ${building.id} - Using image:`, mainImage);
+  
   return (
     <div 
       key={building.id} 
@@ -67,22 +80,12 @@ export function BuildingCard({
       <div className="relative">
         {/* Property Image */}
         <div className="relative aspect-square overflow-hidden">
-          {buildingImages.length > 0 ? (
-            <img 
-              src={buildingImages[0]} 
-              alt={building.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                // Fallback to placeholder if image fails to load
-                const target = e.target as HTMLImageElement;
-                target.src = "/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png";
-              }}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-slate-100">
-              <Building2 className="h-12 w-12 text-slate-300" />
-            </div>
-          )}
+          <img 
+            src={mainImage} 
+            alt={building.name}
+            className="w-full h-full object-cover"
+            onError={handleImageError}
+          />
           
           {/* Rating Pill */}
           {building.google_rating && (

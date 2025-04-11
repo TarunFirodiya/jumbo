@@ -1,7 +1,7 @@
 
 import { memo, useState, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
-import { isYoutubeUrl, isGoogleMapsUrl } from '@/utils/mediaUtils';
+import { isYoutubeUrl, isGoogleMapsUrl, getPlaceholderImage } from '@/utils/mediaUtils';
 
 interface MediaContentProps {
   activeTab: string;
@@ -35,6 +35,11 @@ export const MediaContent = memo(function MediaContent({
     console.log(`[MediaContent] No images available for ${activeTab} tab`);
     return (
       <div className="flex flex-col items-center justify-center text-white/80 p-6 text-center">
+        <img 
+          src={getPlaceholderImage()}
+          alt="No images available"
+          className="w-64 h-64 object-contain opacity-50 mb-4"
+        />
         <p>No content available for this section</p>
         <p className="text-sm mt-2">Try selecting a different category from the tabs above</p>
       </div>
@@ -55,7 +60,7 @@ export const MediaContent = memo(function MediaContent({
     return (
       <div className="flex flex-col items-center justify-center text-white/80 p-6 text-center">
         <img 
-          src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
+          src={getPlaceholderImage()}
           alt="Image not available"
           className="w-64 h-64 object-contain opacity-50 mb-4"
         />
@@ -73,7 +78,7 @@ export const MediaContent = memo(function MediaContent({
     return (
       <div className="flex flex-col items-center justify-center text-white/80 p-6 text-center">
         <img 
-          src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
+          src={getPlaceholderImage()}
           alt="HEIC format not supported"
           className="w-64 h-64 object-contain opacity-50 mb-4"
         />
@@ -159,6 +164,11 @@ export const MediaContent = memo(function MediaContent({
     } else {
       return (
         <div className="flex flex-col items-center justify-center text-white/80 p-6 text-center">
+          <img 
+            src={getPlaceholderImage()}
+            alt="Street view format not supported"
+            className="w-64 h-64 object-contain opacity-50 mb-4"
+          />
           <p>Street view format is not supported</p>
           <p className="text-sm mt-2">Please use a Google Maps Street View link</p>
           <p className="text-xs mt-4 text-gray-400 break-all">{streetView}</p>
@@ -182,6 +192,11 @@ export const MediaContent = memo(function MediaContent({
   console.log(`[MediaContent] No specific content available for ${activeTab} tab`);
   return (
     <div className="flex flex-col items-center justify-center text-white/80 p-6 text-center">
+      <img 
+        src={getPlaceholderImage()}
+        alt="No content available"
+        className="w-64 h-64 object-contain opacity-50 mb-4"
+      />
       <p>No content available for this category</p>
       <p className="text-sm mt-2">Try selecting a different category or check back later</p>
     </div>
