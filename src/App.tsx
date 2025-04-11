@@ -2,7 +2,8 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
 import MainLayout from "./layouts/MainLayout";
@@ -13,6 +14,7 @@ import { trackPageView } from "./utils/analytics";
 import Buildings from "./pages/Buildings";
 import LocalityBuildings from "./pages/LocalityBuildings";
 import Dashboard from "./pages/Dashboard";
+import Index from "./pages/Index";
 
 // Lazy load other components with explicit paths
 const BuildingDetails = lazy(() => import("./pages/BuildingDetails"));
@@ -63,7 +65,7 @@ const App = () => (
             <MainLayout>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
-                  <Route path="/" element={<Navigate to="/buildings" replace />} />
+                  <Route path="/" element={<Index />} />
                   <Route path="/buildings" element={<Buildings />} />
                   <Route path="/buildings/locality/:locality" element={<LocalityBuildings />} />
                   
