@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { generateBuildingSlug } from "@/utils/slugUtils";
 import { Tables } from "@/integrations/supabase/types";
 import { SquareFootage } from "@/components/icons/SquareFootage";
+import { extractImageArrayFromObject } from "@/utils/mediaUtils";
 
 interface BuildingCardProps {
   building: Tables<"buildings">; 
@@ -54,6 +55,9 @@ export function BuildingCard({
     ? building.bhk_types[0] 
     : "";
   
+  // Get building images
+  const buildingImages = extractImageArrayFromObject(building);
+  
   return (
     <div 
       key={building.id} 
@@ -63,11 +67,16 @@ export function BuildingCard({
       <div className="relative">
         {/* Property Image */}
         <div className="relative aspect-square overflow-hidden">
-          {building.images && building.images.length > 0 ? (
+          {buildingImages.length > 0 ? (
             <img 
-              src={building.images[0]} 
+              src={buildingImages[0]} 
               alt={building.name}
-              className="w-full h-full object-cover" 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to placeholder if image fails to load
+                const target = e.target as HTMLImageElement;
+                target.src = "/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png";
+              }}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-slate-100">

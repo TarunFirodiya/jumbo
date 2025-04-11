@@ -70,6 +70,17 @@ export const MediaContent = memo(function MediaContent({
   const isHeicImage = imageUrl && imageUrl.toLowerCase().endsWith('.heic');
   if (isHeicImage) {
     console.log(`[MediaContent] Detected HEIC image: ${imageUrl}`);
+    return (
+      <div className="flex flex-col items-center justify-center text-white/80 p-6 text-center">
+        <img 
+          src="/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png"
+          alt="HEIC format not supported"
+          className="w-64 h-64 object-contain opacity-50 mb-4"
+        />
+        <p>HEIC image format is not supported</p>
+        <p className="text-sm mt-2">This image needs to be converted to JPG or PNG format</p>
+      </div>
+    );
   }
   
   // Render different content based on active tab
@@ -84,12 +95,6 @@ export const MediaContent = memo(function MediaContent({
           className="max-h-full max-w-full object-contain"
           onError={() => handleImageError(imageUrl)}
         />
-        
-        {isHeicImage && (
-          <div className="absolute top-8 right-8 bg-red-500 text-white px-3 py-1 rounded-full text-sm">
-            HEIC format may not display correctly
-          </div>
-        )}
         
         {activeTab === "imagine" && (
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm flex items-center gap-1">
