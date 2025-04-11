@@ -37,6 +37,7 @@ export function BuildingsList({
         return [];
       }
       
+      console.log('Fetched listings:', data);
       return data || [];
     },
     enabled: filteredBuildings.length > 0
@@ -71,6 +72,8 @@ export function BuildingsList({
       {filteredBuildings.map((building) => {
         const isShortlisted = buildingScores?.[building.id]?.shortlisted || false;
         const buildingListings = listingsByBuilding[building.id] || [];
+        
+        console.log(`Building ${building.name} has ${buildingListings.length} listings`);
         
         // If there are listings for this building, render one card per listing
         if (buildingListings.length > 0) {

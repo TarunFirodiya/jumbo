@@ -9,5 +9,5 @@ export function cn(...inputs: ClassValue[]) {
 // Add the formatPrice function to format currency values
 export function formatPrice(price: number): string {
   // Format as Indian currency with commas (e.g., 1,00,000)
-  return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  return price.toLocaleString('en-IN');
 }

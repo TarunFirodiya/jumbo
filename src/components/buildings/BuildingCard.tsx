@@ -112,12 +112,12 @@ export function BuildingCard({
   return (
     <div 
       key={building.id + (listing?.id || '')}
-      className="overflow-hidden cursor-pointer group rounded-3xl bg-white shadow-md hover:shadow-xl transition-all duration-300"
+      className="overflow-hidden cursor-pointer group rounded-xl bg-white shadow-md hover:shadow-xl transition-all duration-300"
       onClick={() => onNavigate(`/property/${slug}`)}
     >
       <div className="relative">
         {/* Property Image */}
-        <div className="relative aspect-square overflow-hidden">
+        <div className="relative aspect-video overflow-hidden">
           <img 
             src={mainImage} 
             alt={building.name}
@@ -152,43 +152,51 @@ export function BuildingCard({
               )}
             />
           </button>
-          
-          {/* Dark overlay with property title */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-black/0 p-4 pt-16">
-            <h3 className="text-xl font-bold text-white">
-              {mainBhkType} {building.name ? `in ${building.name}` : ""}
-            </h3>
-            <p className="text-white/90 text-sm font-medium">
-              {building.locality || ""}
-            </p>
-          </div>
         </div>
       </div>
       
-      {/* Property details in footer */}
-      <div className="p-3 flex items-center justify-between bg-black/90 text-white">
-        {/* Area */}
-        <div className="flex items-center gap-1.5">
-          <SquareFootage className="h-5 w-5 text-white" />
-          <span className="font-medium">
-            {activeListing?.built_up_area ? `${activeListing.built_up_area} sq ft` : "--"}
-          </span>
-        </div>
+      {/* Property details */}
+      <div className="p-4">
+        <h3 className="text-xl font-bold text-gray-800">
+          {mainBhkType} {building.name ? `in ${building.name}` : ""}
+        </h3>
+        <p className="text-gray-600 text-sm mb-3">
+          {building.locality || ""}
+        </p>
         
-        {/* Floor */}
-        <div className="flex items-center gap-1.5">
-          <Building2 className="h-5 w-5 text-white" />
-          <span className="font-medium">
-            {activeListing?.floor ? `${activeListing.floor}${getOrdinalSuffix(activeListing.floor)} floor` : "--"}
-          </span>
+        {/* Property features */}
+        <div className="flex flex-wrap gap-4 text-sm text-gray-700 mb-4">
+          {/* Area */}
+          {activeListing?.built_up_area && (
+            <div className="flex items-center gap-1.5">
+              <SquareFootage className="h-4 w-4 text-gray-500" />
+              <span>{activeListing.built_up_area} sq ft</span>
+            </div>
+          )}
+          
+          {/* Floor */}
+          {activeListing?.floor !== undefined && activeListing?.floor !== null && (
+            <div className="flex items-center gap-1.5">
+              <Building2 className="h-4 w-4 text-gray-500" />
+              <span>{activeListing.floor}{getOrdinalSuffix(activeListing.floor)} floor</span>
+            </div>
+          )}
+          
+          {/* Bedrooms */}
+          {activeListing?.bedrooms && (
+            <div className="flex items-center gap-1.5">
+              <Bed className="h-4 w-4 text-gray-500" />
+              <span>{activeListing.bedrooms} {activeListing.bedrooms > 1 ? 'beds' : 'bed'}</span>
+            </div>
+          )}
         </div>
         
         {/* Price */}
-        <div className="text-xl font-bold">
+        <div className="text-xl font-bold text-gray-900">
           {activeListing?.price 
-            ? `${formatIndianCrore(activeListing.price)} Crore` 
+            ? `₹${formatIndianCrore(activeListing.price)} Cr` 
             : (building.min_price 
-              ? `${formatIndianCrore(building.min_price)} Cr` 
+              ? `₹${formatIndianCrore(building.min_price)} Cr` 
               : "Price on request")}
         </div>
       </div>
