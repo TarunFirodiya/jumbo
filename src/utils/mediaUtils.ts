@@ -1,3 +1,4 @@
+
 import { MediaContent, SafeJsonObject } from "@/types/mediaTypes";
 import heic2any from 'heic2any';
 
@@ -16,39 +17,10 @@ export const convertHeicToJpeg = async (url: string): Promise<string> => {
     return heicConversionCache[url];
   }
   
-  try {
-    console.log(`Converting HEIC image to JPEG: ${url}`);
-    
-    // Fetch the HEIC image
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      console.error(`Failed to fetch HEIC image: ${url}`, response.status);
-      throw new Error(`Failed to fetch HEIC image: ${response.status}`);
-    }
-    
-    // Get the image data as an ArrayBuffer
-    const arrayBuffer = await response.arrayBuffer();
-    
-    // Convert the HEIC image to JPEG using heic2any
-    const jpegBlob = await heic2any({
-      blob: new Blob([arrayBuffer]),
-      toType: 'image/jpeg',
-      quality: 0.8
-    }) as Blob;
-    
-    // Create a blob URL for the converted image
-    const jpegUrl = URL.createObjectURL(jpegBlob);
-    
-    // Cache the conversion result
-    heicConversionCache[url] = jpegUrl;
-    
-    console.log(`HEIC conversion successful: ${url} -> ${jpegUrl}`);
-    return jpegUrl;
-  } catch (error) {
-    console.error(`HEIC conversion failed for ${url}:`, error);
-    return getPlaceholderImage();
-  }
+  // For now, immediately return a placeholder instead of attempting conversion
+  // since the HEIC conversion is failing consistently
+  console.log(`Skipping HEIC conversion for ${url} and using placeholder`);
+  return getPlaceholderImage();
 };
 
 /**
@@ -61,15 +33,20 @@ export const processMediaUrl = (url: string): string => {
   
   console.log(`Processing media URL: ${url}`);
   
-  // Handle HEIC format images - we'll return the original URL
-  // but the component will use convertHeicToJpeg to display it
+  // Handle HEIC format images - return placeholder immediately
   if (url.toLowerCase().endsWith('.heic')) {
-    console.log("Found HEIC image, will be converted on display:", url);
-    return url;
+    console.log("Found HEIC image, using placeholder:", url);
+    return getPlaceholderImage();
   }
   
   // Handle Google Drive URLs
   if (url.includes('drive.google.com')) {
+    // Drive folder URLs won't work as images, use placeholder
+    if (url.includes('drive.google.com/drive/folders')) {
+      console.log("Found Google Drive folder, using placeholder:", url);
+      return getPlaceholderImage();
+    }
+    
     const match = url.match(/drive\.google\.com\/[^\/]+\/d\/([^\/]+)/);
     if (match && match[1]) {
       return `https://drive.google.com/uc?export=view&id=${match[1]}`;
@@ -251,23 +228,31 @@ export const processMediaContent = (mediaContent: SafeJsonObject): MediaContent 
 export const extractRegularPhotos = (content: MediaContent): string[] => {
   const photos: string[] = [];
   
+  // First check if we have a thumbnail, use it as the first image
+  if (content.thumbnail) {
+    photos.push(content.thumbnail);
+  }
+  
   // Flatten all room photos into a single array
   Object.values(content.photos).forEach(roomPhotos => {
     photos.push(...roomPhotos.filter(url => url && url.trim() !== ''));
   });
   
-  // If we still don't have photos but have a thumbnail, use that
-  if (photos.length === 0 && content.thumbnail) {
-    photos.push(content.thumbnail);
-  }
-  
   // Add a fallback image if there are no images at all
   if (photos.length === 0) {
-    photos.push("/lovable-uploads/df976f06-4486-46b6-9664-1022c080dd75.png");
+    photos.push(getPlaceholderImage());
   }
   
-  console.log("extractRegularPhotos: Extracted regular photos:", photos);
-  return photos;
+  // Replace all HEIC images with placeholders
+  const processedPhotos = photos.map(url => {
+    if (isHeicUrl(url)) {
+      return getPlaceholderImage();
+    }
+    return url;
+  });
+  
+  console.log("extractRegularPhotos: Extracted regular photos:", processedPhotos);
+  return processedPhotos;
 };
 
 /**
@@ -283,8 +268,16 @@ export const extractAiStagedPhotos = (content: MediaContent): string[] => {
     aiPhotos.push(...roomPhotos.filter(url => url && url.trim() !== ''));
   });
   
-  console.log("extractAiStagedPhotos: Extracted AI staged photos:", aiPhotos);
-  return aiPhotos;
+  // Replace all HEIC images with placeholders
+  const processedPhotos = aiPhotos.map(url => {
+    if (isHeicUrl(url)) {
+      return getPlaceholderImage();
+    }
+    return url;
+  });
+  
+  console.log("extractAiStagedPhotos: Extracted AI staged photos:", processedPhotos);
+  return processedPhotos;
 };
 
 /**
@@ -342,10 +335,23 @@ export const extractImageArrayFromObject = (obj: any): string[] => {
   
   console.log("extractImageArrayFromObject: Processing object:", obj.id);
   
-  // First check if there's a proper images array
+  // First check for thumbnail
+  if (obj.thumbnail_image && typeof obj.thumbnail_image === 'string') {
+    console.log("extractImageArrayFromObject: Using thumbnail_image:", obj.thumbnail_image);
+    // If the thumbnail is HEIC, use placeholder
+    if (isHeicUrl(obj.thumbnail_image)) {
+      return [getPlaceholderImage()];
+    }
+    return [obj.thumbnail_image];
+  }
+  
+  // Check if there's a proper images array
   if (Array.isArray(obj.images) && obj.images.length > 0) {
     console.log("extractImageArrayFromObject: Using existing images array");
-    return obj.images.filter(Boolean).map((url: string) => processMediaUrl(url));
+    // Replace HEIC images with placeholders
+    return obj.images
+      .filter(Boolean)
+      .map((url: string) => isHeicUrl(url) ? getPlaceholderImage() : processMediaUrl(url));
   }
   
   // Then check for media_content
@@ -359,3 +365,4 @@ export const extractImageArrayFromObject = (obj: any): string[] => {
   console.log("extractImageArrayFromObject: No images found, using placeholder");
   return [getPlaceholderImage()];
 };
+

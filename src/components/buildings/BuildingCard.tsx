@@ -7,9 +7,8 @@ import { Tables } from "@/integrations/supabase/types";
 import { SquareFootage } from "@/components/icons/SquareFootage";
 import { 
   extractImageArrayFromObject, 
-  getPlaceholderImage, 
-  isHeicUrl, 
-  convertHeicToJpeg 
+  getPlaceholderImage,
+  isHeicUrl 
 } from "@/utils/mediaUtils";
 
 interface BuildingCardProps {
@@ -28,7 +27,6 @@ export function BuildingCard({
   const [isShortlisting, setIsShortlisting] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [mainImage, setMainImage] = useState('');
-  const [isConvertingHeic, setIsConvertingHeic] = useState(false);
   
   const handleShortlist = (e: React.MouseEvent, buildingId: string) => {
     e.stopPropagation();
@@ -56,26 +54,10 @@ export function BuildingCard({
       ? getPlaceholderImage()
       : buildingImages[0];
     
-    // Check if it's a HEIC image
+    // Check if it's a HEIC image and use placeholder instead
     if (isHeicUrl(imageToUse)) {
-      console.log(`BuildingCard: Found HEIC image, will convert: ${imageToUse}`);
-      setIsConvertingHeic(true);
-      
-      // First set the placeholder while we convert
+      console.log(`BuildingCard: Found HEIC image, using placeholder: ${imageToUse}`);
       setMainImage(getPlaceholderImage());
-      
-      // Convert the HEIC image
-      convertHeicToJpeg(imageToUse)
-        .then(convertedUrl => {
-          console.log(`BuildingCard: HEIC conversion successful: ${convertedUrl}`);
-          setMainImage(convertedUrl);
-          setIsConvertingHeic(false);
-        })
-        .catch(error => {
-          console.error(`BuildingCard: HEIC conversion failed:`, error);
-          setMainImage(getPlaceholderImage());
-          setIsConvertingHeic(false);
-        });
     } else {
       setMainImage(imageToUse);
     }
@@ -113,19 +95,12 @@ export function BuildingCard({
       <div className="relative">
         {/* Property Image */}
         <div className="relative aspect-square overflow-hidden">
-          {isConvertingHeic ? (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100">
-              <div className="w-12 h-12 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mb-2"></div>
-              <p className="text-sm text-gray-500">Converting image...</p>
-            </div>
-          ) : (
-            <img 
-              src={mainImage} 
-              alt={building.name}
-              className="w-full h-full object-cover"
-              onError={handleImageError}
-            />
-          )}
+          <img 
+            src={mainImage} 
+            alt={building.name}
+            className="w-full h-full object-cover"
+            onError={handleImageError}
+          />
           
           {/* Rating Pill */}
           {building.google_rating && (

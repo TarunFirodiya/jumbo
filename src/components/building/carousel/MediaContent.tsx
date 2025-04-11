@@ -1,7 +1,7 @@
 
 import { memo, useState, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
-import { isYoutubeUrl, isGoogleMapsUrl, getPlaceholderImage, isHeicUrl, convertHeicToJpeg } from '@/utils/mediaUtils';
+import { isYoutubeUrl, isGoogleMapsUrl, getPlaceholderImage, isHeicUrl } from '@/utils/mediaUtils';
 
 interface MediaContentProps {
   activeTab: string;
@@ -23,31 +23,6 @@ export const MediaContent = memo(function MediaContent({
   buildingName = "Property"
 }: MediaContentProps) {
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
-  const [convertedImages, setConvertedImages] = useState<Record<string, string>>({});
-  const [isConverting, setIsConverting] = useState(false);
-  
-  // Convert HEIC images when they're displayed
-  useEffect(() => {
-    const currentImage = displayImages[currentSlide];
-    
-    if (currentImage && isHeicUrl(currentImage) && !convertedImages[currentImage]) {
-      setIsConverting(true);
-      
-      convertHeicToJpeg(currentImage)
-        .then(convertedUrl => {
-          setConvertedImages(prev => ({
-            ...prev,
-            [currentImage]: convertedUrl
-          }));
-          setIsConverting(false);
-        })
-        .catch(error => {
-          console.error("Error converting HEIC image:", error);
-          setImageErrors(prev => ({ ...prev, [currentImage]: true }));
-          setIsConverting(false);
-        });
-    }
-  }, [currentSlide, displayImages, convertedImages]);
   
   // Debug log for active tab and images
   useEffect(() => {
@@ -80,45 +55,29 @@ export const MediaContent = memo(function MediaContent({
   const imageUrl = displayImages[currentSlide];
   
   // If we've already had an error with this image, use fallback
-  if (imageUrl && imageErrors[imageUrl]) {
-    console.log(`[MediaContent] Using fallback for previously failed image: ${imageUrl}`);
+  if (imageUrl && (imageErrors[imageUrl] || isHeicUrl(imageUrl))) {
+    console.log(`[MediaContent] Using fallback for failed image or HEIC image: ${imageUrl}`);
     return (
       <div className="flex flex-col items-center justify-center text-white/80 p-6 text-center">
         <img 
           src={getPlaceholderImage()}
-          alt="Image not available"
-          className="w-64 h-64 object-contain opacity-50 mb-4"
+          alt={`${activeTab === "imagine" ? "AI Staged Image" : "Property view"} ${currentSlide + 1}`}
+          className="max-h-full max-w-full object-contain"
         />
-        <p>The image could not be loaded</p>
-        <p className="text-sm mt-2">The source may be unavailable or in an unsupported format</p>
-        <p className="text-xs mt-4 text-gray-400 break-all">{imageUrl}</p>
+        <p className="mt-4">Property Image Preview</p>
+        <p className="text-sm mt-2">This is a placeholder image for {buildingName}</p>
       </div>
     );
   }
-  
-  // If image is currently converting, show loading state
-  if (isConverting) {
-    return (
-      <div className="flex flex-col items-center justify-center text-white/80 p-6 text-center">
-        <div className="w-16 h-16 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mb-4"></div>
-        <p>Converting HEIC image...</p>
-        <p className="text-sm mt-2">This may take a moment</p>
-      </div>
-    );
-  }
-  
-  // Check if image is HEIC and we have a converted version
-  const isHeicImage = imageUrl && isHeicUrl(imageUrl);
-  const displayUrl = isHeicImage && convertedImages[imageUrl] ? convertedImages[imageUrl] : imageUrl;
   
   // Render different content based on active tab
   if (activeTab === "photos" || activeTab === "imagine") {
-    console.log(`[MediaContent] Rendering image: ${displayUrl} for ${activeTab} tab`);
+    console.log(`[MediaContent] Rendering image: ${imageUrl} for ${activeTab} tab`);
     
     return (
       <>
         <img
-          src={displayUrl}
+          src={imageUrl}
           alt={`${activeTab === "imagine" ? "AI Staged Image" : "Property view"} ${currentSlide + 1}`}
           className="max-h-full max-w-full object-contain"
           onError={() => handleImageError(imageUrl)}
@@ -194,7 +153,6 @@ export const MediaContent = memo(function MediaContent({
           />
           <p>Street view format is not supported</p>
           <p className="text-sm mt-2">Please use a Google Maps Street View link</p>
-          <p className="text-xs mt-4 text-gray-400 break-all">{streetView}</p>
         </div>
       );
     }
