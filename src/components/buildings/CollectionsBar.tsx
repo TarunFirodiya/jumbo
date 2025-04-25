@@ -18,46 +18,58 @@ interface Collection {
 
 const collections: Collection[] = [
   {
-    id: "Affordable",
+    id: "affordable",
     name: "Affordable",
     iconUrl: "/lovable-uploads/5108ee7d-075e-48fa-8f15-cc6bcb951f57.png",
     description: "Budget-friendly homes"
   },
   {
-    id: "Gated Apartment",
+    id: "gated-apartment",
     name: "Gated",
     iconUrl: "/lovable-uploads/4f137503-5396-4dc6-b8c3-9825a77225ab.png",
     description: "Secure gated communities"
   },
   {
-    id: "New Construction",
+    id: "new-construction",
     name: "New",
     iconUrl: "/lovable-uploads/4ef453e4-4ad6-4e6a-a976-da5d90d5381a.png",
     description: "Newly constructed"
   },
   {
-    id: "Child Friendly",
+    id: "child-friendly",
     name: "Kids Friendly",
     iconUrl: "/lovable-uploads/b519014d-fdf4-4afd-a56d-1d8d050749a8.png",
     description: "Great for families"
   },
   {
-    id: "Luxury Community",
-    name: "Luxury",
+    id: "top 5 builder",
+    name: "Top Builder",
     iconUrl: "/lovable-uploads/98d92f31-19ac-4916-838d-51550da202e5.png",
-    description: "Premium communities"
+    description: "Premium builders"
   },
   {
-    id: "Spacious Layout",
+    id: "spacious",
     name: "Spacious",
     iconUrl: "/lovable-uploads/546490ac-c727-4cd4-87a8-b467d49f6438.png",
     description: "Large living spaces"
   },
   {
-    id: "Vastu Compliant",
-    name: "Vastu",
+    id: "high-rise",
+    name: "High Rise",
     iconUrl: "/lovable-uploads/d1672d7d-12f3-4119-9b83-952524bc9ddb.png",
-    description: "Following Vastu principles"
+    description: "High rise buildings"
+  },
+  {
+    id: "villa",
+    name: "Villa",
+    iconUrl: "/lovable-uploads/ed56d2f2-3075-4c81-8869-690f26958f23.png",
+    description: "Luxury villas"
+  },
+  {
+    id: "metro",
+    name: "Metro",
+    iconUrl: "/lovable-uploads/3a57f04c-05ce-4905-bc15-5e538e77a618.png",
+    description: "Near metro stations"
   }
 ];
 

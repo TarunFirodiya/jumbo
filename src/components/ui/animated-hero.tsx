@@ -1,86 +1,152 @@
 
-import { motion, LayoutGroup } from "framer-motion";
+import { motion } from "framer-motion";
+import { useMemo, useState, useEffect } from "react";
 import { ActionSearchBar, Action } from "@/components/ui/action-search-bar";
 import { cn } from "@/lib/utils";
-import { TextRotate } from "@/components/ui/text-rotate";
 
 interface AnimatedHeroProps {
-  title?: string;
-  subtitle?: string;
+  title: string;
+  subtitle: string;
   localityActions?: Action[];
   onSearch?: (query: string) => void;
   onLocalitySelect?: (action: Action) => void;
+  imageUrl?: string;
   className?: string;
 }
 
 export function AnimatedHero({ 
-  subtitle = "Search, visit & buy ready-to-move homes at fixed prices", 
+  title, 
+  subtitle, 
   localityActions = [], 
   onSearch, 
   onLocalitySelect,
+  imageUrl,
   className
 }: AnimatedHeroProps) {
-  return (
-    <section className={cn(
-      "w-full min-h-[60vh] overflow-hidden md:overflow-visible flex flex-col items-center justify-center relative bg-white",
-      className
-    )}>
-      {/* Central content with increased z-index */}
-      <div className="flex flex-col justify-center items-center max-w-[300px] sm:max-w-[400px] md:max-w-[600px] lg:max-w-[800px] relative z-20 px-4">
-        <motion.h1
-          className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl text-center w-full justify-center items-center flex-col flex whitespace-pre leading-tight font-serif tracking-tight space-y-1 md:space-y-3 text-black"
-          animate={{ opacity: 1, y: 0 }}
-          initial={{ opacity: 0, y: 20 }}
-          transition={{ duration: 0.2, ease: "easeOut", delay: 0.3 }}
-        >
-          <span>Home Buying Made </span>
-          <LayoutGroup>
-            <motion.span layout className="flex whitespace-pre">
-              <TextRotate
-                texts={[
-                  "Simple",
-                  "Safe",
-                  "Affordable"
-                ]}
-                mainClassName="overflow-hidden text-blue-600 py-0 pb-2 md:pb-3 rounded-xl"
-                staggerDuration={0.03}
-                staggerFrom="last"
-                rotationInterval={3000}
-                transition={{ type: "spring", damping: 30, stiffness: 400 }}
-              />
-            </motion.span>
-          </LayoutGroup>
-        </motion.h1>
-        
-        <motion.p
-          className="text-sm sm:text-base md:text-lg lg:text-xl text-center pt-4 sm:pt-6 md:pt-8 lg:pt-10 text-black"
-          animate={{ opacity: 1, y: 0 }}
-          initial={{ opacity: 0, y: 20 }}
-          transition={{ duration: 0.2, ease: "easeOut", delay: 0.5 }}
-        >
-          {subtitle}
-        </motion.p>
+  const [titleNumber, setTitleNumber] = useState(0);
+  const titles = useMemo(
+    () => ["luxurious", "peaceful", "spacious", "modern", "perfect"],
+    []
+  );
 
-        {onSearch && (
-          <motion.div 
-            className="w-full max-w-md mt-8 sm:mt-10 md:mt-12 lg:mt-14"
-            animate={{ opacity: 1, y: 0 }}
-            initial={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.2, ease: "easeOut", delay: 0.7 }}
-          >
-            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-1 shadow-lg border border-gray-200">
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (titleNumber === titles.length - 1) {
+        setTitleNumber(0);
+      } else {
+        setTitleNumber(titleNumber + 1);
+      }
+    }, 2000);
+    return () => clearTimeout(timeoutId);
+  }, [titleNumber, titles]);
+
+  // If imageUrl is provided, use the simple layout
+  if (imageUrl) {
+    return (
+      <div className={cn(
+        "w-full bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200",
+        className
+      )}>
+        <div className="container mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 py-12 md:py-16 items-center">
+            {/* Left Content */}
+            <div className="flex flex-col gap-6 px-4 md:px-8 order-2 md:order-1">
+              <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl tracking-tight text-gray-900 font-semibold">
+                {title}
+              </h1>
+              
+              <p className="text-base md:text-lg text-gray-600 max-w-lg">
+                {subtitle}
+              </p>
+              
+              {onSearch && (
+                <div className="w-full max-w-md mt-2">
+                  <ActionSearchBar 
+                    actions={localityActions || []} 
+                    onSearch={onSearch} 
+                    onActionSelect={onLocalitySelect} 
+                    placeholderText="Search by property name or location..." 
+                    labelText="" 
+                    className="shadow-md" 
+                  />
+                </div>
+              )}
+            </div>
+            
+            {/* Right Image */}
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              className="order-1 md:order-2 px-4 md:px-0"
+            >
+              <div className="rounded-2xl overflow-hidden shadow-2xl">
+                <img 
+                  src={imageUrl} 
+                  alt="Happy couple in their new home" 
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Original animated hero if no image is provided
+  return (
+    <div className="w-full bg-gradient-to-b from-blue-50 to-white">
+      <div className="container mx-auto">
+        <div className="flex gap-8 py-16 md:py-24 items-center justify-center flex-col">
+          <div className="flex gap-4 flex-col px-4 md:px-0">
+            <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl max-w-3xl tracking-tight text-center">
+              <span className="text-gray-800">Find your</span>
+              <span className="relative flex w-full justify-center overflow-hidden text-center md:pb-4 md:pt-1">
+                &nbsp;
+                {titles.map((title, index) => (
+                  <motion.span
+                    key={index}
+                    className="absolute font-semibold text-primary"
+                    initial={{ opacity: 0, y: -20 }}
+                    transition={{ type: "spring", stiffness: 50 }}
+                    animate={
+                      titleNumber === index
+                        ? {
+                            y: 0,
+                            opacity: 1,
+                          }
+                        : {
+                            y: titleNumber > index ? -30 : 30,
+                            opacity: 0,
+                          }
+                    }
+                  >
+                    {title}
+                  </motion.span>
+                ))}
+              </span>
+            </h1>
+
+            <p className="text-lg md:text-xl leading-relaxed tracking-tight text-gray-600 max-w-2xl text-center">
+              {subtitle}
+            </p>
+          </div>
+          
+          {onSearch && (
+            <div className="w-full max-w-2xl mx-auto px-4 md:px-0 mt-4">
               <ActionSearchBar 
                 actions={localityActions || []} 
                 onSearch={onSearch} 
                 onActionSelect={onLocalitySelect} 
                 placeholderText="Search by property name or location..." 
                 labelText="" 
-                className="rounded-[20px]" 
+                className="shadow-md" 
               />
             </div>
-          </motion.div>
-        )}
+          )}
+        </div>
       </div>
-    </section>
+    </div>
   );
 }

@@ -5,7 +5,6 @@ import ListingCard from "@/components/ListingCard";
 import { Tables } from "@/integrations/supabase/types";
 import { Bell } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { ListingWithMedia } from "@/types/mediaTypes";
 
 interface AvailableHomesProps {
   listings: Tables<'listings'>[] | null;
@@ -21,12 +20,7 @@ export function AvailableHomes({ listings }: AvailableHomesProps) {
     });
   };
 
-  // Filter out sold or churned listings
-  const availableListings = listings?.filter(listing => 
-    listing.status !== 'sold' && listing.status !== 'churned'
-  ) || [];
-
-  if (!availableListings.length) {
+  if (!listings?.length) {
     return (
       <div className="flex flex-col items-center justify-center py-12 space-y-4">
         <Button onClick={handleNotifyMe} variant="outline" className="gap-2">
@@ -42,8 +36,8 @@ export function AvailableHomes({ listings }: AvailableHomesProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {availableListings.map((listing) => (
-        <ListingCard key={listing.id} listing={listing as ListingWithMedia} />
+      {listings.map((listing) => (
+        <ListingCard key={listing.id} listing={listing} />
       ))}
     </div>
   );

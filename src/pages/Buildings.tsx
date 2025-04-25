@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { MapIcon, List, MapPin, CalendarDays, Building2, Home, Star, Heart, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useState, useCallback, useMemo, lazy, Suspense } from "react";
@@ -11,12 +11,106 @@ import { CollectionsBar } from "@/components/buildings/CollectionsBar";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { SEO } from "@/components/SEO";
 import { cn } from "@/lib/utils";
+import { HeroSection } from "@/components/buildings/HeroSection";
 import { Action } from "@/components/ui/action-search-bar";
-import { BUDGET_RANGES, Filter } from "@/components/ui/filters";
+import { Filter, BUDGET_RANGES } from "@/components/ui/filters";
 import { AnimatedHero } from "@/components/ui/animated-hero";
-import { BuildingCard } from "@/components/buildings/BuildingCard";
-import { useFilteredBuildings } from "@/components/locality/hooks/useFilteredBuildings";
-import BuildingsMap from "@/components/BuildingsMap";
+
+const BuildingsMap = lazy(() => import("@/components/BuildingsMap"));
+
+const BuildingCard = ({
+  building,
+  onNavigate,
+  onShortlist,
+  isShortlisted
+}) => {
+  const [isShortlisting, setIsShortlisting] = useState(false);
+  
+  const handleShortlist = (e, buildingId) => {
+    e.stopPropagation();
+    setIsShortlisting(true);
+    onShortlist(buildingId);
+    
+    setTimeout(() => {
+      setIsShortlisting(false);
+    }, 800);
+  };
+  
+  return (
+    <Card 
+      key={building.id} 
+      className="overflow-hidden cursor-pointer group hover:shadow-xl transition-all duration-300 hover:-translate-y-1" 
+      onClick={() => onNavigate(`/buildings/${building.id}`)}
+    >
+      <div className="relative bg-muted">
+        <ListingCardCarousel 
+          images={building.images || []} 
+          onImageClick={() => onNavigate(`/buildings/${building.id}`)}
+        />
+        <button
+          onClick={e => handleShortlist(e, building.id)} 
+          className={cn(
+            "absolute top-2 right-2 p-2 z-10 transition-all",
+            isShortlisting ? "scale-125" : "hover:scale-110"
+          )}
+        >
+          <Heart 
+            className={cn(
+              "h-6 w-6 transition-all duration-300",
+              isShortlisted 
+                ? "fill-red-500 stroke-red-500" 
+                : "stroke-white fill-black/20 group-hover:fill-black/30",
+              isShortlisting && !isShortlisted && "animate-pulse fill-red-500 stroke-red-500"
+            )} 
+          />
+        </button>
+      </div>
+      <CardContent className="p-4 group-hover:bg-slate-50 transition-colors duration-300">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">{building.name}</h3>
+            {building.google_rating && (
+              <div className="flex items-center gap-1 text-sm">
+                <Star className="h-4 w-4 fill-yellow-400 stroke-yellow-400" />
+                <span className="font-medium">{building.google_rating}</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4" />
+            <span>{building.locality}</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            {building.age && (
+              <div className="flex items-center gap-1">
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{building.age} years</span>
+              </div>
+            )}
+            {building.total_floors && (
+              <div className="flex items-center gap-1">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{building.total_floors} floors</span>
+              </div>
+            )}
+            {building.bhk_types && (
+              <div className="flex items-center gap-1">
+                <Home className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{building.bhk_types.join(", ")} BHK</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-baseline">
+            <span className="text-xs text-muted-foreground mr-1">Starting at</span>
+            <span className="text-lg font-semibold">
+              ₹{(building.min_price / 10000000).toFixed(1)} Cr
+            </span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export default function Buildings() {
   const {
@@ -30,7 +124,6 @@ export default function Buildings() {
   const [authAction, setAuthAction] = useState<"shortlist" | "visit" | "notify">("shortlist");
   const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
   const [visibleCount, setVisibleCount] = useState(20);
-  const [mapError, setMapError] = useState(false);
 
   const {
     data: user
@@ -75,25 +168,18 @@ export default function Buildings() {
   } = useQuery({
     queryKey: ['buildings', selectedCollections],
     queryFn: async () => {
-      let query = supabase
-        .from('buildings')
-        .select('*')
-        .eq('building_status', 'Publish');
-      
+      let query = supabase.from('buildings').select('*');
       if (selectedCollections.length > 0) {
         query = query.contains('collections', selectedCollections);
       }
-      
       const {
         data,
         error
       } = await query;
-      
       if (error) {
         console.error('Error fetching buildings:', error);
         throw error;
       }
-      
       return data;
     }
   });
@@ -111,7 +197,52 @@ export default function Buildings() {
       value: locality
     }));
   }, [buildings]);
-  const filteredBuildings = useFilteredBuildings(buildings || [], selectedCollections, activeFilters, searchTerm);
+  const filteredBuildings = useMemo(() => {
+    let filtered = buildings || [];
+
+    if (searchTerm) {
+      filtered = filtered.filter(building => 
+        building.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (building.locality && building.locality.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    if (selectedCollections.length > 0) {
+      filtered = filtered.filter(building => 
+        selectedCollections.every(collection => 
+          building.collections?.includes(collection)
+        )
+      );
+    }
+
+    activeFilters.forEach(filter => {
+      switch (filter.type) {
+        case "Locality":
+          filtered = filtered.filter(building => 
+            filter.value.includes(building.locality)
+          );
+          break;
+        case "BHK":
+          filtered = filtered.filter(building => 
+            filter.value.some(bhk => 
+              building.bhk_types?.includes(parseInt(bhk))
+            )
+          );
+          break;
+        case "Budget":
+          filtered = filtered.filter(building => {
+            const price = building.min_price;
+            return filter.value.some(range => {
+              const { min, max } = BUDGET_RANGES[range];
+              return price >= min && price < max;
+            });
+          });
+          break;
+      }
+    });
+
+    return filtered;
+  }, [buildings, searchTerm, selectedCollections, activeFilters]);
 
   const displayedBuildings = useMemo(() => {
     return filteredBuildings.slice(0, visibleCount);
@@ -190,40 +321,32 @@ export default function Buildings() {
     setVisibleCount(prev => prev + 20);
   }, []);
 
-  const handleMapError = () => {
-    setMapError(true);
-    setIsMapView(false);
-    toast({
-      title: "Map Error",
-      description: "There was an error loading the map. Switched to list view.",
-      variant: "destructive"
-    });
-  };
-
   if (buildingsLoading) {
     return <>
-        <SEO title="Loading Properties | Jumbo" />
+        <SEO title="Loading Properties | Cozy Dwell Search" />
         <div className="min-h-screen flex items-center justify-center">
           <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
         </div>
       </>;
   }
   return <div className="min-h-screen pb-20">
-      <SEO title={selectedCollections.length ? `Properties in ${selectedCollections.join(', ')} | Jumbo` : 'Ready-to-Move Homes | Lowest Price Guarantee'} description={getSEODescription()} canonical="/buildings" structuredData={{
+      <SEO title={selectedCollections.length ? `Properties in ${selectedCollections.join(', ')} | Cozy Dwell Search` : 'Find Your Perfect Home | Cozy Dwell Search'} description={getSEODescription()} canonical="/buildings" structuredData={{
       "@context": "https://schema.org",
       "@type": "RealEstateAgent",
-      "name": "Jumbo",
+      "name": "Cozy Dwell Search",
       "description": getSEODescription(),
-      "url": "https://www.jumbohomes.com/buildings",
+      "url": "https://www.cozydwellsearch.com/buildings",
       "areaServed": selectedCollections.length ? selectedCollections : ["All Areas"],
       "numberOfItems": filteredBuildings.length
     }} />
       
       <AnimatedHero 
-        subtitle="Search, visit & buy ready-to-move homes at fixed prices"
+        title="Ready-to-move homes at the best prices"
+        subtitle="Find, visit & buy all in one-place. Zero spam. 100% secure."
         localityActions={localityActions}
         onSearch={handleSearch}
         onLocalitySelect={handleLocalitySelect}
+        imageUrl="/lovable-uploads/fa389e8e-879d-4eb9-b3dd-8148a7b06c73.png"
       />
       
       <div className="container mx-auto px-4 mt-8">
@@ -242,31 +365,22 @@ export default function Buildings() {
           </div>
         </div>
 
-        {!filteredBuildings?.length ? 
-          <Card>
+        {!filteredBuildings?.length ? <Card>
             <CardContent className="pt-6">
               <p className="text-center text-muted-foreground">
                 No properties found matching your criteria.
               </p>
             </CardContent>
-          </Card> 
-        : isMapView ? 
-          <ErrorBoundary fallback={
-            <div className="h-[60vh] flex flex-col items-center justify-center bg-gray-100 rounded-lg">
-              <Building2 className="h-16 w-16 text-gray-400 mb-4" />
-              <h3 className="text-xl font-medium text-gray-700">Map view is currently unavailable</h3>
-              <p className="text-gray-500 mb-6">We've automatically switched to list view</p>
-              <Button onClick={() => setIsMapView(false)} variant="outline">Continue with List View</Button>
-            </div>
-          }>
+          </Card> : isMapView ? <Suspense fallback={<div className="h-[60vh] flex items-center justify-center">
+            <div className="h-12 w-12 rounded-full border-4 border-t-primary animate-spin"></div>
+          </div>}>
             <BuildingsMap 
               buildings={displayedBuildings} 
               onShortlist={handleShortlistToggle}
               buildingScores={buildingScores}
             />
-          </ErrorBoundary>
-        : <div className="space-y-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          </Suspense> : <div className="space-y-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {displayedBuildings.map(building => {
                 const isShortlisted = buildingScores?.[building.id]?.shortlisted || false;
                 return (
@@ -298,12 +412,7 @@ export default function Buildings() {
       </div>
 
       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-        <Button 
-          variant="default" 
-          onClick={() => setIsMapView(!isMapView)} 
-          className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2"
-          disabled={mapError && !isMapView}
-        >
+        <Button variant="default" onClick={() => setIsMapView(!isMapView)} className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2">
           {isMapView ? <>
               <List className="h-4 w-4" />
               Show list
@@ -316,24 +425,4 @@ export default function Buildings() {
 
       <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} actionType={authAction} />
     </div>;
-}
-
-function ErrorBoundary({ children, fallback }) {
-  const [hasError, setHasError] = useState(false);
-  
-  if (hasError) {
-    return fallback;
-  }
-  
-  try {
-    return (
-      <div onError={() => setHasError(true)}>
-        {children}
-      </div>
-    );
-  } catch (error) {
-    console.error('Error in map component:', error);
-    setHasError(true);
-    return fallback;
-  }
 }

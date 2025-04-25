@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,21 +6,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const {
+          error
+        } = await supabase.auth.signUp({
           email,
           password
         });
@@ -32,14 +33,19 @@ export default function Auth() {
         });
         navigate("/preferences");
       } else {
-        const { error, data } = await supabase.auth.signInWithPassword({
+        const {
+          error,
+          data
+        } = await supabase.auth.signInWithPassword({
           email,
           password
         });
         if (error) throw error;
 
         // Check if user has preferences
-        const { data: preferences } = await supabase.from('user_preferences').select('*').eq('user_id', data.user.id).maybeSingle();
+        const {
+          data: preferences
+        } = await supabase.from('user_preferences').select('*').eq('user_id', data.user.id).maybeSingle();
         toast({
           title: "Welcome back!",
           description: "You have been signed in successfully"
@@ -59,16 +65,14 @@ export default function Auth() {
       setIsLoading(false);
     }
   };
-
   const handleGoogleSignIn = async () => {
     try {
-      // Get the current domain for dynamic redirect
-      const currentDomain = window.location.origin;
-      
-      const { error } = await supabase.auth.signInWithOAuth({
+      const {
+        error
+      } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${currentDomain}/preferences`,
+          redirectTo: `${window.location.origin}/preferences`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'
@@ -78,9 +82,15 @@ export default function Auth() {
       if (error) throw error;
 
       // Check if user exists and has preferences
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (user) {
-        const { data: preferences } = await supabase.from('user_preferences').select('*').eq('user_id', user.id).maybeSingle();
+        const {
+          data: preferences
+        } = await supabase.from('user_preferences').select('*').eq('user_id', user.id).maybeSingle();
 
         // Navigate based on whether user has preferences
         navigate(preferences ? "/buildings" : "/preferences");
@@ -94,7 +104,6 @@ export default function Auth() {
       });
     }
   };
-
   return <div className="min-h-screen flex items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader>

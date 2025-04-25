@@ -9,50 +9,25 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      app_config: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          key: string
-          updated_at: string
-          value: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          key: string
-          updated_at?: string
-          value: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          key?: string
-          updated_at?: string
-          value?: string
-        }
-        Relationships: []
-      }
       buildings: {
         Row: {
           age: number | null
           amenities: string[] | null
+          bank: string[] | null
           bhk_types: number[] | null
-          building_status: Database["public"]["Enums"]["building_status"] | null
           city: string | null
           collections: string[] | null
           created_at: string | null
+          data_source: string | null
           google_rating: number | null
           id: string
           images: string[] | null
           latitude: number | null
+          lifestyle_cohort: number | null
           locality: string | null
           longitude: number | null
           map_link: string | null
-          media_content: Json | null
+          max_price: number | null
           min_price: number | null
           name: string
           nearby_places: Json | null
@@ -61,6 +36,7 @@ export type Database = {
           sub_locality: string | null
           total_floors: number | null
           total_units: number | null
+          type: string | null
           updated_at: string | null
           user_id: string | null
           video_thumbnail: string | null
@@ -69,21 +45,21 @@ export type Database = {
         Insert: {
           age?: number | null
           amenities?: string[] | null
+          bank?: string[] | null
           bhk_types?: number[] | null
-          building_status?:
-            | Database["public"]["Enums"]["building_status"]
-            | null
           city?: string | null
           collections?: string[] | null
           created_at?: string | null
+          data_source?: string | null
           google_rating?: number | null
           id?: string
           images?: string[] | null
           latitude?: number | null
+          lifestyle_cohort?: number | null
           locality?: string | null
           longitude?: number | null
           map_link?: string | null
-          media_content?: Json | null
+          max_price?: number | null
           min_price?: number | null
           name: string
           nearby_places?: Json | null
@@ -92,6 +68,7 @@ export type Database = {
           sub_locality?: string | null
           total_floors?: number | null
           total_units?: number | null
+          type?: string | null
           updated_at?: string | null
           user_id?: string | null
           video_thumbnail?: string | null
@@ -100,21 +77,21 @@ export type Database = {
         Update: {
           age?: number | null
           amenities?: string[] | null
+          bank?: string[] | null
           bhk_types?: number[] | null
-          building_status?:
-            | Database["public"]["Enums"]["building_status"]
-            | null
           city?: string | null
           collections?: string[] | null
           created_at?: string | null
+          data_source?: string | null
           google_rating?: number | null
           id?: string
           images?: string[] | null
           latitude?: number | null
+          lifestyle_cohort?: number | null
           locality?: string | null
           longitude?: number | null
           map_link?: string | null
-          media_content?: Json | null
+          max_price?: number | null
           min_price?: number | null
           name?: string
           nearby_places?: Json | null
@@ -123,6 +100,7 @@ export type Database = {
           sub_locality?: string | null
           total_floors?: number | null
           total_units?: number | null
+          type?: string | null
           updated_at?: string | null
           user_id?: string | null
           video_thumbnail?: string | null
@@ -135,7 +113,6 @@ export type Database = {
           "99acres_price": number | null
           active_loan_flag: boolean | null
           agent_id: string | null
-          ai_staged_photos: string[] | null
           availability: string | null
           balconies: number | null
           bathrooms: number | null
@@ -160,8 +137,6 @@ export type Database = {
           loan_bank: string | null
           magicbricks_price: number | null
           maintenance: number | null
-          media_content: Json | null
-          media_metadata: Json | null
           nobroker_price: number | null
           occupancy_status:
             | Database["public"]["Enums"]["occupancy_status"]
@@ -177,16 +152,13 @@ export type Database = {
           price_psqft: number | null
           reserve_price: number | null
           status: string | null
-          thumbnail_image: string | null
           uds_area: number | null
-          variants: Json[] | null
           visit_fulfiller: Database["public"]["Enums"]["visit_fulfiller"] | null
         }
         Insert: {
           "99acres_price"?: number | null
           active_loan_flag?: boolean | null
           agent_id?: string | null
-          ai_staged_photos?: string[] | null
           availability?: string | null
           balconies?: number | null
           bathrooms?: number | null
@@ -211,8 +183,6 @@ export type Database = {
           loan_bank?: string | null
           magicbricks_price?: number | null
           maintenance?: number | null
-          media_content?: Json | null
-          media_metadata?: Json | null
           nobroker_price?: number | null
           occupancy_status?:
             | Database["public"]["Enums"]["occupancy_status"]
@@ -228,9 +198,7 @@ export type Database = {
           price_psqft?: number | null
           reserve_price?: number | null
           status?: string | null
-          thumbnail_image?: string | null
           uds_area?: number | null
-          variants?: Json[] | null
           visit_fulfiller?:
             | Database["public"]["Enums"]["visit_fulfiller"]
             | null
@@ -239,7 +207,6 @@ export type Database = {
           "99acres_price"?: number | null
           active_loan_flag?: boolean | null
           agent_id?: string | null
-          ai_staged_photos?: string[] | null
           availability?: string | null
           balconies?: number | null
           bathrooms?: number | null
@@ -264,8 +231,6 @@ export type Database = {
           loan_bank?: string | null
           magicbricks_price?: number | null
           maintenance?: number | null
-          media_content?: Json | null
-          media_metadata?: Json | null
           nobroker_price?: number | null
           occupancy_status?:
             | Database["public"]["Enums"]["occupancy_status"]
@@ -281,9 +246,7 @@ export type Database = {
           price_psqft?: number | null
           reserve_price?: number | null
           status?: string | null
-          thumbnail_image?: string | null
           uds_area?: number | null
-          variants?: Json[] | null
           visit_fulfiller?:
             | Database["public"]["Enums"]["visit_fulfiller"]
             | null
@@ -327,60 +290,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
-      }
-      property_media: {
-        Row: {
-          building_id: string | null
-          created_at: string
-          display_order: number | null
-          id: string
-          is_thumbnail: boolean | null
-          listing_id: string | null
-          metadata: Json | null
-          type: string
-          updated_at: string
-          url: string
-        }
-        Insert: {
-          building_id?: string | null
-          created_at?: string
-          display_order?: number | null
-          id?: string
-          is_thumbnail?: boolean | null
-          listing_id?: string | null
-          metadata?: Json | null
-          type: string
-          updated_at?: string
-          url: string
-        }
-        Update: {
-          building_id?: string | null
-          created_at?: string
-          display_order?: number | null
-          id?: string
-          is_thumbnail?: boolean | null
-          listing_id?: string | null
-          metadata?: Json | null
-          type?: string
-          updated_at?: string
-          url?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "property_media_building_id_fkey"
-            columns: ["building_id"]
-            isOneToOne: false
-            referencedRelation: "buildings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "property_media_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "listings"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       user_building_scores: {
         Row: {
@@ -477,10 +386,10 @@ export type Database = {
           created_at: string
           id: string
           listing_id: string
+          status: Database["public"]["Enums"]["visit_status"]
           updated_at: string
           user_id: string
           visit_day: string
-          visit_status: Database["public"]["Enums"]["visit_status"] | null
           visit_time: string
         }
         Insert: {
@@ -489,10 +398,10 @@ export type Database = {
           created_at?: string
           id?: string
           listing_id: string
+          status?: Database["public"]["Enums"]["visit_status"]
           updated_at?: string
           user_id: string
           visit_day: string
-          visit_status?: Database["public"]["Enums"]["visit_status"] | null
           visit_time: string
         }
         Update: {
@@ -501,10 +410,10 @@ export type Database = {
           created_at?: string
           id?: string
           listing_id?: string
+          status?: Database["public"]["Enums"]["visit_status"]
           updated_at?: string
           user_id?: string
           visit_day?: string
-          visit_status?: Database["public"]["Enums"]["visit_status"] | null
           visit_time?: string
         }
         Relationships: [
@@ -543,12 +452,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      binary_quantize: {
-        Args: { "": string } | { "": unknown }
-        Returns: unknown
-      }
+      binary_quantize:
+        | {
+            Args: {
+              "": string
+            }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
       get_visit_details: {
-        Args: { visit_id_param: string }
+        Args: {
+          visit_id_param: string
+        }
         Returns: {
           visit_day: string
           visit_time: string
@@ -558,104 +478,170 @@ export type Database = {
           sub_locality: string
           full_name: string
           phone_number: string
-          visit_status: string
-          map_link: string
-          agent_name: string
-          property_type: string
-          agent_phone: string
+          status: string
         }[]
       }
       halfvec_avg: {
-        Args: { "": number[] }
+        Args: {
+          "": number[]
+        }
         Returns: unknown
       }
       halfvec_out: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       halfvec_send: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: string
       }
       halfvec_typmod_in: {
-        Args: { "": unknown[] }
+        Args: {
+          "": unknown[]
+        }
         Returns: number
       }
       hnsw_bit_support: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       hnsw_halfvec_support: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       hnsw_sparsevec_support: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       hnswhandler: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       ivfflat_bit_support: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       ivfflat_halfvec_support: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       ivfflathandler: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
-      l2_norm: {
-        Args: { "": unknown } | { "": unknown }
-        Returns: number
-      }
-      l2_normalize: {
-        Args: { "": string } | { "": unknown } | { "": unknown }
-        Returns: string
-      }
+      l2_norm:
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
+      l2_normalize:
+        | {
+            Args: {
+              "": string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
       sparsevec_out: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       sparsevec_send: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: string
       }
       sparsevec_typmod_in: {
-        Args: { "": unknown[] }
+        Args: {
+          "": unknown[]
+        }
         Returns: number
       }
       vector_avg: {
-        Args: { "": number[] }
+        Args: {
+          "": number[]
+        }
         Returns: string
       }
-      vector_dims: {
-        Args: { "": string } | { "": unknown }
-        Returns: number
-      }
+      vector_dims:
+        | {
+            Args: {
+              "": string
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
       vector_norm: {
-        Args: { "": string }
+        Args: {
+          "": string
+        }
         Returns: number
       }
       vector_out: {
-        Args: { "": string }
+        Args: {
+          "": string
+        }
         Returns: unknown
       }
       vector_send: {
-        Args: { "": string }
+        Args: {
+          "": string
+        }
         Returns: string
       }
       vector_typmod_in: {
-        Args: { "": unknown[] }
+        Args: {
+          "": unknown[]
+        }
         Returns: number
       }
     }
     Enums: {
-      building_status: "Photos Pending" | "Publish"
       collections:
         | "Affordable"
         | "Gated Apartment"
@@ -665,7 +651,6 @@ export type Database = {
         | "Spacious Layout"
         | "Vastu Compliant"
       khata_type: "A" | "B"
-      listing_status: "Available" | "Draft" | "Booked" | "Sold" | "Churned"
       occupancy_status:
         | "Vacant"
         | "Owner Occupied"
@@ -684,7 +669,7 @@ export type Database = {
         | "Afternoon (12 pm - 4 pm)"
         | "Evening (4 pm - 8 pm)"
       visit_fulfiller: "Broker" | "Serai"
-      visit_status: "confirmed" | "completed" | "cancelled"
+      visit_status: "to be confirmed" | "confirmed" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -692,29 +677,27 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database[Extract<keyof Database, "public">]
+type PublicSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+  PublicTableNameOrOptions extends
+    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
     | { schema: keyof Database },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+        Database[PublicTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
+        PublicSchema["Views"])
+    ? (PublicSchema["Tables"] &
+        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -722,22 +705,20 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -745,22 +726,20 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -768,23 +747,21 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
+  PublicEnumNameOrOptions extends
+    | keyof PublicSchema["Enums"]
     | { schema: keyof Database },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+> = PublicEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
+    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
+    | keyof PublicSchema["CompositeTypes"]
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database
@@ -793,47 +770,6 @@ export type CompositeTypes<
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
-
-export const Constants = {
-  public: {
-    Enums: {
-      building_status: ["Photos Pending", "Publish"],
-      collections: [
-        "Affordable",
-        "Gated Apartment",
-        "New Construction",
-        "Child Friendly",
-        "Luxury Community",
-        "Spacious Layout",
-        "Vastu Compliant",
-      ],
-      khata_type: ["A", "B"],
-      listing_status: ["Available", "Draft", "Booked", "Sold", "Churned"],
-      occupancy_status: [
-        "Vacant",
-        "Owner Occupied",
-        "Tenant Occupied",
-        "Builder Occupied",
-      ],
-      preferred_visit_days: [
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-        "Sunday",
-      ],
-      preferred_visit_times: [
-        "Morning (8 am - 12 pm)",
-        "Afternoon (12 pm - 4 pm)",
-        "Evening (4 pm - 8 pm)",
-      ],
-      visit_fulfiller: ["Broker", "Serai"],
-      visit_status: ["confirmed", "completed", "cancelled"],
-    },
-  },
-} as const

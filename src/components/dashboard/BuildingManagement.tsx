@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PencilIcon, Plus, MapPin, Building, Trash2, Search } from "lucide-react";
+import { PencilIcon, Plus, MapPin, Building, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { type Database } from "@/integrations/supabase/types";
+import { Json } from "@/integrations/supabase/types";
 
 interface BuildingManagementProps {
   currentUser: Profile;
@@ -35,35 +35,37 @@ interface Building {
   longitude: number | null;
   images: string[] | null;
   user_id: string | null;
+  type: string | null;
   age: number | null;
   total_floors: number | null;
   min_price: number | null;
+  max_price: number | null;
   price_psqft: number | null;
   bhk_types: number[] | null;
+  lifestyle_cohort: number | null;
   collections: string[] | null;
   amenities: string[] | null;
+  features?: any | null;
   google_rating: number | null;
+  bank: string[] | null;
   water: string[] | null;
   map_link: string | null;
   street_view: string | null;
   video_thumbnail: string | null;
+  data_source: string | null;
   total_units: number | null;
-  building_status: "Photos Pending" | "Publish" | string;
-  nearby_places: any;
 }
 
+const buildingTypes = ["Apartment", "Villa", "Penthouse", "Duplex", "Studio", "Row House", "Independent House"];
 const collectionOptions = ["Affordable", "Gated Apartment", "New Construction", "Child Friendly", "Luxury Community", "Spacious Layout", "Vastu Compliant"];
 const featureCategories = {
-  "Amenities": [
-    "Swimming Pool", "Gym", "Clubhouse", "Garden", "Children's Play Area", 
-    "Badminton", "Cricket", "Tennis", "Spa", "Basketball", 
-    "Table Tennis", "Snooker", "Library"
-  ],
-  "Security": ["24/7 Security", "CCTV", "Intercom", "Gated Community"]
+  "Amenities": ["Swimming Pool", "Gym", "Clubhouse", "Garden", "Indoor Games", "Children's Play Area", "Sports Facilities"],
+  "Security": ["24/7 Security", "CCTV", "Intercom", "Gated Community"],
+  "Connectivity": ["Near Metro", "Near Bus Stop", "Near Highway", "Near Airport"],
+  "Lifestyle": ["Pet Friendly", "Senior Living", "Smart Home", "Green Building"]
 };
 const waterSourceOptions = ["Borewell", "Corporation", "Tanker", "Rainwater Harvesting"];
-const nearbyPlaceCategories = ["schools", "hospitals", "tech_parks", "malls", "metro"];
-const BUILDING_STATUS_OPTIONS = ["Photos Pending", "Publish"];
+const bankOptions = ["SBI", "HDFC", "ICICI", "Axis", "PNB", "Canara Bank", "Bank of Baroda"];
 
 export function BuildingManagement({ currentUser }: BuildingManagementProps) {
   const { toast } = useToast();
@@ -78,19 +80,11 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
   const [selectedBHKTypes, setSelectedBHKTypes] = useState<number[]>([]);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [selectedWaterSources, setSelectedWaterSources] = useState<string[]>([]);
+  const [selectedBanks, setSelectedBanks] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("basic");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [buildingToDelete, setBuildingToDelete] = useState<string | null>(null);
-  const [nearbyPlaces, setNearbyPlaces] = useState<{[key: string]: string[]}>({
-    schools: [],
-    hospitals: [],
-    tech_parks: [],
-    malls: [],
-    metro: []
-  });
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-
+  
   useEffect(() => {
     const getSession = async () => {
       const { data } = await supabase.auth.getSession();
@@ -107,8 +101,8 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
       authListener.subscription.unsubscribe();
     };
   }, []);
-
-  const { data: buildings = [], isLoading } = useQuery<Building[]>({
+  
+  const { data: buildings, isLoading } = useQuery<Building[]>({
     queryKey: ['buildings'],
     queryFn: async () => {
       if (!currentSession?.user?.id) {
@@ -124,77 +118,41 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         throw error;
       }
       
-      return (data || []) as Building[];
+      return data?.map(building => ({
+        ...building,
+        features: building.amenities
+      })) || [];
     },
     enabled: !!currentSession?.user?.id
   });
 
-  const filteredBuildings = useMemo(() => {
-    return buildings.filter(building => {
-      const matchesSearch = 
-        searchTerm === "" || 
-        building.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        building.locality.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = 
-        statusFilter === "all" || 
-        building.building_status === statusFilter;
-      
-      return matchesSearch && matchesStatus;
-    });
-  }, [buildings, searchTerm, statusFilter]);
-
   useEffect(() => {
     if (editingBuilding) {
+      const features = editingBuilding.features || {};
       const featureState: {[key: string]: boolean} = {};
       
-      if (editingBuilding.amenities) {
-        Object.values(featureCategories).flat().forEach(feature => {
-          featureState[feature] = editingBuilding.amenities?.includes(feature) || false;
-        });
-      }
+      Object.values(featureCategories).flat().forEach(feature => {
+        const category = Object.keys(featureCategories).find(cat => 
+          featureCategories[cat as keyof typeof featureCategories].includes(feature)
+        );
+        if (category && features[category]) {
+          featureState[feature] = features[category].includes(feature);
+        } else {
+          featureState[feature] = false;
+        }
+      });
       
       setSelectedFeatures(featureState);
       setSelectedBHKTypes(editingBuilding.bhk_types || []);
       setSelectedCollections(editingBuilding.collections || []);
       setSelectedWaterSources(editingBuilding.water || []);
-      
-      const initialNearbyPlaces: {[key: string]: string[]} = {
-        schools: [],
-        hospitals: [],
-        tech_parks: [],
-        malls: [],
-        metro: []
-      };
-      
-      if (editingBuilding.nearby_places) {
-        Object.entries(editingBuilding.nearby_places).forEach(([category, places]) => {
-          if (Array.isArray(places)) {
-            initialNearbyPlaces[category] = places.map(place => {
-              if (typeof place === 'object' && place !== null && 'name' in place) {
-                return place.name as string;
-              }
-              return '';
-            }).filter(Boolean);
-          } else if (places && typeof places === 'object' && 'name' in places) {
-            initialNearbyPlaces[category] = [places.name as string];
-          }
-        });
-      }
-      
-      setNearbyPlaces(initialNearbyPlaces);
+      setSelectedBanks(editingBuilding.bank || []);
     } else {
       setSelectedFeatures({});
       setSelectedBHKTypes([]);
       setSelectedCollections([]);
       setSelectedWaterSources([]);
-      setNearbyPlaces({
-        schools: [],
-        hospitals: [],
-        tech_parks: [],
-        malls: [],
-        metro: []
-      });
+      setSelectedBanks([]);
     }
   }, [editingBuilding]);
 
@@ -247,22 +205,25 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     }
   };
 
-  const prepareAmenities = () => {
-    return Object.entries(selectedFeatures)
-      .filter(([_, isSelected]) => isSelected)
-      .map(([feature]) => feature);
-  };
-
-  const prepareNearbyPlaces = () => {
-    const result: any = {};
+  const prepareFeatures = () => {
+    const features: { [key: string]: string[] } = {};
     
-    Object.entries(nearbyPlaces).forEach(([category, places]) => {
-      if (places.length > 0) {
-        result[category] = places.map(name => ({ name }));
+    Object.entries(selectedFeatures).forEach(([feature, isSelected]) => {
+      if (isSelected) {
+        const category = Object.keys(featureCategories).find(cat => 
+          featureCategories[cat as keyof typeof featureCategories].includes(feature)
+        );
+        
+        if (category) {
+          if (!features[category]) {
+            features[category] = [];
+          }
+          features[category].push(feature);
+        }
       }
     });
     
-    return Object.keys(result).length > 0 ? result : null;
+    return features;
   };
 
   const createBuilding = useMutation({
@@ -273,10 +234,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
       
       const uploadedUrls = await uploadImages(uploadedImages);
       
-      const amenitiesList = prepareAmenities();
-      const nearbyPlacesData = prepareNearbyPlaces();
-      
-      const buildingStatus = formData.get('building_status')?.toString() || 'Photos Pending';
+      const features = prepareFeatures();
       
       const buildingData = {
         name: formData.get('name')?.toString() || '',
@@ -285,28 +243,32 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         sub_locality: formData.get('sub_locality')?.toString() || null,
         latitude: formData.get('latitude') ? Number(formData.get('latitude')) : null,
         longitude: formData.get('longitude') ? Number(formData.get('longitude')) : null,
+        type: formData.get('type')?.toString() || null,
         age: formData.get('age') ? Number(formData.get('age')) : null,
         total_floors: formData.get('total_floors') ? Number(formData.get('total_floors')) : null,
         min_price: formData.get('min_price') ? Number(formData.get('min_price')) : null,
+        max_price: formData.get('max_price') ? Number(formData.get('max_price')) : null,
         price_psqft: formData.get('price_psqft') ? Number(formData.get('price_psqft')) : null,
         bhk_types: selectedBHKTypes.length ? selectedBHKTypes : null,
+        lifestyle_cohort: formData.get('lifestyle_cohort') ? Number(formData.get('lifestyle_cohort')) : null,
         collections: selectedCollections.length ? selectedCollections : null,
-        amenities: amenitiesList.length ? amenitiesList : null,
+        amenities: Object.values(features).flat().length ? Object.values(features).flat() : null,
+        features: Object.keys(features).length ? features : null,
         google_rating: formData.get('google_rating') ? Number(formData.get('google_rating')) : null,
+        bank: selectedBanks.length ? selectedBanks : null,
         water: selectedWaterSources.length ? selectedWaterSources : null,
         map_link: formData.get('map_link')?.toString() || null,
         street_view: formData.get('street_view')?.toString() || null,
         video_thumbnail: formData.get('video_thumbnail')?.toString() || null,
+        data_source: formData.get('data_source')?.toString() || null,
         images: uploadedUrls.length ? uploadedUrls : null,
         user_id: currentSession.user.id,
-        total_units: formData.get('total_units') ? Number(formData.get('total_units')) : null,
-        building_status: buildingStatus,
-        nearby_places: nearbyPlacesData
+        total_units: formData.get('total_units') ? Number(formData.get('total_units')) : null
       };
 
       const { data, error } = await supabase
         .from('buildings')
-        .insert(buildingData as any)
+        .insert(buildingData)
         .select();
 
       if (error) {
@@ -339,7 +301,7 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
   const updateBuilding = useMutation({
     mutationFn: async (formData: FormData) => {
       const buildingId = formData.get('buildingId')?.toString();
-      if (!buildingId || !editingBuilding) throw new Error('Building ID is required');
+      if (!buildingId) throw new Error('Building ID is required');
       
       let imageUrls: string[] | null = editingBuilding?.images || null;
       
@@ -348,72 +310,40 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         imageUrls = editingBuilding?.images ? [...editingBuilding.images, ...newUrls] : newUrls;
       }
       
-      const amenitiesList = prepareAmenities();
-      const nearbyPlacesData = prepareNearbyPlaces();
+      const features = prepareFeatures();
       
-      const buildingData: Partial<Building> = {};
-
-      const name = formData.get('name')?.toString();
-      if (name) buildingData.name = name;
-
-      const city = formData.get('city')?.toString();
-      if (city) buildingData.city = city;
-
-      const locality = formData.get('locality')?.toString();
-      if (locality) buildingData.locality = locality;
-
-      const sub_locality = formData.get('sub_locality')?.toString();
-      if (sub_locality !== undefined) buildingData.sub_locality = sub_locality || null;
-
-      const latitude = formData.get('latitude') ? Number(formData.get('latitude')) : null;
-      if (latitude !== null) buildingData.latitude = latitude;
-
-      const longitude = formData.get('longitude') ? Number(formData.get('longitude')) : null;
-      if (longitude !== null) buildingData.longitude = longitude;
-
-      const age = formData.get('age') ? Number(formData.get('age')) : null;
-      if (age !== null) buildingData.age = age;
-
-      const total_floors = formData.get('total_floors') ? Number(formData.get('total_floors')) : null;
-      if (total_floors !== null) buildingData.total_floors = total_floors;
-
-      const min_price = formData.get('min_price') ? Number(formData.get('min_price')) : null;
-      if (min_price !== null) buildingData.min_price = min_price;
-
-      const price_psqft = formData.get('price_psqft') ? Number(formData.get('price_psqft')) : null;
-      if (price_psqft !== null) buildingData.price_psqft = price_psqft;
-
-      const google_rating = formData.get('google_rating') ? Number(formData.get('google_rating')) : null;
-      if (google_rating !== null) buildingData.google_rating = google_rating;
-
-      const map_link = formData.get('map_link')?.toString();
-      if (map_link !== undefined) buildingData.map_link = map_link || null;
-
-      const street_view = formData.get('street_view')?.toString();
-      if (street_view !== undefined) buildingData.street_view = street_view || null;
-
-      const video_thumbnail = formData.get('video_thumbnail')?.toString();
-      if (video_thumbnail !== undefined) buildingData.video_thumbnail = video_thumbnail || null;
-
-      const total_units = formData.get('total_units') ? Number(formData.get('total_units')) : null;
-      if (total_units !== null) buildingData.total_units = total_units;
-
-      const building_status = formData.get('building_status')?.toString();
-      if (building_status) buildingData.building_status = building_status;
-
-      if (selectedBHKTypes.length) buildingData.bhk_types = selectedBHKTypes;
-      if (selectedCollections.length) buildingData.collections = selectedCollections;
-      if (amenitiesList.length) buildingData.amenities = amenitiesList;
-      if (selectedWaterSources.length) buildingData.water = selectedWaterSources;
-      if (nearbyPlacesData) buildingData.nearby_places = nearbyPlacesData;
-      
-      if (imageUrls) buildingData.images = imageUrls;
-      
-      console.log("Updating building with data:", buildingData);
+      const buildingData = {
+        name: formData.get('name')?.toString() || '',
+        city: formData.get('city')?.toString() || 'Bengaluru',
+        locality: formData.get('locality')?.toString() || '',
+        sub_locality: formData.get('sub_locality')?.toString() || null,
+        latitude: formData.get('latitude') ? Number(formData.get('latitude')) : null,
+        longitude: formData.get('longitude') ? Number(formData.get('longitude')) : null,
+        type: formData.get('type')?.toString() || null,
+        age: formData.get('age') ? Number(formData.get('age')) : null,
+        total_floors: formData.get('total_floors') ? Number(formData.get('total_floors')) : null,
+        min_price: formData.get('min_price') ? Number(formData.get('min_price')) : null,
+        max_price: formData.get('max_price') ? Number(formData.get('max_price')) : null,
+        price_psqft: formData.get('price_psqft') ? Number(formData.get('price_psqft')) : null,
+        bhk_types: selectedBHKTypes.length ? selectedBHKTypes : null,
+        lifestyle_cohort: formData.get('lifestyle_cohort') ? Number(formData.get('lifestyle_cohort')) : null,
+        collections: selectedCollections.length ? selectedCollections : null,
+        amenities: Object.values(features).flat().length ? Object.values(features).flat() : null,
+        features: Object.keys(features).length ? features : null,
+        google_rating: formData.get('google_rating') ? Number(formData.get('google_rating')) : null,
+        bank: selectedBanks.length ? selectedBanks : null,
+        water: selectedWaterSources.length ? selectedWaterSources : null,
+        map_link: formData.get('map_link')?.toString() || null,
+        street_view: formData.get('street_view')?.toString() || null,
+        video_thumbnail: formData.get('video_thumbnail')?.toString() || null,
+        data_source: formData.get('data_source')?.toString() || null,
+        images: imageUrls,
+        total_units: formData.get('total_units') ? Number(formData.get('total_units')) : null
+      };
 
       const { error } = await supabase
         .from('buildings')
-        .update(buildingData as any)
+        .update(buildingData)
         .eq('id', buildingId);
 
       if (error) throw error;
@@ -519,6 +449,14 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     );
   };
 
+  const toggleBank = (value: string) => {
+    setSelectedBanks(prev => 
+      prev.includes(value) 
+        ? prev.filter(item => item !== value) 
+        : [...prev, value]
+    );
+  };
+
   const toggleFeature = (feature: string, isChecked: boolean) => {
     setSelectedFeatures(prev => ({
       ...prev,
@@ -526,184 +464,161 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
     }));
   };
 
-  const handleNearbyPlaceChange = (category: string, index: number, value: string) => {
-    setNearbyPlaces(prev => {
-      const updatedPlaces = [...prev[category]];
-      updatedPlaces[index] = value;
-      return { ...prev, [category]: updatedPlaces };
-    });
-  };
-
-  const addNearbyPlace = (category: string) => {
-    setNearbyPlaces(prev => ({
-      ...prev,
-      [category]: [...prev[category], ""]
-    }));
-  };
-
-  const removeNearbyPlace = (category: string, index: number) => {
-    setNearbyPlaces(prev => {
-      const updatedPlaces = [...prev[category]];
-      updatedPlaces.splice(index, 1);
-      return { ...prev, [category]: updatedPlaces };
-    });
-  };
-
-  const BuildingForm = ({ building }: { building?: Building }) => {
-    return (
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {building && <input type="hidden" name="buildingId" value={building.id} />}
+  const BuildingForm = ({ building }: { building?: Building }) => (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {building && <input type="hidden" name="buildingId" value={building.id} />}
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-5 w-full">
+          <TabsTrigger value="basic">Basic</TabsTrigger>
+          <TabsTrigger value="pricing">Pricing</TabsTrigger>
+          <TabsTrigger value="features">Features</TabsTrigger>
+          <TabsTrigger value="utilities">Utilities</TabsTrigger>
+          <TabsTrigger value="links">Links & Media</TabsTrigger>
+        </TabsList>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-5 w-full">
-            <TabsTrigger value="basic">Basic</TabsTrigger>
-            <TabsTrigger value="pricing">Pricing</TabsTrigger>
-            <TabsTrigger value="features">Features</TabsTrigger>
-            <TabsTrigger value="nearby">Nearby Places</TabsTrigger>
-            <TabsTrigger value="links">Links & Media</TabsTrigger>
-          </TabsList>
-          
-          <ScrollArea className="h-[500px] pr-4 mt-4">
-            <TabsContent value="basic" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Building Name*</Label>
-                <Input 
-                  id="name" 
-                  name="name" 
-                  defaultValue={building?.name || ''} 
-                  required 
-                  className="w-full"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
-                  <Input 
-                    id="city" 
-                    name="city" 
-                    defaultValue={building?.city || 'Bengaluru'} 
-                    required 
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="locality">Locality*</Label>
-                  <Input 
-                    id="locality" 
-                    name="locality" 
-                    defaultValue={building?.locality || ''} 
-                    required 
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="sub_locality">Sub Locality</Label>
-                <Input 
-                  id="sub_locality" 
-                  name="sub_locality" 
-                  defaultValue={building?.sub_locality || ''} 
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="latitude">Latitude</Label>
-                  <Input 
-                    id="latitude" 
-                    name="latitude" 
-                    type="number" 
-                    step="any" 
-                    defaultValue={building?.latitude || ''} 
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="longitude">Longitude</Label>
-                  <Input 
-                    id="longitude" 
-                    name="longitude" 
-                    type="number" 
-                    step="any" 
-                    defaultValue={building?.longitude || ''} 
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="building_status">Status</Label>
-                <Select name="building_status" defaultValue={building?.building_status || 'Photos Pending'}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select building status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BUILDING_STATUS_OPTIONS.map((status) => (
-                      <SelectItem key={status} value={status}>{status}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="age">Age (in years)</Label>
-                  <Input 
-                    id="age" 
-                    name="age" 
-                    type="number" 
-                    min="0" 
-                    step="0.1" 
-                    defaultValue={building?.age || ''} 
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="total_floors">Total Floors</Label>
-                  <Input 
-                    id="total_floors" 
-                    name="total_floors" 
-                    type="number" 
-                    min="1" 
-                    defaultValue={building?.total_floors || ''} 
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="total_units">Total Units</Label>
-                  <Input 
-                    id="total_units" 
-                    name="total_units" 
-                    type="number" 
-                    min="1" 
-                    defaultValue={building?.total_units || ''} 
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>BHK Types Available</Label>
-                <div className="flex flex-wrap gap-2">
-                  {[1, 2, 3, 4, 5].map(bhk => (
-                    <div 
-                      key={bhk} 
-                      className={`px-3 py-1 rounded-full border cursor-pointer select-none transition-colors ${
-                        selectedBHKTypes.includes(bhk) 
-                          ? 'bg-primary text-white border-primary' 
-                          : 'bg-background border-muted-foreground/20 text-muted-foreground'
-                      }`}
-                      onClick={() => toggleBHKType(bhk)}
-                    >
-                      {bhk} BHK
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
+        <ScrollArea className="h-[500px] pr-4 mt-4">
+          <TabsContent value="basic" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Building Name*</Label>
+              <Input 
+                id="name" 
+                name="name" 
+                defaultValue={building?.name || ''} 
+                required 
+                className="w-full"
+              />
+            </div>
             
-            <TabsContent value="pricing" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="min_price">Price (₹)</Label>
+                <Label htmlFor="city">City</Label>
+                <Input 
+                  id="city" 
+                  name="city" 
+                  defaultValue={building?.city || 'Bengaluru'} 
+                  required 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="locality">Locality*</Label>
+                <Input 
+                  id="locality" 
+                  name="locality" 
+                  defaultValue={building?.locality || ''} 
+                  required 
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sub_locality">Sub Locality</Label>
+              <Input 
+                id="sub_locality" 
+                name="sub_locality" 
+                defaultValue={building?.sub_locality || ''} 
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="latitude">Latitude</Label>
+                <Input 
+                  id="latitude" 
+                  name="latitude" 
+                  type="number" 
+                  step="any" 
+                  defaultValue={building?.latitude || ''} 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="longitude">Longitude</Label>
+                <Input 
+                  id="longitude" 
+                  name="longitude" 
+                  type="number" 
+                  step="any" 
+                  defaultValue={building?.longitude || ''} 
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="type">Building Type</Label>
+              <Select name="type" defaultValue={building?.type || ''}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select building type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {buildingTypes.map(type => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="age">Age (in years)</Label>
+                <Input 
+                  id="age" 
+                  name="age" 
+                  type="number" 
+                  min="0" 
+                  step="0.1" 
+                  defaultValue={building?.age || ''} 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="total_floors">Total Floors</Label>
+                <Input 
+                  id="total_floors" 
+                  name="total_floors" 
+                  type="number" 
+                  min="1" 
+                  defaultValue={building?.total_floors || ''} 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="total_units">Total Units</Label>
+                <Input 
+                  id="total_units" 
+                  name="total_units" 
+                  type="number" 
+                  min="1" 
+                  defaultValue={building?.total_units || ''} 
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>BHK Types Available</Label>
+              <div className="flex flex-wrap gap-2">
+                {[1, 2, 3, 4, 5].map(bhk => (
+                  <div 
+                    key={bhk} 
+                    className={`px-3 py-1 rounded-full border cursor-pointer select-none transition-colors ${
+                      selectedBHKTypes.includes(bhk) 
+                        ? 'bg-primary text-white border-primary' 
+                        : 'bg-background border-muted-foreground/20 text-muted-foreground'
+                    }`}
+                    onClick={() => toggleBHKType(bhk)}
+                  >
+                    {bhk} BHK
+                  </div>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="pricing" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="min_price">Minimum Price (₹)</Label>
                 <Input 
                   id="min_price" 
                   name="min_price" 
@@ -713,239 +628,254 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
                   defaultValue={building?.min_price || ''} 
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="price_psqft">Price per Sq. ft. (₹) (Jumbo Fair Price Estimate)</Label>
-                <Input 
-                  id="price_psqft" 
-                  name="price_psqft" 
-                  type="number" 
-                  min="0" 
-                  step="1" 
-                  defaultValue={building?.price_psqft || ''} 
-                />
-              </div>
               
               <div className="space-y-2">
-                <Label htmlFor="collections">Collections</Label>
+                <Label htmlFor="max_price">Maximum Price (₹)</Label>
+                <Input 
+                  id="max_price" 
+                  name="max_price" 
+                  type="number" 
+                  min="0" 
+                  step="1000" 
+                  defaultValue={building?.max_price || ''} 
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="price_psqft">Price per Sq. ft. (₹)</Label>
+              <Input 
+                id="price_psqft" 
+                name="price_psqft" 
+                type="number" 
+                min="0" 
+                step="1" 
+                defaultValue={building?.price_psqft || ''} 
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="collections">Collections</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {collectionOptions.map(collection => (
+                  <div key={collection} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`collection-${collection}`} 
+                      checked={selectedCollections.includes(collection)} 
+                      onCheckedChange={() => toggleCollection(collection)} 
+                    />
+                    <Label htmlFor={`collection-${collection}`} className="cursor-pointer font-normal">{collection}</Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="lifestyle_cohort">Lifestyle Cohort (1-10)</Label>
+              <div className="pt-2">
+                <Slider 
+                  id="lifestyle_cohort"
+                  name="lifestyle_cohort"
+                  defaultValue={[building?.lifestyle_cohort || 5]}
+                  min={1}
+                  max={10}
+                  step={1}
+                />
+                <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+                  <span>Budget</span>
+                  <span>Premium</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="google_rating">Google Rating (0-5)</Label>
+              <Input 
+                id="google_rating" 
+                name="google_rating" 
+                type="number" 
+                min="0" 
+                max="5" 
+                step="0.1" 
+                defaultValue={building?.google_rating || ''} 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bank Approvals</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {bankOptions.map(bank => (
+                  <div key={bank} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`bank-${bank}`} 
+                      checked={selectedBanks.includes(bank)} 
+                      onCheckedChange={() => toggleBank(bank)} 
+                    />
+                    <Label htmlFor={`bank-${bank}`} className="cursor-pointer font-normal">{bank}</Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="features" className="space-y-4">
+            {Object.entries(featureCategories).map(([category, features]) => (
+              <div key={category} className="space-y-2">
+                <h3 className="font-medium text-sm">{category}</h3>
                 <div className="grid grid-cols-2 gap-2">
-                  {collectionOptions.map(collection => (
-                    <div key={collection} className="flex items-center space-x-2">
+                  {features.map(feature => (
+                    <div key={feature} className="flex items-center space-x-2">
                       <Checkbox 
-                        id={`collection-${collection}`} 
-                        checked={selectedCollections.includes(collection)} 
-                        onCheckedChange={() => toggleCollection(collection)} 
+                        id={`feature-${feature}`} 
+                        checked={selectedFeatures[feature] || false} 
+                        onCheckedChange={(checked) => toggleFeature(feature, !!checked)} 
                       />
-                      <Label htmlFor={`collection-${collection}`} className="cursor-pointer font-normal">{collection}</Label>
+                      <Label htmlFor={`feature-${feature}`} className="cursor-pointer font-normal">{feature}</Label>
                     </div>
                   ))}
                 </div>
+                <Separator className="my-2" />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="google_rating">Google Rating (0-5)</Label>
-                <Input 
-                  id="google_rating" 
-                  name="google_rating" 
-                  type="number" 
-                  min="0" 
-                  max="5" 
-                  step="0.1" 
-                  defaultValue={building?.google_rating || ''} 
-                />
+            ))}
+          </TabsContent>
+          
+          <TabsContent value="utilities" className="space-y-4">
+            <div className="space-y-2">
+              <Label>Water Sources</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {waterSourceOptions.map(source => (
+                  <div key={source} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`water-${source}`} 
+                      checked={selectedWaterSources.includes(source)} 
+                      onCheckedChange={() => toggleWaterSource(source)} 
+                    />
+                    <Label htmlFor={`water-${source}`} className="cursor-pointer font-normal">{source}</Label>
+                  </div>
+                ))}
               </div>
-            </TabsContent>
+            </div>
             
-            <TabsContent value="features" className="space-y-4">
-              {Object.entries(featureCategories).map(([category, features]) => (
-                <div key={category} className="space-y-2">
-                  <h3 className="font-medium text-sm">{category}</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    {features.map(feature => (
-                      <div key={feature} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`feature-${feature}`} 
-                          checked={selectedFeatures[feature] || false} 
-                          onCheckedChange={(checked) => toggleFeature(feature, !!checked)} 
+            <div className="space-y-2">
+              <Label htmlFor="data_source">Data Source</Label>
+              <Input 
+                id="data_source" 
+                name="data_source" 
+                defaultValue={building?.data_source || ''} 
+                placeholder="Where did this data come from?"
+              />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="links" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="map_link">Google Maps Link</Label>
+              <Input 
+                id="map_link" 
+                name="map_link" 
+                type="url" 
+                defaultValue={building?.map_link || ''} 
+                placeholder="https://maps.google.com/..."
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="street_view">Street View Link</Label>
+              <Input 
+                id="street_view" 
+                name="street_view" 
+                type="url" 
+                defaultValue={building?.street_view || ''} 
+                placeholder="https://maps.google.com/..."
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="video_thumbnail">Video Thumbnail URL</Label>
+              <Input 
+                id="video_thumbnail" 
+                name="video_thumbnail" 
+                type="url" 
+                defaultValue={building?.video_thumbnail || ''} 
+                placeholder="https://example.com/thumbnail.jpg"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="images">Building Images</Label>
+              <Input 
+                id="images" 
+                name="images" 
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleFileChange}
+                className="cursor-pointer"
+              />
+              
+              {building?.images && building.images.length > 0 && (
+                <div className="mt-2">
+                  <Label>Existing Images</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {building.images.map((image, index) => (
+                      <img 
+                        key={index} 
+                        src={image} 
+                        alt={`Building ${index + 1}`} 
+                        className="h-16 w-16 object-cover rounded-md"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {uploadedImages.length > 0 && (
+                <div className="mt-2">
+                  <Label>New Images to Upload</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {Array.from(uploadedImages).map((file, index) => (
+                      <div key={index} className="h-16 w-16 relative">
+                        <img 
+                          src={URL.createObjectURL(file)} 
+                          alt={`Preview ${index + 1}`} 
+                          className="h-full w-full object-cover rounded-md"
                         />
-                        <Label htmlFor={`feature-${feature}`} className="cursor-pointer font-normal">{feature}</Label>
                       </div>
                     ))}
                   </div>
-                  <Separator className="my-2" />
                 </div>
-              ))}
-            </TabsContent>
-            
-            <TabsContent value="nearby" className="space-y-4">
-              {nearbyPlaceCategories.map(category => (
-                <div key={category} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label className="capitalize">{category.replace('_', ' ')}</Label>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => addNearbyPlace(category)}
-                    >
-                      Add
-                    </Button>
-                  </div>
-                  
-                  {nearbyPlaces[category].map((place, index) => (
-                    <div key={`${category}-${index}`} className="flex gap-2">
-                      <Input 
-                        value={place} 
-                        onChange={(e) => handleNearbyPlaceChange(category, index, e.target.value)} 
-                        placeholder={`Enter ${category.replace('_', ' ')} name`}
-                      />
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => removeNearbyPlace(category, index)}
-                        className="shrink-0"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  
-                  {nearbyPlaces[category].length === 0 && (
-                    <p className="text-sm text-muted-foreground">No {category.replace('_', ' ')} added yet.</p>
-                  )}
-                  
-                  <Separator className="my-2" />
-                </div>
-              ))}
-            </TabsContent>
-            
-            <TabsContent value="links" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="map_link">Google Maps Link</Label>
-                <Input 
-                  id="map_link" 
-                  name="map_link" 
-                  type="url" 
-                  defaultValue={building?.map_link || ''} 
-                  placeholder="https://maps.google.com/..."
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="street_view">Street View Link</Label>
-                <Input 
-                  id="street_view" 
-                  name="street_view" 
-                  type="url" 
-                  defaultValue={building?.street_view || ''} 
-                  placeholder="https://maps.google.com/..."
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="video_thumbnail">Video Thumbnail URL</Label>
-                <Input 
-                  id="video_thumbnail" 
-                  name="video_thumbnail" 
-                  type="url" 
-                  defaultValue={building?.video_thumbnail || ''} 
-                  placeholder="https://example.com/thumbnail.jpg"
-                />
-              </div>
+              )}
+            </div>
+          </TabsContent>
+        </ScrollArea>
+      </Tabs>
 
-              <div className="space-y-2">
-                <Label htmlFor="water">Water Sources</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {waterSourceOptions.map(source => (
-                    <div key={source} className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`water-${source}`} 
-                        checked={selectedWaterSources.includes(source)} 
-                        onCheckedChange={() => toggleWaterSource(source)} 
-                      />
-                      <Label htmlFor={`water-${source}`} className="cursor-pointer font-normal">{source}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="images">Building Images</Label>
-                <Input 
-                  id="images" 
-                  name="images" 
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="cursor-pointer"
-                />
-                
-                {building?.images && building.images.length > 0 && (
-                  <div className="mt-2">
-                    <Label>Existing Images</Label>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {building.images.map((image, index) => (
-                        <img 
-                          key={index} 
-                          src={image} 
-                          alt={`Building ${index + 1}`} 
-                          className="h-16 w-16 object-cover rounded-md"
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {uploadedImages.length > 0 && (
-                  <div className="mt-2">
-                    <Label>New Images to Upload</Label>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {Array.from(uploadedImages).map((file, index) => (
-                        <div key={index} className="h-16 w-16 relative">
-                          <img 
-                            src={URL.createObjectURL(file)} 
-                            alt={`Preview ${index + 1}`} 
-                            className="h-full w-full object-cover rounded-md"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-          </ScrollArea>
-        </Tabs>
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => {
-              if (editingBuilding) {
-                setEditingBuilding(null);
-              } else {
-                setIsCreateOpen(false);
-              }
-              setActiveTab("basic");
-            }}
-          >
-            Cancel
-          </Button>
-          <Button 
-            type="submit" 
-            disabled={isUploading || createBuilding.isPending || updateBuilding.isPending}
-          >
-            {isUploading ? 'Uploading images...' : 
-             (createBuilding.isPending || updateBuilding.isPending) ? 'Saving...' : 
-             building ? 'Update Building' : 'Create Building'}
-          </Button>
-        </div>
-      </form>
-    );
-  };
+      <div className="flex justify-end gap-2 pt-2">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={() => {
+            if (editingBuilding) {
+              setEditingBuilding(null);
+            } else {
+              setIsCreateOpen(false);
+            }
+            setActiveTab("basic");
+          }}
+        >
+          Cancel
+        </Button>
+        <Button 
+          type="submit" 
+          disabled={isUploading || createBuilding.isPending || updateBuilding.isPending}
+        >
+          {isUploading ? 'Uploading images...' : 
+           (createBuilding.isPending || updateBuilding.isPending) ? 'Saving...' : 
+           building ? 'Update Building' : 'Create Building'}
+        </Button>
+      </div>
+    </form>
+  );
 
   if (isLoading) {
     return <div className="flex justify-center py-8">
@@ -985,42 +915,20 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
         </Dialog>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name or locality..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="Photos Pending">Photos Pending</SelectItem>
-            <SelectItem value="Publish">Published</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Location</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Price</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Price Range</TableHead>
               <TableHead>Images</TableHead>
               <TableHead className="w-[100px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredBuildings.length > 0 ? filteredBuildings.map((building) => (
+            {buildings && buildings.map((building) => (
               <TableRow key={building.id}>
                 <TableCell className="font-medium">{building.name}</TableCell>
                 <TableCell>
@@ -1032,10 +940,14 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
                     </span>
                   </div>
                 </TableCell>
-                <TableCell>{building.building_status || "Photos Pending"}</TableCell>
+                <TableCell>{building.type || "—"}</TableCell>
                 <TableCell>
-                  {building.min_price ? (
-                    <span>₹{(building.min_price / 100000).toFixed(1)}L</span>
+                  {building.min_price && building.max_price ? (
+                    <span>₹{(building.min_price / 100000).toFixed(1)}L - ₹{(building.max_price / 100000).toFixed(1)}L</span>
+                  ) : building.min_price ? (
+                    <span>From ₹{(building.min_price / 100000).toFixed(1)}L</span>
+                  ) : building.max_price ? (
+                    <span>Up to ₹{(building.max_price / 100000).toFixed(1)}L</span>
                   ) : (
                     <span className="text-muted-foreground text-sm">Not specified</span>
                   )}
@@ -1081,12 +993,11 @@ export function BuildingManagement({ currentUser }: BuildingManagementProps) {
                   </div>
                 </TableCell>
               </TableRow>
-            )) : (
+            ))}
+            {!buildings?.length && (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
-                  {searchTerm || statusFilter !== "all" ? 
-                    "No buildings match your search criteria" : 
-                    "No buildings found"}
+                  No buildings found
                 </TableCell>
               </TableRow>
             )}

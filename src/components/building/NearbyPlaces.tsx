@@ -1,7 +1,7 @@
 
 import { 
   School, Hospital, Utensils, Building2, 
-  ShoppingCart, Train, LucideIcon
+  LucideIcon
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -13,13 +13,10 @@ interface Place {
 }
 
 interface NearbyPlacesData {
-  schools?: Place[] | Place;
-  hospitals?: Place[] | Place;
-  restaurants?: Place[] | Place;
-  tech_parks?: Place[] | Place;
-  malls?: Place[] | Place;
-  metro?: Place[] | Place;
-  [key: string]: any; // Allow for other place types
+  schools?: Place[];
+  hospitals?: Place[];
+  restaurants?: Place[];
+  tech_parks?: Place[];
 }
 
 const placeIconMap: Record<string, LucideIcon> = {
@@ -27,8 +24,6 @@ const placeIconMap: Record<string, LucideIcon> = {
   "hospital": Hospital,
   "restaurant": Utensils,
   "tech_park": Building2,
-  "mall": ShoppingCart,
-  "metro": Train,
 };
 
 const categoryDisplayNames: Record<string, string> = {
@@ -36,8 +31,6 @@ const categoryDisplayNames: Record<string, string> = {
   "hospitals": "Hospitals",
   "restaurants": "Restaurants",
   "tech_parks": "Tech Parks",
-  "malls": "Malls",
-  "metro": "Metro Stations",
 };
 
 interface NearbyPlacesProps {
@@ -48,54 +41,26 @@ export function NearbyPlaces({ nearbyPlaces }: NearbyPlacesProps) {
   const [showAll, setShowAll] = useState(false);
   
   if (!nearbyPlaces) {
-    return <div className="text-muted-foreground">No nearby places information available</div>;
+    return <p className="text-muted-foreground">No nearby places information available</p>;
   }
 
-  // Safely extract all places from the data structure
-  const extractPlaces = () => {
-    try {
-      // Create a flat array of all places with their category
-      return Object.entries(nearbyPlaces).flatMap(([category, places]) => {
-        // Skip if places is null/undefined
-        if (!places) return [];
-        
-        // Handle different potential formats
-        if (Array.isArray(places)) {
-          // If it's already an array, map each place
-          return places.map(place => ({
-            name: place.name || 'Unknown',
-            category,
-            displayCategory: categoryDisplayNames[category] || category
-          }));
-        } 
-        else if (typeof places === 'object' && places !== null) {
-          // If it's a single object (not array), convert to array item
-          return [{
-            name: places.name || 'Unknown',
-            category,
-            displayCategory: categoryDisplayNames[category] || category
-          }];
-        }
-        
-        // Return empty array for any other type
-        return [];
-      });
-    } catch (error) {
-      console.error("Error extracting nearby places:", error);
-      return [];
-    }
-  };
-
-  const allPlaces = extractPlaces();
-
-  if (allPlaces.length === 0) {
-    return <div className="text-muted-foreground">No nearby places information available</div>;
-  }
+  // Create a flat array of all places with their category
+  const allPlaces = Object.entries(nearbyPlaces).flatMap(([category, places]) => 
+    places ? places.map(place => ({ 
+      ...place, 
+      category, 
+      displayCategory: categoryDisplayNames[category] || category
+    })) : []
+  );
 
   const ITEMS_PER_ROW = 4; // For desktop view
   const INITIAL_ROWS = 2;
   const initialItems = ITEMS_PER_ROW * INITIAL_ROWS;
   const displayedPlaces = showAll ? allPlaces : allPlaces.slice(0, initialItems);
+
+  if (allPlaces.length === 0) {
+    return <p className="text-muted-foreground">No nearby places information available</p>;
+  }
 
   return (
     <div className="space-y-4">

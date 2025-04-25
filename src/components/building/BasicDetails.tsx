@@ -1,5 +1,5 @@
 
-import { Building, Clock, BadgeIndianRupee, Droplets } from "lucide-react";
+import { Building, Clock, BadgeIndianRupee, Droplets, Building2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 interface BasicDetailsProps {
@@ -7,7 +7,9 @@ interface BasicDetailsProps {
   age?: string | null;
   pricePsqft?: number;
   minPrice?: number;
+  maxPrice?: number;
   water?: string[] | null;
+  bank?: string[] | null;
 }
 
 export function BasicDetails({
@@ -15,57 +17,68 @@ export function BasicDetails({
   age,
   pricePsqft,
   minPrice,
+  maxPrice,
   water,
+  bank,
 }: BasicDetailsProps) {
   return (
     <Card className="p-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {totalFloors && (
           <div>
-            <div className="text-sm text-muted-foreground flex items-center gap-2">
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
               <Building className="h-4 w-4" />
               Total Floors
-            </div>
-            <div className="font-medium">{totalFloors}</div>
+            </p>
+            <p className="font-medium">{totalFloors}</p>
           </div>
         )}
-        {age !== null && age !== undefined && (
+        {age !== null && (
           <div>
-            <div className="text-sm text-muted-foreground flex items-center gap-2">
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
               <Clock className="h-4 w-4" />
               Age
-            </div>
-            <div className="font-medium">{age}</div>
+            </p>
+            <p className="font-medium">{age}</p>
           </div>
         )}
         {pricePsqft && (
           <div>
-            <div className="text-sm text-muted-foreground flex items-center gap-2">
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
               <BadgeIndianRupee className="h-4 w-4" />
               Price per sq ft
-              <span className="text-xs">(Jumbo Fair Price Estimate)</span>
-            </div>
-            <div className="font-medium">₹{pricePsqft.toLocaleString()}</div>
+            </p>
+            <p className="font-medium">₹{pricePsqft.toLocaleString()}</p>
           </div>
         )}
         {minPrice && (
           <div>
-            <div className="text-sm text-muted-foreground flex items-center gap-2">
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
               <BadgeIndianRupee className="h-4 w-4" />
               Price
-            </div>
-            <div className="font-medium">
+            </p>
+            <p className="font-medium">
               ₹{(minPrice/10000000).toFixed(1)} Cr
-            </div>
+              {maxPrice && ` - ₹${(maxPrice/10000000).toFixed(1)} Cr`}
+            </p>
           </div>
         )}
         {water?.length ? (
           <div>
-            <div className="text-sm text-muted-foreground flex items-center gap-2">
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
               <Droplets className="h-4 w-4" />
               Water
-            </div>
-            <div className="font-medium">{water.join(", ")}</div>
+            </p>
+            <p className="font-medium">{water.join(", ")}</p>
+          </div>
+        ) : null}
+        {bank?.length ? (
+          <div>
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Bank
+            </p>
+            <p className="font-medium">{bank.join(", ")}</p>
           </div>
         ) : null}
       </div>

@@ -134,13 +134,10 @@ export function useAuth() {
 
   const signInWithGoogle = async () => {
     try {
-      // Get the current domain for dynamic redirect
-      const currentDomain = window.location.origin;
-      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${currentDomain}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       if (error) throw error;

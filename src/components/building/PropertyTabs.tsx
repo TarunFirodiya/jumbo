@@ -5,7 +5,6 @@ import { LocationTab } from "@/components/building/tabs/LocationTab";
 import { AmenitiesTab } from "@/components/building/tabs/AmenitiesTab";
 import { ReviewsTab } from "@/components/building/tabs/ReviewsTab";
 import { Info, MapPin, Home, Star, FileText, Ruler } from "lucide-react";
-import { NearbyPlaces } from "@/components/building/NearbyPlaces";
 
 interface PropertyTabsProps {
   buildingName: string;
@@ -15,7 +14,6 @@ interface PropertyTabsProps {
   googleRating?: number;
   googleReviews?: any[]; // This would be extended as needed
   buildingSpecs?: any; // This would include additional building specifications
-  nearbyPlaces?: any;
 }
 
 export function PropertyTabs({
@@ -25,8 +23,7 @@ export function PropertyTabs({
   features,
   googleRating,
   googleReviews,
-  buildingSpecs,
-  nearbyPlaces
+  buildingSpecs
 }: PropertyTabsProps) {
   const [activeTab, setActiveTab] = useState("overview");
   
@@ -102,13 +99,6 @@ export function PropertyTabs({
               </div>
             </div>
           </div>
-          
-          {nearbyPlaces && (
-            <div>
-              <h3 className="text-lg font-semibold mb-3">Nearby Places</h3>
-              <NearbyPlaces nearbyPlaces={nearbyPlaces} />
-            </div>
-          )}
         </div>
       </TabsContent>
       

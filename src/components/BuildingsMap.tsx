@@ -15,15 +15,6 @@ interface BuildingsMapProps {
   buildingScores?: Record<string, any>;
 }
 
-// Create a simple fallback component for errors
-const MapErrorFallback = () => (
-  <div className="w-full h-[calc(100vh-12rem)] rounded-lg shadow-lg bg-gray-100 flex flex-col items-center justify-center">
-    <Building className="h-20 w-20 text-gray-400 mb-4" />
-    <h3 className="text-xl font-medium text-gray-700">Map currently unavailable</h3>
-    <p className="text-gray-500 mt-2">Please try again later or view the list instead</p>
-  </div>
-);
-
 const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: BuildingsMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -32,7 +23,6 @@ const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: Buildings
   const navigate = useNavigate();
   const [mapboxToken, setMapboxToken] = useState<string>('');
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
-  const [mapError, setMapError] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchMapboxToken = async () => {
@@ -44,7 +34,6 @@ const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: Buildings
         }
       } catch (error) {
         console.error('Error fetching Mapbox token:', error);
-        setMapError(true);
         toast({
           title: "Error",
           description: "Failed to initialize map settings",
@@ -58,7 +47,7 @@ const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: Buildings
 
   // Initialize map
   useEffect(() => {
-    if (!mapboxToken || !mapContainer.current || map.current || mapError) return;
+    if (!mapboxToken || !mapContainer.current || map.current) return;
 
     try {
       mapboxgl.accessToken = mapboxToken;
@@ -87,14 +76,13 @@ const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: Buildings
       };
     } catch (error) {
       console.error('Error initializing map:', error);
-      setMapError(true);
       toast({
         title: "Map Error",
         description: "There was an error loading the map",
         variant: "destructive",
       });
     }
-  }, [mapboxToken, mapError, toast]);
+  }, [mapboxToken, toast]);
 
   // Function to handle shortlist
   const handleShortlist = (e: Event, buildingId: string) => {
@@ -121,7 +109,6 @@ const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: Buildings
 
     // Create bounds object to fit markers
     const bounds = new mapboxgl.LngLatBounds();
-    let validMarkersAdded = 0;
 
     // Add new markers
     buildings.forEach(building => {
@@ -264,106 +251,83 @@ const BuildingsMap = ({ buildings, onShortlist, buildingScores = {} }: Buildings
         </div>
       `);
 
-      try {
-        // Create the marker
-        const marker = new mapboxgl.Marker({
-          element: el,
-          anchor: 'bottom',  // Ensures the bottom of the marker is at the coordinate point
-        })
-          .setLngLat([building.longitude, building.latitude])
-          .setPopup(popup)
-          .addTo(map.current!);
+      // Create the marker
+      const marker = new mapboxgl.Marker({
+        element: el,
+        anchor: 'bottom',  // Ensures the bottom of the marker is at the coordinate point
+      })
+        .setLngLat([building.longitude, building.latitude])
+        .setPopup(popup)
+        .addTo(map.current);
 
-        // Handle marker click to set active state
-        el.addEventListener('click', () => {
-          // Reset previous active marker
-          if (activeMarker && activeMarker !== building.id) {
-            const prevMarkerEl = markers.current.find(m => 
-              m.getElement().getAttribute('data-building-id') === activeMarker
-            )?.getElement();
-            
-            if (prevMarkerEl) {
-              const prevBubble = prevMarkerEl.querySelector('.price-bubble') as HTMLElement;
-              if (prevBubble) {
-                prevMarkerEl.style.zIndex = "5";
-                prevBubble.style.transform = "";
-                prevBubble.style.backgroundColor = "white";
-                prevBubble.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
-              }
-            }
-          }
+      // Handle marker click to set active state
+      el.addEventListener('click', () => {
+        // Reset previous active marker
+        if (activeMarker && activeMarker !== building.id) {
+          const prevMarkerEl = markers.current.find(m => 
+            m.getElement().getAttribute('data-building-id') === activeMarker
+          )?.getElement();
           
-          // Set new active marker
-          setActiveMarker(building.id);
-          const bubble = el.querySelector('.price-bubble') as HTMLElement;
-          if (bubble) {
-            el.style.zIndex = "10";
-            bubble.style.transform = "scale(1.1)";
-            bubble.style.backgroundColor = "#f8f8f8";
-            bubble.style.boxShadow = "0 3px 7px rgba(0,0,0,0.25)";
-          }
-        });
-
-        // Set data attribute for identification
-        el.setAttribute('data-building-id', building.id);
-        
-        markers.current.push(marker);
-        bounds.extend([building.longitude, building.latitude]);
-        validMarkersAdded++;
-        
-        // Add event listener for the shortlist button after popup is open
-        marker.getPopup().on('open', () => {
-          setTimeout(() => {
-            const shortlistBtn = document.getElementById(`shortlist-btn-${building.id}`);
-            if (shortlistBtn) {
-              shortlistBtn.addEventListener('click', (e) => handleShortlist(e, building.id));
+          if (prevMarkerEl) {
+            const prevBubble = prevMarkerEl.querySelector('.price-bubble') as HTMLElement;
+            if (prevBubble) {
+              prevMarkerEl.style.zIndex = "5";
+              prevBubble.style.transform = "";
+              prevBubble.style.backgroundColor = "white";
+              prevBubble.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
             }
-          }, 100);
-        });
-      } catch (error) {
-        console.error('Error creating marker for building:', building.id, error);
-      }
+          }
+        }
+        
+        // Set new active marker
+        setActiveMarker(building.id);
+        const bubble = el.querySelector('.price-bubble') as HTMLElement;
+        if (bubble) {
+          el.style.zIndex = "10";
+          bubble.style.transform = "scale(1.1)";
+          bubble.style.backgroundColor = "#f8f8f8";
+          bubble.style.boxShadow = "0 3px 7px rgba(0,0,0,0.25)";
+        }
+      });
+
+      // Set data attribute for identification
+      el.setAttribute('data-building-id', building.id);
+      
+      markers.current.push(marker);
+      bounds.extend([building.longitude, building.latitude]);
+      
+      // Add event listener for the shortlist button after popup is open
+      marker.getPopup().on('open', () => {
+        setTimeout(() => {
+          const shortlistBtn = document.getElementById(`shortlist-btn-${building.id}`);
+          if (shortlistBtn) {
+            shortlistBtn.addEventListener('click', (e) => handleShortlist(e, building.id));
+          }
+        }, 100);
+      });
     });
 
     // Fit map to markers if there are any
-    if (validMarkersAdded > 0) {
-      try {
-        map.current.fitBounds(bounds, {
-          padding: 50,
-          maxZoom: 15
-        });
-      } catch (error) {
-        console.error('Error fitting bounds:', error);
-      }
-    } else {
-      console.log('No valid markers to fit bounds');
+    if (markers.current.length > 0) {
+      map.current.fitBounds(bounds, {
+        padding: 50,
+        maxZoom: 15
+      });
     }
   };
 
   // Update markers when buildings change
   useEffect(() => {
-    if (map.current && !mapError) {
-      try {
-        addMarkers();
-      } catch (error) {
-        console.error('Error updating markers:', error);
-        setMapError(true);
-      }
+    if (map.current) {
+      addMarkers();
     }
-  }, [buildings, buildingScores, mapError]);
-
-  if (mapError) {
-    return <MapErrorFallback />;
-  }
+  }, [buildings, buildingScores]);
 
   if (!mapboxToken) {
     return (
       <div className="w-full h-[calc(100vh-12rem)]">
         <div className="w-full h-full rounded-lg shadow-lg bg-muted flex items-center justify-center">
-          <div className="text-center p-4">
-            <div className="h-8 w-8 rounded-full border-4 border-t-primary animate-spin mx-auto mb-4"></div>
-            <p>Loading map...</p>
-          </div>
+          Loading map...
         </div>
       </div>
     );
